@@ -13,7 +13,7 @@ const NON_CONFORME_PATTERNS = [
   {
     pattern: /preparation fromagere|specialite fromagere|specialite laitiere/,
     label: 'préparation fromagère / spécialité laitière',
-    headline: (label) => `"${label}" — ne respecte pas les critères légaux du fromage`,
+    headline: (label) => `"${label}" - ne respecte pas les critères légaux du fromage`,
     legalNote:
       'Cette dénomination signale par construction un produit qui ne respecte pas le taux minimal de matière grasse laitière ou les critères légaux du fromage. Fiches DGCCRF sur les denrées alimentaires.',
     compareSuggest: 'Fromage',
@@ -22,7 +22,7 @@ const NON_CONFORME_PATTERNS = [
   {
     pattern: /preparation a base de miel/,
     label: 'préparation à base de miel',
-    headline: (label) => `"${label}" — très faible taux de miel réel`,
+    headline: (label) => `"${label}" - très faible taux de miel réel`,
     legalNote:
       'Cette dénomination signale par construction un très faible taux de miel réel, insuffisant pour la dénomination légale "miel". Fiches DGCCRF sur les denrées alimentaires.',
     compareSuggest: 'Miel',
@@ -31,7 +31,7 @@ const NON_CONFORME_PATTERNS = [
   {
     pattern: /similaire au jambon|preparation a base de viande/,
     label: 'préparation à base de viande / similaire au jambon',
-    headline: (label) => `"${label}" — non conforme à la dénomination jambon`,
+    headline: (label) => `"${label}" - non conforme à la dénomination jambon`,
     legalNote:
       'Cette dénomination signale par construction une non-conformité aux critères légaux de la dénomination "jambon". Fiches DGCCRF sur les denrées alimentaires.',
     compareSuggest: 'Jambon',
@@ -44,7 +44,7 @@ const FLAVOR_PATTERN = /(?:saveur|gout|parfum)\s+([a-z]+(?:\s+[a-z]+)?)/g;
 // Mots d'ingrédients/fruits assez identifiables pour qu'on les vérifie quand ils
 // apparaissent tels quels dans le nom du produit (ex. "Blueberry Waffles"),
 // même sans "saveur/goût" devant. Volontairement limité aux mots concrets et peu
-// ambigus (fruits, arômes classiques) — pas les noms de marque ("Nutella").
+// ambigus (fruits, arômes classiques) - pas les noms de marque ("Nutella").
 const FOOD_WORDS = [
   'myrtille', 'blueberry', 'fraise', 'strawberry', 'framboise', 'raspberry',
   'vanille', 'vanilla', 'chocolat', 'chocolate', 'cacao', 'cocoa', 'noisette', 'hazelnut',
@@ -132,7 +132,7 @@ const LEGAL_NOTE_POSITION =
   'L\'ordre de la liste d\'ingrédients doit refléter leur quantité décroissante (règlement (UE) n°1169/2011, art. 18). La position d\'un ingrédient est donc un signal fiable de sa proportion réelle.';
 
 const LEGAL_NOTE_FLAVOR =
-  'La mention d\'un ingrédient dans le nom ("saveur / goût X", ou le nom direct d\'un fruit/arôme) décrit une saveur perçue, pas un ingrédient garanti. Le règlement (UE) n°1169/2011 exige seulement que "arôme" figure dans la liste — pas qu\'il précise sa source.';
+  'La mention d\'un ingrédient dans le nom ("saveur / goût X", ou le nom direct d\'un fruit/arôme) décrit une saveur perçue, pas un ingrédient garanti. Le règlement (UE) n°1169/2011 exige seulement que "arôme" figure dans la liste - pas qu\'il précise sa source.';
 
 /**
  * @param {string} productName
@@ -140,7 +140,7 @@ const LEGAL_NOTE_FLAVOR =
  * @returns {{ verdict: 'clean'|'warning'|'misleading'|'unknown', headline: string, legalNote?: string, detail?: object }}
  */
 function detectVerdict(productName, ingredientsText) {
-  // Exclure les produits "Chocolate X%" — chocolat pur, pas une saveur
+  // Exclure les produits "Chocolate X%" - chocolat pur, pas une saveur
   if (/chocolate.+\d+\s*%/i.test(productName)) {
     return {
       verdict: 'clean',
@@ -154,7 +154,7 @@ function detectVerdict(productName, ingredientsText) {
   if (!ingredientsNorm) {
     return {
       verdict: 'unknown',
-      headline: "Composition indisponible sur Open Food Facts — impossible de vérifier.",
+      headline: "Composition indisponible sur Open Food Facts - impossible de vérifier.",
     };
   }
 
@@ -177,7 +177,7 @@ function detectVerdict(productName, ingredientsText) {
   const flavors = findFlavorMention(productName);
 
   if (flavors.length > 0) {
-    // Exclure si c'est "Chocolate X%" — chocolat pur, pas une saveur
+    // Exclure si c'est "Chocolate X%" - chocolat pur, pas une saveur
     const isChocolatePercent = flavors.includes('chocolate') && /\d+\s*%/.test(productName);
 
     if (!isChocolatePercent) {
@@ -200,8 +200,8 @@ function detectVerdict(productName, ingredientsText) {
         return {
           verdict: 'misleading',
           headline: missingFlavors.length === 1
-            ? `"${missingFlavors[0]}" absent — seulement un arôme`
-            : `${missingFlavors.length} saveur${missingFlavors.length > 1 ? 's' : ''} absent${missingFlavors.length > 1 ? 'es' : ''} — seulement des arômes`,
+            ? `"${missingFlavors[0]}" absent - seulement un arôme`
+            : `${missingFlavors.length} saveur${missingFlavors.length > 1 ? 's' : ''} absent${missingFlavors.length > 1 ? 'es' : ''} - seulement des arômes`,
           legalNote: LEGAL_NOTE_FLAVOR,
           detail: {
             rule: 'saveur-sans-ingredient',

@@ -71,11 +71,15 @@ const ADDITIVES_DATABASE = {
   'en:e320': { name: 'BHA', role: 'Antioxydant' },
   'en:e321': { name: 'BHT', role: 'Antioxydant' },
   'en:e407': { name: 'Carraghénane', role: 'Épaississant' },
+  'en:e410': { name: 'Gomme de caroube', role: 'Épaississant / Stabilisant' },
   'en:e412': { name: 'Gomme de guar', role: 'Épaississant' },
   'en:e413': { name: 'Gomme d\'acacia', role: 'Épaississant' },
   'en:e414': { name: 'Gomme xanthane', role: 'Épaississant' },
   'en:e415': { name: 'Gomme de xanthane', role: 'Épaississant' },
+  'en:e433': { name: 'Polysorbate 80', role: 'Émulsifiant' },
   'en:e440': { name: 'Pectine', role: 'Épaississant' },
+  'en:e466': { name: 'Carboxyméthylcellulose', role: 'Épaississant / Gélifiant' },
+  'en:e471': { name: 'Mono- et diglycérides d\'acides gras', role: 'Émulsifiant' },
   'en:e500': { name: 'Carbonate de sodium', role: 'Régulateur d\'acidité' },
   'en:e501': { name: 'Carbonate de potassium', role: 'Régulateur d\'acidité' },
   'en:e621': { name: 'Glutamate monosodique', role: 'Exhausteur de goût' },
@@ -85,20 +89,35 @@ const ADDITIVES_DATABASE = {
   'en:e955': { name: 'Sucralose', role: 'Édulcorant' },
 };
 
+// Catégorisation des additifs: ok (vert), to-limit (orange), risky (rouge)
+const ADDITIVE_CATEGORY_MAP = {
+  'en:e250': 'risky',
+  'en:e251': 'risky',
+  'en:e252': 'risky',
+  'en:e320': 'risky',
+  'en:e321': 'risky',
+  'en:e102': 'to-limit',
+  'en:e110': 'to-limit',
+  'en:e124': 'to-limit',
+  'en:e129': 'to-limit',
+  'en:e171': 'risky',
+  'en:e951': 'to-limit',
+};
+
 // Additifs faisant l'objet d'un signalement sanitaire documenté (avis EFSA/CIRC),
 // pas une liste exhaustive de tous les additifs à controverse.
 const ADDITIVE_RISK_MAP = {
-  'en:e250': 'Nitrite de sodium — classé cancérogène probable pour l\'homme (CIRC, groupe 2A) en lien avec la charcuterie',
-  'en:e251': 'Nitrate de sodium — précurseur de nitrites, mêmes réserves que E250',
-  'en:e252': 'Nitrate de potassium — précurseur de nitrites, mêmes réserves que E250',
-  'en:e320': 'BHA — suspecté perturbateur endocrinien, classé possiblement cancérogène (CIRC, groupe 2B)',
-  'en:e321': 'BHT — suspecté perturbateur endocrinien',
-  'en:e102': 'Tartrazine — associée à un risque d\'hyperactivité chez l\'enfant (avis EFSA)',
-  'en:e110': 'Jaune orangé S — associé à un risque d\'hyperactivité chez l\'enfant (avis EFSA)',
-  'en:e124': 'Rouge cochenille A — associé à un risque d\'hyperactivité chez l\'enfant (avis EFSA)',
-  'en:e129': 'Rouge allura AC — associé à un risque d\'hyperactivité chez l\'enfant (avis EFSA)',
-  'en:e171': 'Dioxyde de titane — additif interdit dans l\'alimentation en UE depuis 2022 (préoccupations de génotoxicité)',
-  'en:e951': 'Aspartame — classé possiblement cancérogène (CIRC, groupe 2B)',
+  'en:e250': 'Nitrite de sodium - classe cancerogene probable pour l\'homme (CIRC, groupe 2A) en lien avec la charcuterie',
+  'en:e251': 'Nitrate de sodium - precurseur de nitrites, memes reserves que E250',
+  'en:e252': 'Nitrate de potassium - precurseur de nitrites, memes reserves que E250',
+  'en:e320': 'BHA - suspecte perturbateur endocrinien, classe possiblement cancerogene (CIRC, groupe 2B)',
+  'en:e321': 'BHT - suspecte perturbateur endocrinien',
+  'en:e102': 'Tartrazine - associee a un risque d\'hyperactivite chez l\'enfant (avis EFSA)',
+  'en:e110': 'Jaune orange S - associe a un risque d\'hyperactivite chez l\'enfant (avis EFSA)',
+  'en:e124': 'Rouge cochenille A - associe a un risque d\'hyperactivite chez l\'enfant (avis EFSA)',
+  'en:e129': 'Rouge allura AC - associe a un risque d\'hyperactivite chez l\'enfant (avis EFSA)',
+  'en:e171': 'Dioxyde de titane - additif interdit dans l\'alimentation en UE depuis 2022 (preoccupations de genotoxicite)',
+  'en:e951': 'Aspartame - classe possiblement cancerogene (CIRC, groupe 2B)',
 };
 
 function findRiskyAdditives(additivesTags) {
@@ -126,6 +145,7 @@ function showScreen(screen) {
   searchScreen.classList.toggle('hidden', screen !== 'search');
   scanScreen.classList.toggle('hidden', screen !== 'scan');
   resultScreen.classList.toggle('hidden', screen !== 'result');
+  backButton.classList.toggle('hidden', screen === 'home');
   if (screen === 'scan') startQuaggaScanner();
   else if (quaggaInitialized) stopQuaggaScanner();
 }
@@ -287,7 +307,7 @@ async function findAlternative(product) {
 function renderResults(products) {
   resultsList.innerHTML = '';
   if (products.length === 0) {
-    searchStatus.textContent = 'Aucun produit trouvé — essaie un autre nom ou une autre marque.';
+    searchStatus.textContent = 'Aucun produit trouvé - essaie un autre nom ou une autre marque.';
     return;
   }
   searchStatus.textContent = '';
@@ -318,7 +338,7 @@ async function selectProduct(code) {
     renderResult(product);
     showScreen('result');
   } catch (err) {
-    searchStatus.textContent = 'Erreur réseau — réessaie dans un instant.';
+    searchStatus.textContent = 'Erreur réseau - réessaie dans un instant.';
   }
 }
 
@@ -344,7 +364,7 @@ function renderScoreTile(iconId, valueId, meta, fallbackLabel) {
   } else {
     iconEl.style.background = '#C7CBCE';
     iconEl.style.color = 'var(--ink-soft)';
-    iconEl.textContent = '—';
+    iconEl.textContent = '-';
     valueEl.textContent = fallbackLabel;
   }
 }
@@ -375,7 +395,7 @@ function buildIngredientExcerpt(ingredientsText, detail) {
   const parts = [];
   if (hiddenBefore > 0) parts.push(`${hiddenBefore} avant`);
   if (hiddenAfter > 0) parts.push(`${hiddenAfter} après`);
-  const caption = parts.length ? `${parts.join(', ')} — sur ${items.length} ingrédients au total.` : '';
+  const caption = parts.length ? `${parts.join(', ')} - sur ${items.length} ingrédients au total.` : '';
   return { rows, caption };
 }
 
@@ -416,12 +436,13 @@ function renderResult(product) {
   // Stocker TOUS les additifs du produit
   currentAllAdditives = (product.additives_tags || []).map(tag => {
     const risk = ADDITIVE_RISK_MAP[tag];
+    const category = ADDITIVE_CATEGORY_MAP[tag] || 'ok';
     const info = ADDITIVES_DATABASE[tag] || {};
     return {
       code: tag.replace('en:', '').toUpperCase(),
       name: info.name || 'Additif inconnu',
       role: info.role || '',
-      isRisky: !!risk,
+      category: category,
       reason: risk
     };
   });
@@ -431,7 +452,7 @@ function renderResult(product) {
     additiveAlertEl.classList.remove('hidden');
     const first = riskyAdditives[0];
     const suffix = riskyAdditives.length > 1 ? ` (+${riskyAdditives.length - 1} autre${riskyAdditives.length > 2 ? 's' : ''})` : '';
-    document.getElementById('additive-alert-text').textContent = `${first.code} — ${first.reason}${suffix}`;
+    document.getElementById('additive-alert-text').textContent = `${first.code} - ${first.reason}${suffix}`;
   } else {
     additiveAlertEl.classList.add('hidden');
   }
@@ -522,7 +543,7 @@ searchForm.addEventListener('submit', async (event) => {
     });
     renderResults(products);
   } catch (err) {
-    searchStatus.textContent = 'Erreur réseau — réessaie dans un instant.';
+    searchStatus.textContent = 'Erreur réseau - réessaie dans un instant.';
   }
 });
 
@@ -553,12 +574,13 @@ document.getElementById('additives-info-btn').addEventListener('click', () => {
     body.innerHTML = '<div class="additive-item" style="border-left-color:var(--green)"><div class="additive-code">Aucun additif</div></div>';
   } else {
     body.innerHTML = currentAllAdditives.map(additive => {
-      const borderColor = additive.isRisky ? 'var(--red)' : 'var(--green)';
+      const borderColorMap = { ok: 'var(--green)', 'to-limit': 'var(--amber)', risky: 'var(--red)' };
+      const borderColor = borderColorMap[additive.category] || 'var(--green)';
       const roleHtml = additive.role ? `<div class="additive-role">${additive.role}</div>` : '';
       const reasonHtml = additive.reason ? `<div class="additive-reason">${additive.reason}</div>` : '';
       return `
       <div class="additive-item" style="border-left-color:${borderColor}">
-        <div class="additive-code">${additive.code} — ${additive.name}</div>
+        <div class="additive-code">${additive.code} - ${additive.name}</div>
         ${roleHtml}
         ${reasonHtml}
       </div>
