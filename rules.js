@@ -53,6 +53,7 @@ const FOOD_WORDS = [
   'cannelle', 'cinnamon', 'mangue', 'mango', 'peche', 'peach',
   'pistache', 'pistachio', 'abricot', 'apricot', 'ananas', 'pineapple',
   'poire', 'pear', 'grenade', 'pomegranate', 'menthe', 'mint',
+  'boeuf', 'beef', 'aubergine', 'eggplant',
 ];
 const FOOD_WORD_PATTERN = new RegExp(`\\b(${FOOD_WORDS.join('|')})\\b`, 'g');
 
@@ -73,6 +74,10 @@ const INGREDIENT_VARIANTS = {
   'hazelnut': ['noisette', 'noisettes', 'hazelnut', 'hazelnuts'],
   'menthe': ['menthe', 'menthes', 'mint', 'mints'],
   'mint': ['menthe', 'menthes', 'mint', 'mints'],
+  'boeuf': ['boeuf', 'beef', 'beefs'],
+  'beef': ['boeuf', 'beef', 'beefs'],
+  'aubergine': ['aubergine', 'aubergines', 'eggplant', 'eggplants'],
+  'eggplant': ['aubergine', 'aubergines', 'eggplant', 'eggplants'],
 };
 
 function findFlavorMention(productName) {
