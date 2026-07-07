@@ -37,7 +37,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  if (url.hostname === 'world.openfoodfacts.org') {
+  if (url.hostname === 'world.openfoodfacts.net') {
     event.respondWith(
       caches.open(CACHE_NAME).then((cache) => {
         return fetch(event.request)
