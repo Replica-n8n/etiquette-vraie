@@ -1,0 +1,255 @@
+// Moteur de règles - Étiquette Vraie
+// Détecte les incohérences entre le nom d'un produit et sa composition réelle.
+
+function stripAccents(str) {
+  return str.normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function normalize(str) {
+  return stripAccents(str || '').toLowerCase().trim();
+}
+
+const NON_CONFORME_PATTERNS = [
+  {
+    pattern: /preparation fromagere|specialite fromagere|specialite laitiere/,
+    label: 'préparation fromagère / spécialité laitière',
+    headline: (label) => `"${label}" — ne respecte pas les critères légaux du fromage`,
+    legalNote:
+      'Cette dénomination signale par construction un produit qui ne respecte pas le taux minimal de matière grasse laitière ou les critères légaux du fromage. Fiches DGCCRF sur les denrées alimentaires.',
+    compareSuggest: 'Fromage',
+    compareReal: 'Critères légaux du fromage non respectés',
+  },
+  {
+    pattern: /preparation a base de miel/,
+    label: 'préparation à base de miel',
+    headline: (label) => `"${label}" — très faible taux de miel réel`,
+    legalNote:
+      'Cette dénomination signale par construction un très faible taux de miel réel, insuffisant pour la dénomination légale "miel". Fiches DGCCRF sur les denrées alimentaires.',
+    compareSuggest: 'Miel',
+    compareReal: 'Très faible taux de miel réel',
+  },
+  {
+    pattern: /similaire au jambon|preparation a base de viande/,
+    label: 'préparation à base de viande / similaire au jambon',
+    headline: (label) => `"${label}" — non conforme à la dénomination jambon`,
+    legalNote:
+      'Cette dénomination signale par construction une non-conformité aux critères légaux de la dénomination "jambon". Fiches DGCCRF sur les denrées alimentaires.',
+    compareSuggest: 'Jambon',
+    compareReal: 'Non conforme à la dénomination jambon',
+  },
+];
+
+const FLAVOR_PATTERN = /(?:saveur|gout|parfum)\s+([a-z]+(?:\s+[a-z]+)?)/g;
+
+// Mots d'ingrédients/fruits assez identifiables pour qu'on les vérifie quand ils
+// apparaissent tels quels dans le nom du produit (ex. "Blueberry Waffles"),
+// même sans "saveur/goût" devant. Volontairement limité aux mots concrets et peu
+// ambigus (fruits, arômes classiques) — pas les noms de marque ("Nutella").
+const FOOD_WORDS = [
+  'myrtille', 'blueberry', 'fraise', 'strawberry', 'framboise', 'raspberry',
+  'vanille', 'vanilla', 'chocolat', 'chocolate', 'noisette', 'hazelnut',
+  'citron', 'lemon', 'orange', 'banane', 'banana', 'pomme', 'apple',
+  'cerise', 'cherry', 'coco', 'coconut', 'caramel', 'cafe', 'coffee',
+  'cannelle', 'cinnamon', 'mangue', 'mango', 'peche', 'peach',
+  'pistache', 'pistachio', 'abricot', 'apricot', 'ananas', 'pineapple',
+  'poire', 'pear', 'grenade', 'pomegranate',
+];
+const FOOD_WORD_PATTERN = new RegExp(`\\b(${FOOD_WORDS.join('|')})\\b`, 'g');
+
+const INGREDIENT_VARIANTS = {
+  'pistache': ['pistache', 'pistaches', 'pistachio', 'pistachios'],
+  'pistachio': ['pistache', 'pistaches', 'pistachio', 'pistachios'],
+  'ananas': ['ananas', 'pineapple', 'pineapples'],
+  'pineapple': ['ananas', 'pineapple', 'pineapples'],
+  'fraise': ['fraise', 'fraises', 'strawberry', 'strawberries'],
+  'strawberry': ['fraise', 'fraises', 'strawberry', 'strawberries'],
+  'chocolat': ['chocolat', 'chocolats', 'chocolate', 'chocolates'],
+  'chocolate': ['chocolat', 'chocolats', 'chocolate', 'chocolates'],
+  'vanille': ['vanille', 'vanilla'],
+  'vanilla': ['vanille', 'vanilla'],
+  'noisette': ['noisette', 'noisettes', 'hazelnut', 'hazelnuts'],
+  'hazelnut': ['noisette', 'noisettes', 'hazelnut', 'hazelnuts'],
+};
+
+function findFlavorMention(productName) {
+  // Exclure les produits "Chocolate X%", "Dark Chocolate Y%", etc.
+  if (/chocolate.+\d+\s*%/i.test(productName)) {
+    return [];
+  }
+
+  const nameNorm = normalize(productName);
+  const flavors = new Set();
+
+  // Cherche toutes les saveurs "saveur X", "goût X", "parfum X"
+  const explicitMatches = nameNorm.matchAll(FLAVOR_PATTERN);
+  for (const match of explicitMatches) {
+    flavors.add(match[1].trim());
+  }
+
+  // Cherche tous les FOOD_WORDS directs (fruits, arômes)
+  const directMatches = nameNorm.matchAll(FOOD_WORD_PATTERN);
+  for (const match of directMatches) {
+    flavors.add(match[1].trim());
+  }
+
+  return Array.from(flavors);
+}
+
+// Variante(s) plurielles d'un mot, pour matcher "fraise"/"fraises" mais aussi
+// "blueberry"/"blueberries" (pluriel anglais en -y -> -ies).
+function pluralPattern(word) {
+  const alternatives = [word, `${word}s`];
+  if (word.endsWith('y')) alternatives.push(`${word.slice(0, -1)}ies`);
+  return alternatives.join('|');
+}
+
+// Vrai si le mot n'apparaît dans les ingrédients que collé à "arôme(s)",
+// jamais comme ingrédient réel autonome.
+function onlyAppearsAsArome(word, ingredientsNorm) {
+  const allVariants = INGREDIENT_VARIANTS[word] || [word];
+  const variants = allVariants.map(v => pluralPattern(v)).join('|');
+  const wordRe = new RegExp(`\\b(?:${variants})\\b`, 'g');
+  const occurrences = ingredientsNorm.match(wordRe) || [];
+  if (occurrences.length === 0) return true; // absent = pareil qu'arôme seul
+  const aromeContextRe = new RegExp(`arom[ae]s?[^,]{0,25}\\b(?:${variants})\\b`, 'g');
+  const aromeOccurrences = ingredientsNorm.match(aromeContextRe) || [];
+  return aromeOccurrences.length >= occurrences.length;
+}
+
+function findIngredientPosition(word, ingredientsNorm) {
+  const items = ingredientsNorm.split(',').map((s) => s.trim()).filter(Boolean);
+  const allVariants = INGREDIENT_VARIANTS[word] || [word];
+  const variants = allVariants.map(v => pluralPattern(v)).join('|');
+  const wordRe = new RegExp(`\\b(?:${variants})\\b`);
+  const index = items.findIndex((item) => wordRe.test(item));
+  if (index === -1) return null;
+  return { index, total: items.length, ratio: (index + 1) / items.length };
+}
+
+const LEGAL_NOTE_POSITION =
+  'L\'ordre de la liste d\'ingrédients doit refléter leur quantité décroissante (règlement (UE) n°1169/2011, art. 18). La position d\'un ingrédient est donc un signal fiable de sa proportion réelle.';
+
+const LEGAL_NOTE_FLAVOR =
+  'La mention d\'un ingrédient dans le nom ("saveur / goût X", ou le nom direct d\'un fruit/arôme) décrit une saveur perçue, pas un ingrédient garanti. Le règlement (UE) n°1169/2011 exige seulement que "arôme" figure dans la liste — pas qu\'il précise sa source.';
+
+/**
+ * @param {string} productName
+ * @param {string} ingredientsText
+ * @returns {{ verdict: 'clean'|'warning'|'misleading'|'unknown', headline: string, legalNote?: string, detail?: object }}
+ */
+function detectVerdict(productName, ingredientsText) {
+  // Exclure les produits "Chocolate X%" — chocolat pur, pas une saveur
+  if (/chocolate.+\d+\s*%/i.test(productName)) {
+    return {
+      verdict: 'clean',
+      headline: 'Le nom du produit correspond à sa composition réelle',
+    };
+  }
+
+  const nameNorm = normalize(productName);
+  const ingredientsNorm = normalize(ingredientsText);
+
+  if (!ingredientsNorm) {
+    return {
+      verdict: 'unknown',
+      headline: "Composition indisponible sur Open Food Facts — impossible de vérifier.",
+    };
+  }
+
+  for (const rule of NON_CONFORME_PATTERNS) {
+    if (rule.pattern.test(nameNorm)) {
+      return {
+        verdict: 'misleading',
+        headline: rule.headline(rule.label),
+        legalNote: rule.legalNote,
+        detail: {
+          rule: 'denomination-non-conforme',
+          matched: rule.label,
+          compareSuggest: rule.compareSuggest,
+          compareReal: rule.compareReal,
+        },
+      };
+    }
+  }
+
+  const flavors = findFlavorMention(productName);
+
+  if (flavors.length > 0) {
+    // Exclure si c'est "Chocolate X%" — chocolat pur, pas une saveur
+    const isChocolatePercent = flavors.includes('chocolate') && /\d+\s*%/.test(productName);
+
+    if (!isChocolatePercent) {
+      const missingFlavors = [];
+      const suspiciousFlavors = [];
+
+      for (const flavor of flavors) {
+        if (onlyAppearsAsArome(flavor, ingredientsNorm)) {
+          missingFlavors.push(flavor);
+        } else {
+          const position = findIngredientPosition(flavor, ingredientsNorm);
+          if (position && position.ratio > 0.7) {
+            suspiciousFlavors.push({ flavor, position });
+          }
+        }
+      }
+
+      // Si des saveurs sont manquantes
+      if (missingFlavors.length > 0) {
+        return {
+          verdict: 'misleading',
+          headline: missingFlavors.length === 1
+            ? `"${missingFlavors[0]}" absent — seulement un arôme`
+            : `${missingFlavors.length} saveur${missingFlavors.length > 1 ? 's' : ''} absent${missingFlavors.length > 1 ? 'es' : ''} — seulement des arômes`,
+          legalNote: LEGAL_NOTE_FLAVOR,
+          detail: {
+            rule: 'saveur-sans-ingredient',
+            matched: missingFlavors.join(', '),
+            compareSuggest: missingFlavors.join(', '),
+            compareReal: 'Arômes seuls / absents',
+          },
+        };
+      }
+
+      // Si des saveurs sont en très petite quantité
+      if (suspiciousFlavors.length > 0) {
+        const first = suspiciousFlavors[0];
+        return {
+          verdict: 'warning',
+          headline: `"${first.flavor}" bien présent, mais en toute petite quantité`,
+          legalNote: LEGAL_NOTE_POSITION,
+          detail: {
+            rule: 'position-suspecte',
+            matched: first.flavor,
+            compareSuggest: first.flavor,
+            compareReal: `Présent, position ${first.position.index + 1}/${first.position.total}`,
+            ...first.position,
+          },
+        };
+      }
+
+      // Toutes les saveurs sont présentes correctement
+      return {
+        verdict: 'clean',
+        headline: flavors.length === 1
+          ? `"${flavors[0]}" confirmé dans la composition réelle`
+          : `Toutes les saveurs confirmées dans la composition réelle`,
+        legalNote: LEGAL_NOTE_POSITION,
+        detail: {
+          rule: 'ingredient-confirme',
+          matched: flavors.join(', '),
+          compareSuggest: flavors.join(', '),
+          compareReal: 'Présentes dans la liste',
+        },
+      };
+    }
+  }
+
+  return {
+    verdict: 'clean',
+    headline: 'Le nom du produit correspond à sa composition réelle',
+  };
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = { detectVerdict, normalize, findFlavorMention, onlyAppearsAsArome, findIngredientPosition };
+}

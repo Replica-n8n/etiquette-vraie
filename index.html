@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="Vérifie si le nom d'un produit correspond vraiment à sa composition">
+<title>Étiquette Vraie</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23000' width='192' height='192'/><text x='96' y='120' font-size='100' font-weight='bold' fill='%23fff' text-anchor='middle'>É</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23000' width='192' height='192'/><text x='96' y='120' font-size='100' font-weight='bold' fill='%23fff' text-anchor='middle'>É</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+</head>
+<body>
+
+<div class="phone">
+  <div class="screen">
+
+    <div class="topbar">
+      <div class="back" id="back-button">←</div>
+      <div class="brand">Étiquette <b>Vraie</b></div>
+      <div style="width:34px;"></div>
+    </div>
+
+    <div id="home-screen" class="home-screen">
+      <div class="home-content">
+        <div class="home-title">Vérifier un produit</div>
+        <div class="home-subtitle">Découvre si le nom d'un produit correspond vraiment à sa composition</div>
+        <button id="btn-search" class="home-button">🔤 Chercher par nom</button>
+        <button id="btn-scan" class="home-button scan">📷 Scanner un code-barres</button>
+      </div>
+    </div>
+
+    <div id="search-screen" class="search-screen hidden">
+      <div class="search-head">
+        <div class="search-title">Vérifier un produit</div>
+        <div class="search-hint">Tape le nom d'un produit (ex. "Oreo", "Nutella") pour voir si son nom correspond à sa vraie composition.</div>
+      </div>
+      <form id="search-form" class="search-form">
+        <input id="search-input" class="search-input" type="text" placeholder="Nom du produit..." autocomplete="off">
+        <button type="submit" class="search-button">Chercher</button>
+      </form>
+      <div id="search-status" class="search-status"></div>
+      <ul id="results-list" class="results-list"></ul>
+    </div>
+
+    <div id="scan-screen" class="scan-screen hidden">
+      <div class="scan-header">
+        <div class="scan-title">Scanner un code-barres</div>
+        <div class="scan-hint">Pointe la caméra vers le code-barres de l'emballage</div>
+      </div>
+      <div id="qr-reader" class="qr-reader"></div>
+      <div id="scan-status" class="scan-status"></div>
+    </div>
+
+    <div id="result-screen" class="hidden">
+      <div id="result-loading" class="result-loading">
+        <div class="loader"></div>
+        <div class="loader-text">Chargement du produit...</div>
+      </div>
+
+      <div id="result-error" class="result-error hidden">
+        <div class="error-icon">⚠️</div>
+        <div class="error-title">Produit non trouvé</div>
+        <div class="error-text" id="error-message"></div>
+        <button id="btn-error-back" class="error-button">Retour</button>
+      </div>
+
+      <div id="result-content" class="result-content hidden">
+        <div class="product-head">
+          <div class="product-name" id="product-name"></div>
+          <div class="product-sub" id="product-sub"></div>
+        </div>
+
+      <div class="alert" id="verdict-box">
+        <span class="stamp" id="stamp"><span class="dot"></span></span>
+        <div class="alert-text" id="verdict-text"></div>
+      </div>
+
+      <div class="alert compact v-misleading hidden" id="additive-alert">
+        <span class="stamp"><span class="dot"></span>Additif à risque</span>
+        <div class="alert-text" id="additive-alert-text"></div>
+      </div>
+
+      <div class="compare" id="compare-section">
+        <div class="compare-col suggest">
+          <div class="compare-label">Le nom suggère</div>
+          <div class="compare-value" id="compare-suggest"></div>
+        </div>
+        <div class="compare-col real" id="compare-real-col">
+          <div class="compare-label">Il y a vraiment</div>
+          <div class="compare-value" id="compare-real"></div>
+        </div>
+      </div>
+
+      <div class="score-grid">
+        <div class="score-tile">
+          <div class="icon" id="nutriscore-icon"></div>
+          <div>
+            <div class="score-label">Nutri-Score</div>
+            <div class="score-value" id="nutriscore-value"></div>
+          </div>
+        </div>
+        <div class="score-tile">
+          <div class="icon" id="nova-icon"></div>
+          <div>
+            <div class="score-label">NOVA</div>
+            <div class="score-value" id="nova-value"></div>
+          </div>
+        </div>
+        <div class="score-tile additives-tile">
+          <div class="icon" id="additives-icon"></div>
+          <div>
+            <div class="score-label">Additifs</div>
+            <div class="score-value" id="additives-value"></div>
+          </div>
+          <button id="additives-info-btn" class="info-btn" title="Voir la liste complète des additifs">i</button>
+        </div>
+        <div class="score-tile">
+          <div class="icon" id="bio-icon"></div>
+          <div>
+            <div class="score-label">Bio</div>
+            <div class="score-value" id="bio-value"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-label">Détail à la demande</div>
+
+      <details class="accordion hidden" id="legal-accordion">
+        <summary>Pourquoi c'est autorisé <span class="chev">⌄</span></summary>
+        <div class="accordion-body" id="legal-note"></div>
+      </details>
+
+      <details class="accordion">
+        <summary>Position dans la liste d'ingrédients <span class="chev">⌄</span></summary>
+        <div class="accordion-body">
+          <div class="ingredient-list" id="ingredients-list"></div>
+          <div class="ingredient-caption" id="ingredients-caption"></div>
+        </div>
+      </details>
+
+      <details class="accordion hidden" id="alternative-accordion">
+        <summary>Alternative disponible <span class="chev">⌄</span></summary>
+        <div class="accordion-body">
+          <div class="alternative-row">
+            <img class="alternative-thumb" id="alternative-thumb" alt="" onerror="this.style.visibility='hidden'">
+            <div>
+              <div class="alternative-name" id="alternative-name"></div>
+              <div class="alternative-brand" id="alternative-brand"></div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <div class="freshness">
+        <span>🕓</span>
+        <div>
+          <span id="freshness-text"></span>
+          <a id="off-link" href="#" target="_blank" rel="noopener">Signaler un changement</a>
+        </div>
+      </div>
+
+      <div id="additives-modal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Liste complète des additifs</h2>
+            <button class="modal-close" id="additives-modal-close">✕</button>
+          </div>
+          <div class="modal-body" id="additives-modal-body"></div>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <div class="bottom-space"></div>
+  </div>
+</div>
+
+<script src="rules.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>
