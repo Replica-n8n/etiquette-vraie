@@ -228,6 +228,13 @@ function detectVerdict(productName, ingredientsText) {
       }
 
       // Toutes les saveurs sont présentes correctement
+      const positions = flavors
+        .map(flavor => {
+          const pos = findIngredientPosition(flavor, ingredientsNorm);
+          return pos ? `${flavor} pos ${pos.index + 1}/${pos.total}` : flavor;
+        })
+        .join(', ');
+
       return {
         verdict: 'clean',
         headline: flavors.length === 1
@@ -238,7 +245,7 @@ function detectVerdict(productName, ingredientsText) {
           rule: 'ingredient-confirme',
           matched: flavors.join(', '),
           compareSuggest: flavors.join(', '),
-          compareReal: 'Présentes dans la liste',
+          compareReal: positions,
         },
       };
     }

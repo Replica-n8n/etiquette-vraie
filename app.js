@@ -13,6 +13,7 @@ let quaggaInitialized = false;
 let lastOFFRequestTime = 0;
 const OFF_MIN_DELAY_MS = 1000;
 let currentRiskyAdditives = [];
+let currentAllAdditives = [];
 
 const VERDICT_META = {
   clean: { label: 'Clean', className: 'v-clean' },
@@ -365,6 +366,17 @@ function renderResult(product) {
 
   const riskyAdditives = findRiskyAdditives(product.additives_tags);
   currentRiskyAdditives = riskyAdditives;
+
+  // Stocker TOUS les additifs du produit
+  currentAllAdditives = (product.additives_tags || []).map(tag => {
+    const risk = ADDITIVE_RISK_MAP[tag];
+    return {
+      code: tag.replace('en:', '').toUpperCase(),
+      isRisky: !!risk,
+      reason: risk
+    };
+  });
+
   const additiveAlertEl = document.getElementById('additive-alert');
   if (riskyAdditives.length > 0) {
     additiveAlertEl.classList.remove('hidden');
@@ -488,15 +500,19 @@ document.getElementById('additives-info-btn').addEventListener('click', () => {
   const modal = document.getElementById('additives-modal');
   const body = document.getElementById('additives-modal-body');
 
-  if (currentRiskyAdditives.length === 0) {
-    body.innerHTML = '<div class="additive-item" style="border-left-color:var(--green)"><div class="additive-code">Aucun additif à risque</div></div>';
+  if (currentAllAdditives.length === 0) {
+    body.innerHTML = '<div class="additive-item" style="border-left-color:var(--green)"><div class="additive-code">Aucun additif</div></div>';
   } else {
-    body.innerHTML = currentRiskyAdditives.map(additive => `
-      <div class="additive-item">
+    body.innerHTML = currentAllAdditives.map(additive => {
+      const borderColor = additive.isRisky ? 'var(--red)' : 'var(--green)';
+      const reasonHtml = additive.reason ? `<div class="additive-reason">${additive.reason}</div>` : '';
+      return `
+      <div class="additive-item" style="border-left-color:${borderColor}">
         <div class="additive-code">${additive.code}</div>
-        <div class="additive-reason">${additive.reason}</div>
+        ${reasonHtml}
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   modal.classList.remove('hidden');
