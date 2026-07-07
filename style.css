@@ -289,3 +289,21 @@ body{
 }
 .additive-code{ font-family:'IBM Plex Mono', monospace; font-weight:600; color:var(--ink); }
 .additive-reason{ font-size:12px; color:var(--ink-soft); margin-top:4px; line-height:1.4; }
+
+/* Mobile: enlever le cadre du téléphone mockup et utiliser fullscreen */
+@media (max-width: 480px) {
+  body {
+    background: var(--paper);
+    padding: 0;
+  }
+  .phone {
+    width: 100%;
+    max-width: none;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  }
+  .screen {
+    min-height: 100vh;
+  }
+}
