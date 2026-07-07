@@ -14,6 +14,8 @@ let lastOFFRequestTime = 0;
 const OFF_MIN_DELAY_MS = 1000;
 let currentRiskyAdditives = [];
 let currentAllAdditives = [];
+let productHistory = [];
+const MAX_HISTORY = 4;
 
 const VERDICT_META = {
   clean: { label: 'Clean', className: 'v-clean' },
@@ -146,6 +148,7 @@ function showScreen(screen) {
   scanScreen.classList.toggle('hidden', screen !== 'scan');
   resultScreen.classList.toggle('hidden', screen !== 'result');
   backButton.classList.toggle('hidden', screen === 'home');
+  if (screen === 'home') searchInput.value = '';
   if (screen === 'scan') startQuaggaScanner();
   else if (quaggaInitialized) stopQuaggaScanner();
 }
@@ -426,6 +429,8 @@ function renderResult(product) {
   const { verdict, headline, legalNote, detail } = detectVerdict(product.product_name, product.ingredients_text);
   const meta = VERDICT_META[verdict];
 
+  addToHistory(product);
+
   document.getElementById('product-name').textContent = product.product_name;
   document.getElementById('product-sub').textContent = product.brands || '';
 
@@ -533,6 +538,33 @@ function showResultError(message) {
   document.getElementById('result-error').classList.remove('hidden');
   document.getElementById('result-content').classList.add('hidden');
   document.getElementById('error-message').textContent = message;
+}
+
+function addToHistory(product) {
+  productHistory = productHistory.filter(p => p.code !== product.code);
+  productHistory.unshift(product);
+  if (productHistory.length > MAX_HISTORY) productHistory.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const historySection = document.getElementById('history-section');
+  const historyList = document.getElementById('history-list');
+  if (productHistory.length === 0) {
+    historySection.classList.add('hidden');
+    return;
+  }
+  historySection.classList.remove('hidden');
+  historyList.innerHTML = productHistory.map(product => `
+    <li class="history-item" onclick="loadFromHistory('${product.code}')">
+      <img class="history-thumb" src="${product.image_front_small_url || ''}" alt="" onerror="this.style.visibility='hidden'">
+      <div class="history-name">${product.product_name}</div>
+    </li>
+  `).join('');
+}
+
+function loadFromHistory(code) {
+  selectProduct(code);
 }
 
 searchForm.addEventListener('submit', async (event) => {

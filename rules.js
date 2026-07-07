@@ -52,7 +52,7 @@ const FOOD_WORDS = [
   'cerise', 'cherry', 'coco', 'coconut', 'caramel', 'cafe', 'coffee',
   'cannelle', 'cinnamon', 'mangue', 'mango', 'peche', 'peach',
   'pistache', 'pistachio', 'abricot', 'apricot', 'ananas', 'pineapple',
-  'poire', 'pear', 'grenade', 'pomegranate',
+  'poire', 'pear', 'grenade', 'pomegranate', 'menthe', 'mint',
 ];
 const FOOD_WORD_PATTERN = new RegExp(`\\b(${FOOD_WORDS.join('|')})\\b`, 'g');
 
@@ -71,6 +71,8 @@ const INGREDIENT_VARIANTS = {
   'vanilla': ['vanille', 'vanilla'],
   'noisette': ['noisette', 'noisettes', 'hazelnut', 'hazelnuts'],
   'hazelnut': ['noisette', 'noisettes', 'hazelnut', 'hazelnuts'],
+  'menthe': ['menthe', 'menthes', 'mint', 'mints'],
+  'mint': ['menthe', 'menthes', 'mint', 'mints'],
 };
 
 function findFlavorMention(productName) {
