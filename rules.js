@@ -230,6 +230,7 @@ function detectVerdict(productName, ingredientsText) {
       }
 
       // Toutes les saveurs sont présentes correctement
+      const firstFlavorPos = findIngredientPosition(flavors[0], ingredientsNorm);
       const positions = flavors
         .map(flavor => {
           const pos = findIngredientPosition(flavor, ingredientsNorm);
@@ -248,6 +249,7 @@ function detectVerdict(productName, ingredientsText) {
           matched: flavors.join(', '),
           compareSuggest: flavors.join(', '),
           compareReal: positions,
+          ...(firstFlavorPos && { index: firstFlavorPos.index, total: firstFlavorPos.total, ratio: firstFlavorPos.ratio }),
         },
       };
     }
