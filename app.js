@@ -378,8 +378,8 @@ function buildIngredientExcerpt(ingredientsText, detail) {
   const items = (ingredientsText || '')
     .split(',')
     .map((s) => s.trim())
-    .filter(Boolean)
-    .filter(item => !/^\d+[\s%(\-]*/.test(item)); // Enlever éléments qui commencent par chiffres/pourcentages
+    .map(s => s.replace(/^\d+[\s%(\-]*/, '').replace(/\s*\d+[\s%]*$/, '').trim()) // Nettoyer pourcentages début/fin
+    .filter(Boolean);
   if (items.length === 0) return { rows: [], caption: '' };
 
   if (!detail || detail.index === undefined) {
