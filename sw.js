@@ -1,13 +1,13 @@
 const CACHE_NAME = 'etiquette-vraie-v1';
-const OFFLINE_URL = './index.html';
+const OFFLINE_URL = '/etiquette-vraie/index.html';
 
 const urlsToCache = [
-  './',
-  './index.html',
-  './style.css',
-  './app.js',
-  './rules.js',
-  './manifest.json'
+  '/etiquette-vraie/',
+  '/etiquette-vraie/index.html',
+  '/etiquette-vraie/style.css',
+  '/etiquette-vraie/app.js',
+  '/etiquette-vraie/rules.js',
+  '/etiquette-vraie/manifest.json'
 ];
 
 self.addEventListener('install', (event) => {

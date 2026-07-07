@@ -488,7 +488,7 @@ showScreen('home');
 
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').then((registration) => {
+  navigator.serviceWorker.register('/etiquette-vraie/sw.js', { scope: '/etiquette-vraie/' }).then((registration) => {
     console.log('[SW] Registered:', registration);
   }).catch((err) => {
     console.error('[SW] Registration failed:', err);

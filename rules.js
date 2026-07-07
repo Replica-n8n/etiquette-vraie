@@ -47,7 +47,7 @@ const FLAVOR_PATTERN = /(?:saveur|gout|parfum)\s+([a-z]+(?:\s+[a-z]+)?)/g;
 // ambigus (fruits, arômes classiques) — pas les noms de marque ("Nutella").
 const FOOD_WORDS = [
   'myrtille', 'blueberry', 'fraise', 'strawberry', 'framboise', 'raspberry',
-  'vanille', 'vanilla', 'chocolat', 'chocolate', 'noisette', 'hazelnut',
+  'vanille', 'vanilla', 'chocolat', 'chocolate', 'cacao', 'cocoa', 'noisette', 'hazelnut',
   'citron', 'lemon', 'orange', 'banane', 'banana', 'pomme', 'apple',
   'cerise', 'cherry', 'coco', 'coconut', 'caramel', 'cafe', 'coffee',
   'cannelle', 'cinnamon', 'mangue', 'mango', 'peche', 'peach',
@@ -63,8 +63,10 @@ const INGREDIENT_VARIANTS = {
   'pineapple': ['ananas', 'pineapple', 'pineapples'],
   'fraise': ['fraise', 'fraises', 'strawberry', 'strawberries'],
   'strawberry': ['fraise', 'fraises', 'strawberry', 'strawberries'],
-  'chocolat': ['chocolat', 'chocolats', 'chocolate', 'chocolates'],
-  'chocolate': ['chocolat', 'chocolats', 'chocolate', 'chocolates'],
+  'chocolat': ['chocolat', 'chocolats', 'chocolate', 'chocolates', 'cacao', 'cacaos', 'cocoa'],
+  'chocolate': ['chocolat', 'chocolats', 'chocolate', 'chocolates', 'cacao', 'cacaos', 'cocoa'],
+  'cacao': ['chocolat', 'chocolats', 'chocolate', 'chocolates', 'cacao', 'cacaos', 'cocoa'],
+  'cocoa': ['chocolat', 'chocolats', 'chocolate', 'chocolates', 'cacao', 'cacaos', 'cocoa'],
   'vanille': ['vanille', 'vanilla'],
   'vanilla': ['vanille', 'vanilla'],
   'noisette': ['noisette', 'noisettes', 'hazelnut', 'hazelnuts'],
