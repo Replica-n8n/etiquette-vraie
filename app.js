@@ -372,7 +372,11 @@ function renderScoreTile(iconId, valueId, meta, fallbackLabel) {
 // Extrait centré sur l'ingrédient signalé (évite d'afficher une liste entière
 // quand elle fait plusieurs dizaines d'ingrédients).
 function buildIngredientExcerpt(ingredientsText, detail) {
-  const items = (ingredientsText || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const items = (ingredientsText || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .filter(item => !/^\d+(\s*%)?$/.test(item)); // Enlever lignes qui ne sont que des chiffres/pourcentages
   if (items.length === 0) return { rows: [], caption: '' };
 
   if (!detail || detail.index === undefined) {
