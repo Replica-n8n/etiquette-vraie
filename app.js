@@ -39,6 +39,52 @@ const NOVA_META = {
 
 const BIO_LABEL_TAGS = ['en:organic', 'en:eu-organic', 'fr:ab-agriculture-biologique'];
 
+// Base de données des additifs courants avec nom et rôle
+const ADDITIVES_DATABASE = {
+  'en:e101': { name: 'Riboflavine', role: 'Colorant' },
+  'en:e102': { name: 'Tartrazine', role: 'Colorant jaune' },
+  'en:e104': { name: 'Jaune de quinoléine', role: 'Colorant' },
+  'en:e110': { name: 'Jaune orangé S', role: 'Colorant' },
+  'en:e120': { name: 'Cochenille', role: 'Colorant rouge' },
+  'en:e124': { name: 'Rouge cochenille A', role: 'Colorant rouge' },
+  'en:e129': { name: 'Rouge allura AC', role: 'Colorant rouge' },
+  'en:e131': { name: 'Bleu patenté V', role: 'Colorant bleu' },
+  'en:e133': { name: 'Bleu brillant FCF', role: 'Colorant bleu' },
+  'en:e150a': { name: 'Caramel classe I', role: 'Colorant' },
+  'en:e150b': { name: 'Caramel classe II', role: 'Colorant' },
+  'en:e150c': { name: 'Caramel classe III', role: 'Colorant' },
+  'en:e150d': { name: 'Caramel classe IV', role: 'Colorant' },
+  'en:e160a': { name: 'Carotènes', role: 'Colorant orange' },
+  'en:e160c': { name: 'Lycopène', role: 'Colorant rouge' },
+  'en:e162': { name: 'Anthocyanes', role: 'Colorant rouge/bleu' },
+  'en:e171': { name: 'Dioxyde de titane', role: 'Colorant blanc' },
+  'en:e200': { name: 'Acide sorbique', role: 'Conservateur' },
+  'en:e202': { name: 'Sorbate de potassium', role: 'Conservateur' },
+  'en:e210': { name: 'Acide benzoïque', role: 'Conservateur' },
+  'en:e211': { name: 'Benzoate de sodium', role: 'Conservateur' },
+  'en:e220': { name: 'Dioxyde de soufre', role: 'Conservateur' },
+  'en:e250': { name: 'Nitrite de sodium', role: 'Conservateur' },
+  'en:e251': { name: 'Nitrate de sodium', role: 'Conservateur' },
+  'en:e252': { name: 'Nitrate de potassium', role: 'Conservateur' },
+  'en:e301': { name: 'Ascorbate de sodium', role: 'Antioxydant' },
+  'en:e306': { name: 'Tocophérols', role: 'Antioxydant' },
+  'en:e320': { name: 'BHA', role: 'Antioxydant' },
+  'en:e321': { name: 'BHT', role: 'Antioxydant' },
+  'en:e407': { name: 'Carraghénane', role: 'Épaississant' },
+  'en:e412': { name: 'Gomme de guar', role: 'Épaississant' },
+  'en:e413': { name: 'Gomme d\'acacia', role: 'Épaississant' },
+  'en:e414': { name: 'Gomme xanthane', role: 'Épaississant' },
+  'en:e415': { name: 'Gomme de xanthane', role: 'Épaississant' },
+  'en:e440': { name: 'Pectine', role: 'Épaississant' },
+  'en:e500': { name: 'Carbonate de sodium', role: 'Régulateur d\'acidité' },
+  'en:e501': { name: 'Carbonate de potassium', role: 'Régulateur d\'acidité' },
+  'en:e621': { name: 'Glutamate monosodique', role: 'Exhausteur de goût' },
+  'en:e950': { name: 'Acésulfame K', role: 'Édulcorant' },
+  'en:e951': { name: 'Aspartame', role: 'Édulcorant' },
+  'en:e952': { name: 'Cyclamate', role: 'Édulcorant' },
+  'en:e955': { name: 'Sucralose', role: 'Édulcorant' },
+};
+
 // Additifs faisant l'objet d'un signalement sanitaire documenté (avis EFSA/CIRC),
 // pas une liste exhaustive de tous les additifs à controverse.
 const ADDITIVE_RISK_MAP = {
@@ -370,8 +416,11 @@ function renderResult(product) {
   // Stocker TOUS les additifs du produit
   currentAllAdditives = (product.additives_tags || []).map(tag => {
     const risk = ADDITIVE_RISK_MAP[tag];
+    const info = ADDITIVES_DATABASE[tag] || {};
     return {
       code: tag.replace('en:', '').toUpperCase(),
+      name: info.name || 'Additif inconnu',
+      role: info.role || '',
       isRisky: !!risk,
       reason: risk
     };
@@ -505,10 +554,12 @@ document.getElementById('additives-info-btn').addEventListener('click', () => {
   } else {
     body.innerHTML = currentAllAdditives.map(additive => {
       const borderColor = additive.isRisky ? 'var(--red)' : 'var(--green)';
+      const roleHtml = additive.role ? `<div class="additive-role">${additive.role}</div>` : '';
       const reasonHtml = additive.reason ? `<div class="additive-reason">${additive.reason}</div>` : '';
       return `
       <div class="additive-item" style="border-left-color:${borderColor}">
-        <div class="additive-code">${additive.code}</div>
+        <div class="additive-code">${additive.code} — ${additive.name}</div>
+        ${roleHtml}
         ${reasonHtml}
       </div>
     `;

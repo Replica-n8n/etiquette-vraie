@@ -288,6 +288,7 @@ body{
   border-radius:12px; border-left:4px solid var(--amber);
 }
 .additive-code{ font-family:'IBM Plex Mono', monospace; font-weight:600; color:var(--ink); }
+.additive-role{ font-size:12px; color:var(--ink); margin-top:2px; font-weight:500; }
 .additive-reason{ font-size:12px; color:var(--ink-soft); margin-top:4px; line-height:1.4; }
 
 /* Mobile: enlever le cadre du téléphone mockup et utiliser fullscreen */
