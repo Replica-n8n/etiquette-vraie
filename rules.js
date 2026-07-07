@@ -199,6 +199,25 @@ function detectVerdict(productName, ingredientsText) {
 
       // Si des saveurs sont manquantes
       if (missingFlavors.length > 0) {
+        // Exception: si le nom dit "aromatisé", c'est normal que ce soit que des arômes
+        const isAromatized = /arom/i.test(nameNorm);
+        if (isAromatized) {
+          // C'est un produit aromatisé, ce n'est pas une fraude
+          const firstFlavorPos = findIngredientPosition(missingFlavors[0], ingredientsNorm);
+          return {
+            verdict: 'clean',
+            headline: `Produit aromatisé - arôme${missingFlavors.length > 1 ? 's' : ''} de ${missingFlavors.join(', ')}`,
+            legalNote: LEGAL_NOTE_FLAVOR,
+            detail: {
+              rule: 'ingredient-confirme',
+              matched: missingFlavors.join(', '),
+              compareSuggest: missingFlavors.join(', '),
+              compareReal: `Arôme${missingFlavors.length > 1 ? 's' : ''} - conforme`,
+              ...(firstFlavorPos && { index: firstFlavorPos.index, total: firstFlavorPos.total, ratio: firstFlavorPos.ratio }),
+            },
+          };
+        }
+
         return {
           verdict: 'misleading',
           headline: missingFlavors.length === 1
