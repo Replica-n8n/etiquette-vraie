@@ -1,0 +1,94 @@
+{
+  "risky": {
+    "en:e250": {
+      "name": "Nitrite de sodium",
+      "reason": "Carcinogène probable dans charcuterie"
+    },
+    "en:e251": {
+      "name": "Nitrate de sodium",
+      "reason": "Risque carcinogène via nitrosamines"
+    },
+    "en:e252": {
+      "name": "Nitrate de potassium",
+      "reason": "Risque carcinogène via nitrosamines"
+    },
+    "en:e951": {
+      "name": "Aspartame",
+      "reason": "Possible carcinogène (classé 2023)"
+    },
+    "en:e320": {
+      "name": "BHA",
+      "reason": "Perturbateur endocrinien soupçonné"
+    }
+  },
+  "limited": {
+    "en:e102": {
+      "name": "Tartrazine",
+      "reason": "Hyperactivité enfants documentée"
+    },
+    "en:e104": {
+      "name": "Jaune de quinoléine",
+      "reason": "Hyperactivité enfants documentée"
+    },
+    "en:e110": {
+      "name": "Sunset yellow FCF",
+      "reason": "Hyperactivité enfants documentée"
+    },
+    "en:e122": {
+      "name": "Azorubine/Carmoisine",
+      "reason": "Hyperactivité enfants documentée"
+    },
+    "en:e124": {
+      "name": "Ponceau 4R",
+      "reason": "Hyperactivité enfants documentée"
+    },
+    "en:e129": {
+      "name": "Allura red AC",
+      "reason": "Hyperactivité enfants + endocrine suspect"
+    },
+    "en:e211": {
+      "name": "Benzoate de sodium",
+      "reason": "Conservateur controversé"
+    },
+    "en:e321": {
+      "name": "BHT",
+      "reason": "Perturbateur endocrinien soupçonné"
+    },
+    "en:e450": {
+      "name": "Polyphosphates diphosphoriques",
+      "reason": "Excès peut affecter enfants"
+    },
+    "en:e451": {
+      "name": "Polyphosphates triphosphoriques",
+      "reason": "Excès peut affecter enfants"
+    },
+    "en:e452": {
+      "name": "Polyphosphates",
+      "reason": "Excès peut affecter enfants"
+    },
+    "en:e554": {
+      "name": "Silicate aluminium sodique",
+      "reason": "Anti-agglomérant : neurotoxicité potentielle"
+    },
+    "en:e555": {
+      "name": "Silicate aluminium potassique",
+      "reason": "Anti-agglomérant : neurotoxicité potentielle"
+    },
+    "en:e556": {
+      "name": "Silicate aluminium calcium",
+      "reason": "Anti-agglomérant : neurotoxicité potentielle"
+    },
+    "en:e952": {
+      "name": "Cyclamate",
+      "reason": "Édulcorant controversé (interdit USA)"
+    },
+    "en:e954": {
+      "name": "Saccharine",
+      "reason": "Risques à long terme incertains"
+    },
+    "en:e955": {
+      "name": "Sucralose",
+      "reason": "Risques à long terme incertains"
+    }
+  }
+}

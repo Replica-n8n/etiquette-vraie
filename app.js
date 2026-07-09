@@ -17,6 +17,9 @@ let currentAllAdditives = [];
 let productHistory = [];
 const MAX_HISTORY = 4;
 
+let RISKY_ADDITIVES = {};
+let LIMITED_ADDITIVES = {};
+
 const VERDICT_META = {
   clean: { label: 'Clean', className: 'v-clean' },
   warning: { label: 'À vérifier', className: 'v-warning' },
@@ -40,6 +43,38 @@ const NOVA_META = {
 };
 
 const BIO_LABEL_TAGS = ['en:organic', 'en:eu-organic', 'fr:ab-agriculture-biologique'];
+
+async function loadAdditivesDatabase() {
+  try {
+    const response = await fetch('data/additives.json');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    RISKY_ADDITIVES = data.risky || {};
+    LIMITED_ADDITIVES = data.limited || {};
+    console.log('[Additives] Loaded:', Object.keys(RISKY_ADDITIVES).length, 'risky,', Object.keys(LIMITED_ADDITIVES).length, 'limited');
+  } catch (err) {
+    console.error('[Additives] Failed to load:', err.message);
+    loadFallbackAdditives();
+  }
+}
+
+function loadFallbackAdditives() {
+  RISKY_ADDITIVES = {
+    'en:e250': { name: 'Nitrite de sodium', reason: 'Carcinogène probable' },
+    'en:e251': { name: 'Nitrate de sodium', reason: 'Risque carcinogène' },
+    'en:e252': { name: 'Nitrate de potassium', reason: 'Risque carcinogène' },
+    'en:e320': { name: 'BHA', reason: 'Perturbateur endocrinien' },
+    'en:e321': { name: 'BHT', reason: 'Perturbateur endocrinien' },
+    'en:e102': { name: 'Tartrazine', reason: 'Hyperactivité enfants' },
+    'en:e110': { name: 'Sunset yellow FCF', reason: 'Hyperactivité enfants' },
+    'en:e124': { name: 'Ponceau 4R', reason: 'Hyperactivité enfants' },
+    'en:e129': { name: 'Allura red AC', reason: 'Hyperactivité enfants' },
+    'en:e171': { name: 'Dioxyde de titane', reason: 'Interdit EU 2022' },
+    'en:e951': { name: 'Aspartame', reason: 'Possible carcinogène' }
+  };
+  LIMITED_ADDITIVES = {};
+  console.log('[Additives] Fallback loaded (11 codes)');
+}
 
 // Base de données des additifs courants avec nom et rôle
 const ADDITIVES_DATABASE = {
@@ -122,11 +157,23 @@ const ADDITIVE_RISK_MAP = {
   'en:e951': 'Aspartame - classe possiblement cancerogene (CIRC, groupe 2B)',
 };
 
-function findRiskyAdditives(additivesTags) {
-  if (!Array.isArray(additivesTags)) return [];
-  return additivesTags
-    .filter((tag) => ADDITIVE_RISK_MAP[tag])
-    .map((tag) => ({ code: tag.replace('en:', '').toUpperCase(), reason: ADDITIVE_RISK_MAP[tag] }));
+function findFlaggedAdditives(additivesTags) {
+  if (!Array.isArray(additivesTags)) return { risky: [], limited: [] };
+  const risky = additivesTags
+    .filter(tag => RISKY_ADDITIVES[tag])
+    .map(tag => ({
+      code: tag.replace('en:', '').toUpperCase(),
+      name: RISKY_ADDITIVES[tag].name,
+      reason: RISKY_ADDITIVES[tag].reason
+    }));
+  const limited = additivesTags
+    .filter(tag => LIMITED_ADDITIVES[tag])
+    .map(tag => ({
+      code: tag.replace('en:', '').toUpperCase(),
+      name: LIMITED_ADDITIVES[tag].name,
+      reason: LIMITED_ADDITIVES[tag].reason
+    }));
+  return { risky, limited };
 }
 
 function additivesMeta(additivesN) {
@@ -298,7 +345,8 @@ async function findAlternative(product) {
       if (!candidate.ingredients_text || !candidate.product_name) continue;
       const candidateVerdict = detectVerdict(candidate.product_name, candidate.ingredients_text);
       if (candidateVerdict.verdict !== 'clean') continue;
-      if (findRiskyAdditives(candidate.additives_tags).length > 0) continue;
+      const flagged = findFlaggedAdditives(candidate.additives_tags);
+      if (flagged.risky.length > 0) continue;
       return candidate;
     }
     return null;
@@ -439,20 +487,21 @@ function renderResult(product) {
   document.getElementById('stamp').textContent = meta.label;
   document.getElementById('verdict-text').textContent = headline;
 
-  const riskyAdditives = findRiskyAdditives(product.additives_tags);
-  currentRiskyAdditives = riskyAdditives;
+  const flaggedAdditives = findFlaggedAdditives(product.additives_tags);
+  currentRiskyAdditives = flaggedAdditives.risky;
 
   // Stocker TOUS les additifs du produit
   currentAllAdditives = (product.additives_tags || []).map(tag => {
-    const risk = ADDITIVE_RISK_MAP[tag];
-    const category = ADDITIVE_CATEGORY_MAP[tag] || 'ok';
+    const isRisky = RISKY_ADDITIVES[tag];
+    const isLimited = LIMITED_ADDITIVES[tag];
+    const category = isRisky ? 'risky' : (isLimited ? 'limited' : 'ok');
     const info = ADDITIVES_DATABASE[tag] || {};
     return {
       code: tag.replace('en:', '').toUpperCase(),
       name: info.name || 'Additif inconnu',
       role: info.role || '',
       category: category,
-      reason: risk
+      reason: isRisky ? isRisky.reason : (isLimited ? isLimited.reason : null)
     };
   });
 
@@ -590,7 +639,10 @@ document.getElementById('btn-scan').addEventListener('click', () => showScreen('
 document.getElementById('btn-error-back').addEventListener('click', () => showScreen('home'));
 
 // Initialize with home screen
-showScreen('home');
+(async () => {
+  await loadAdditivesDatabase();
+  showScreen('home');
+})();
 
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
