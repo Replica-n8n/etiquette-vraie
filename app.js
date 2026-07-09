@@ -431,8 +431,8 @@ function buildIngredientExcerpt(ingredientsText, detail) {
   if (items.length === 0) return { rows: [], caption: '' };
 
   if (!detail || detail.index === undefined) {
-    const shown = items.slice(0, 5);
-    const caption = items.length > 5 ? `Et ${items.length - 5} ingrédient(s) supplémentaire(s).` : '';
+    const shown = items;
+    const caption = items.length > 0 ? `${items.length} ingrédient(s) au total.` : '';
     return {
       rows: shown.map((text, i) => ({ num: i + 1, text, flagged: false })),
       caption,
