@@ -20,6 +20,24 @@ const MAX_HISTORY = 4;
 let RISKY_ADDITIVES = {};
 let LIMITED_ADDITIVES = {};
 
+let CURRENT_COUNTRY = localStorage.getItem('etiquette-pays') || 'FR';
+const SUPPORTED_COUNTRIES = ['FR', 'MA', 'CA'];
+
+function getOFFDomain() {
+  if (SUPPORTED_COUNTRIES.includes(CURRENT_COUNTRY)) {
+    return `https://${CURRENT_COUNTRY.toLowerCase()}.openfoodfacts.org`;
+  }
+  return 'https://world.openfoodfacts.org';
+}
+
+function setCountry(country) {
+  if (SUPPORTED_COUNTRIES.includes(country)) {
+    CURRENT_COUNTRY = country;
+    localStorage.setItem('etiquette-pays', country);
+    document.getElementById('country-badge').textContent = country;
+  }
+}
+
 const VERDICT_META = {
   clean: { label: 'Clean', className: 'v-clean' },
   warning: { label: 'À vérifier', className: 'v-warning' },
@@ -289,7 +307,7 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function fetchOFF(url) {
+async function fetchOFF(url, retryOnFail = true) {
   const now = Date.now();
   const timeSinceLastRequest = now - lastOFFRequestTime;
   if (timeSinceLastRequest < OFF_MIN_DELAY_MS) {
@@ -297,12 +315,26 @@ async function fetchOFF(url) {
   }
   lastOFFRequestTime = Date.now();
 
-  const response = await fetch(url);
-  return response;
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (!response.ok && retryOnFail && CURRENT_COUNTRY !== 'FR') {
+      console.log('[OFF] Retry with world domain:', url);
+      const fallbackUrl = url.replace(getOFFDomain(), 'https://world.openfoodfacts.org');
+      return fetchOFF(fallbackUrl, false);
+    }
+    return response;
+  } catch (err) {
+    if (retryOnFail && CURRENT_COUNTRY !== 'FR') {
+      console.log('[OFF] Retry with world domain (error):', err.message);
+      const fallbackUrl = url.replace(getOFFDomain(), 'https://world.openfoodfacts.org');
+      return fetchOFF(fallbackUrl, false);
+    }
+    throw err;
+  }
 }
 
 async function searchProducts(term, onRetry) {
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(term)}&search_simple=1&action=process&json=1&page_size=15`;
+  const url = `${getOFFDomain()}/cgi/search.pl?search_terms=${encodeURIComponent(term)}&search_simple=1&action=process&json=1&page_size=15`;
   try {
     const response = await fetchOFF(url);
     if (!response.ok) throw new Error('network');
@@ -319,7 +351,7 @@ async function searchProducts(term, onRetry) {
 }
 
 async function fetchProduct(code) {
-  const url = `https://world.openfoodfacts.org/api/v0/product/${code}.json?fields=product_name,ingredients_text,brands,last_modified_t,image_front_small_url,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags`;
+  const url = `${getOFFDomain()}/api/v0/product/${code}.json?fields=product_name,ingredients_text,brands,last_modified_t,image_front_small_url,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags`;
   const response = await fetchOFF(url);
   if (!response.ok) throw new Error('network');
   const data = await response.json();
@@ -331,7 +363,7 @@ async function findAlternative(product) {
   const categories = product.categories_tags;
   if (!Array.isArray(categories) || categories.length === 0) return null;
   const category = categories[categories.length - 1].replace(/^\w+:/, '');
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=10&tagtype_0=categories&tag_contains_0=contains&tag_0=${encodeURIComponent(category)}&sort_by=unique_scans_n`;
+  const url = `${getOFFDomain()}/cgi/search.pl?search_simple=1&action=process&json=1&page_size=10&tagtype_0=categories&tag_contains_0=contains&tag_0=${encodeURIComponent(category)}&sort_by=unique_scans_n`;
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);
@@ -550,7 +582,7 @@ function renderResult(product) {
   renderIngredientExcerpt(product.ingredients_text, detail, meta.className);
 
   document.getElementById('freshness-text').textContent = freshnessText(product.last_modified_t);
-  document.getElementById('off-link').href = `https://world.openfoodfacts.org/product/${product.code}`;
+  document.getElementById('off-link').href = `${getOFFDomain()}/product/${product.code}`;
 
   const alternativeAccordion = document.getElementById('alternative-accordion');
   alternativeAccordion.classList.add('hidden');
@@ -637,6 +669,17 @@ backButton.addEventListener('click', () => showScreen('home'));
 document.getElementById('btn-search').addEventListener('click', () => showScreen('search'));
 document.getElementById('btn-scan').addEventListener('click', () => showScreen('scan'));
 document.getElementById('btn-error-back').addEventListener('click', () => showScreen('home'));
+
+// Country selector (cycle FR → MA → CA → FR)
+document.getElementById('country-badge').addEventListener('click', () => {
+  const countries = ['FR', 'MA', 'CA'];
+  const currentIndex = countries.indexOf(CURRENT_COUNTRY);
+  const nextCountry = countries[(currentIndex + 1) % countries.length];
+  setCountry(nextCountry);
+});
+
+// Initialize country badge with stored value
+document.getElementById('country-badge').textContent = CURRENT_COUNTRY;
 
 // Initialize with home screen
 (async () => {
