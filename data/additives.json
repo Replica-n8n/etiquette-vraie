@@ -89,6 +89,14 @@
     "en:e955": {
       "name": "Sucralose",
       "reason": "Risques à long terme incertains"
+    },
+    "en:e322": {
+      "name": "Lécithine",
+      "reason": "Peut contenir soja OGM, nécessite vigilance"
+    },
+    "en:e428": {
+      "name": "Gélatine",
+      "reason": "Épaississant d'origine animale, à vérifier"
     }
   }
 }

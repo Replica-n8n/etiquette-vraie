@@ -192,13 +192,15 @@ function detectVerdict(productName, ingredientsText) {
       const suspiciousFlavors = [];
 
       for (const flavor of flavors) {
-        if (onlyAppearsAsArome(flavor, ingredientsNorm)) {
-          missingFlavors.push(flavor);
-        } else {
-          const position = findIngredientPosition(flavor, ingredientsNorm);
-          if (position && position.ratio > 0.7) {
+        const position = findIngredientPosition(flavor, ingredientsNorm);
+        if (position) {
+          // Ingrédient trouvé dans la liste → CLEAN (présent réellement)
+          if (position.ratio > 0.7) {
             suspiciousFlavors.push({ flavor, position });
           }
+        } else if (onlyAppearsAsArome(flavor, ingredientsNorm)) {
+          // Pas trouvé comme ingrédient, seulement comme arôme → missing
+          missingFlavors.push(flavor);
         }
       }
 
