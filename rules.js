@@ -60,7 +60,7 @@ const FOOD_WORDS = [
   'poire', 'pear', 'grenade', 'pomegranate', 'menthe', 'mint',
   'boeuf', 'beef', 'aubergine', 'eggplant',
 ];
-const FOOD_WORD_PATTERN = new RegExp(`\\b(${FOOD_WORDS.join('|')})\\b`, 'g');
+// Pattern created dynamically in findFlavorMention() to support plurals
 
 const INGREDIENT_VARIANTS = {
   'pistache': ['pistache', 'pistaches', 'pistachio', 'pistachios'],
@@ -100,8 +100,10 @@ function findFlavorMention(productName) {
     flavors.add(match[1].trim());
   }
 
-  // Cherche tous les FOOD_WORDS directs (fruits, arômes)
-  const directMatches = nameNorm.matchAll(FOOD_WORD_PATTERN);
+  // Cherche tous les FOOD_WORDS directs (fruits, arômes) - incluant pluriels
+  const pluralWords = FOOD_WORDS.map(w => pluralPattern(w)).join('|');
+  const foodWordPattern = new RegExp(`\\b(${pluralWords})\\b`, 'g');
+  const directMatches = nameNorm.matchAll(foodWordPattern);
   for (const match of directMatches) {
     flavors.add(match[1].trim());
   }
