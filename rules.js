@@ -2,7 +2,12 @@
 // Détecte les incohérences entre le nom d'un produit et sa composition réelle.
 
 function stripAccents(str) {
-  return str.normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return str
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/œ/g, 'oe')
+    .replace(/æ/g, 'ae')
+    .replace(/ß/g, 'ss');
 }
 
 function normalize(str) {
