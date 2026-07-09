@@ -39,7 +39,7 @@ const NON_CONFORME_PATTERNS = [
   },
 ];
 
-const FLAVOR_PATTERN = /(?:saveur|gout|parfum)\s+([a-z]+(?:\s+[a-z]+)?)/g;
+const FLAVOR_PATTERN = /(?:saveur|gout|parfum|essence|extrait|concentre)\s+(?:de\s+)?([a-z]+(?:\s+[a-z]+)?)/g;
 
 // Mots d'ingrédients/fruits assez identifiables pour qu'on les vérifie quand ils
 // apparaissent tels quels dans le nom du produit (ex. "Blueberry Waffles"),
@@ -204,8 +204,9 @@ function detectVerdict(productName, ingredientsText) {
 
       // Si des saveurs sont manquantes
       if (missingFlavors.length > 0) {
-        // Exception: si le nom dit "aromatisé", c'est normal que ce soit que des arômes
-        const isAromatized = /arom/i.test(nameNorm);
+        // Exception: si le nom dit "aromatisé" / "saveur" / "goût" / "parfum", c'est normal que ce soit que des arômes
+        // (tous ces termes signalent un produit aromatisé, légalement conforme)
+        const isAromatized = /arom|saveur|gout|parfum/i.test(nameNorm);
         if (isAromatized) {
           // C'est un produit aromatisé, ce n'est pas une fraude
           const firstFlavorPos = findIngredientPosition(missingFlavors[0], ingredientsNorm);
