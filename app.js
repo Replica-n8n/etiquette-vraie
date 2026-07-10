@@ -379,14 +379,20 @@ function renderResults(products) {
 }
 
 async function selectProduct(code) {
+  console.log('[APP] selectProduct called, showing result screen');
   // Show result page immediately with loading state
   showScreen('result');
   document.getElementById('result-error').style.display = 'none';
+  console.log('[APP] Result screen shown');
 
   try {
+    console.log('[APP] Starting fetch for code:', code);
     // Fetch with 5 second timeout max
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => {
+      console.log('[APP] Fetch timeout!');
+      controller.abort();
+    }, 5000);
 
     const response = await fetch(
       `https://world.openfoodfacts.org/api/v0/product/${code}.json?fields=product_name,ingredients_text,brands,image_front_small_url,code,nutriscore_grade,nova_group,additives_tags,labels_tags,categories_tags`,
@@ -394,9 +400,11 @@ async function selectProduct(code) {
     );
 
     clearTimeout(timeoutId);
+    console.log('[APP] Fetch response:', response.status);
 
     if (!response.ok) throw new Error('API error');
     const data = await response.json();
+    console.log('[APP] Got data:', data.product?.product_name);
 
     if (!data.product) {
       throw new Error('Product not found');
@@ -404,6 +412,7 @@ async function selectProduct(code) {
 
     renderResult(data.product);
   } catch (err) {
+    console.log('[APP] Error:', err.message);
     document.getElementById('result-error').style.display = 'block';
     document.getElementById('result-error').textContent = 'Erreur réseau - réessaie.';
   }
