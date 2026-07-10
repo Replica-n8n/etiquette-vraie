@@ -603,7 +603,7 @@ function renderResult(product) {
     : null;
   renderScoreTile('nova-icon', 'nova-value', novaMeta, 'Non renseigné');
 
-  renderScoreTile('additives-icon', 'additives-value', additivesMeta(product.additives_n), 'Non renseigné');
+  renderScoreTile('additives-icon', 'additives-value', additivesMeta(product.additives_n !== undefined ? product.additives_n : currentAllAdditives.length), 'Non renseigné');
   renderScoreTile('bio-icon', 'bio-value', bioMeta(product.labels_tags), 'Non certifié');
 
   const legalAccordion = document.getElementById('legal-accordion');
