@@ -652,7 +652,7 @@ document.getElementById('btn-error-back').addEventListener('click', () => showSc
 
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js', { scope: '/' }).then((registration) => {
+  navigator.serviceWorker.register('./sw.js', { scope: './' }).then((registration) => {
     console.log('[SW] Registered:', registration);
   }).catch((err) => {
     console.error('[SW] Registration failed:', err);
