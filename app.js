@@ -379,21 +379,33 @@ function renderResults(products) {
 }
 
 async function selectProduct(code) {
-  searchStatus.textContent = 'Chargement...';
-  showScreen('result');  // Affiche la page de résultat immédiatement
+  // Show result page immediately with loading state
+  showScreen('result');
+  document.getElementById('result-error').style.display = 'none';
 
   try {
-    const product = await fetchProduct(code);
-    if (!product) {
-      document.getElementById('result-error').textContent = 'Fiche produit introuvable sur Open Food Facts.';
-      document.getElementById('result-error').style.display = 'block';
-      return;
+    // Fetch with 5 second timeout max
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(
+      `https://world.openfoodfacts.org/api/v0/product/${code}.json?fields=product_name,ingredients_text,brands,image_front_small_url,code,nutriscore_grade,nova_group,additives_tags,labels_tags,categories_tags`,
+      { signal: controller.signal }
+    );
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) throw new Error('API error');
+    const data = await response.json();
+
+    if (!data.product) {
+      throw new Error('Product not found');
     }
-    document.getElementById('result-error').style.display = 'none';
-    renderResult(product);
+
+    renderResult(data.product);
   } catch (err) {
-    document.getElementById('result-error').textContent = 'Erreur réseau - réessaie dans un instant.';
     document.getElementById('result-error').style.display = 'block';
+    document.getElementById('result-error').textContent = 'Erreur réseau - réessaie.';
   }
 }
 
