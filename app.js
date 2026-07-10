@@ -531,10 +531,10 @@ function renderResult(product) {
   });
 
   const additiveAlertEl = document.getElementById('additive-alert');
-  if (riskyAdditives.length > 0) {
+  if (currentRiskyAdditives.length > 0) {
     additiveAlertEl.classList.remove('hidden');
-    const first = riskyAdditives[0];
-    const suffix = riskyAdditives.length > 1 ? ` (+${riskyAdditives.length - 1} autre${riskyAdditives.length > 2 ? 's' : ''})` : '';
+    const first = currentRiskyAdditives[0];
+    const suffix = currentRiskyAdditives.length > 1 ? ` (+${currentRiskyAdditives.length - 1} autre${currentRiskyAdditives.length > 2 ? 's' : ''})` : '';
     document.getElementById('additive-alert-text').textContent = `${first.code} - ${first.reason}${suffix}`;
   } else {
     additiveAlertEl.classList.add('hidden');
@@ -581,7 +581,7 @@ function renderResult(product) {
 
   const alternativeAccordion = document.getElementById('alternative-accordion');
   alternativeAccordion.classList.add('hidden');
-  const needsAlternative = verdict === 'misleading' || verdict === 'warning' || riskyAdditives.length > 0;
+  const needsAlternative = verdict === 'misleading' || verdict === 'warning' || currentRiskyAdditives.length > 0;
   if (needsAlternative) {
     findAlternative(product).then((alternative) => {
       if (!alternative) return;
