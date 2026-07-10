@@ -469,8 +469,21 @@ function buildIngredientExcerpt(ingredientsText, detail) {
     ? detail.matched.split(',').map(s => s.trim().toLowerCase())
     : [];
 
-  const windowStart = Math.max(0, detail.index - 2);
-  const windowEnd = Math.min(items.length, detail.index + 3);
+  // Si on a plusieurs ingrédients à mettre en évidence, afficher TOUS les ingrédients
+  // Sinon, afficher une fenêtre autour de l'ingrédient
+  const hasMultipleMatches = matchedIngredients.length > 1;
+
+  let windowStart, windowEnd;
+  if (hasMultipleMatches) {
+    // Afficher tous les ingrédients
+    windowStart = 0;
+    windowEnd = items.length;
+  } else {
+    // Fenêtre autour de l'ingrédient unique
+    windowStart = Math.max(0, detail.index - 2);
+    windowEnd = Math.min(items.length, detail.index + 3);
+  }
+
   const rows = [];
   for (let i = windowStart; i < windowEnd; i += 1) {
     // Marquer comme flagged si l'ingrédient est dans la liste à mettre en évidence
