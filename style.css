@@ -316,23 +316,22 @@ body{
 .redesign-toggle.active { background: var(--ink); color: white; border-color: var(--ink); }
 
 /* Redesign mode styles */
-body.redesign-mode .stamp { background: #2F6F4F; color: white; border: none; }
-body.redesign-mode .alert.v-clean .stamp { background: #2F6F4F; }
-body.redesign-mode .alert.v-misleading .stamp { background: #C0392B; }
-body.redesign-mode .alert.v-warning .stamp { background: #B5792A; }
+body.redesign-mode #stamp { background: #2F6F4F; color: white; border: none; padding: 10px 16px; border-radius: 10px; display: inline-block; margin-bottom: 12px; }
 
-body.redesign-mode .alert-text { font-weight: 700; font-size: 15px; }
+body.redesign-mode .alert { padding: 16px 20px; }
+body.redesign-mode .alert.v-clean { background: #E7F1EC; border: 1.5px solid #2F6F4F; }
+body.redesign-mode .alert.v-misleading { background: #FBEAE7; border: 1.5px solid #C0392B; }
+body.redesign-mode .alert.v-warning { background: #FBF1E3; border: 1.5px solid #B5792A; }
 
-body.redesign-mode .score-tile { background: var(--card); border: 0.5px solid var(--line); }
-body.redesign-mode .score-icon { font-size: 28px; font-weight: 800; }
-body.redesign-mode .score-icon.nutri-c { color: #BA7517; }
-body.redesign-mode .score-icon.nova-3 { color: #378ADD; }
+body.redesign-mode .alert-headline { font-weight: 700; font-size: 16px; }
+
+body.redesign-mode #nutriscore-value, body.redesign-mode #nova-value { font-size: 28px; font-weight: 800; }
+body.redesign-mode #nutriscore-icon { color: #BA7517; }
+body.redesign-mode #nova-icon { color: #378ADD; }
 
 body.redesign-mode #compare-suggest,
-body.redesign-mode #compare-real { font-weight: 700; font-size: 14px; padding: 14px 16px; background: var(--card); border-radius: 10px; border-left: 4px solid var(--amber); }
+body.redesign-mode #compare-real { font-weight: 700; font-size: 15px; padding: 14px 16px; background: var(--card); border-radius: 10px; border-left: 4px solid var(--amber); }
 body.redesign-mode #compare-real { border-left-color: var(--green); }
-
-body.redesign-mode .additive-item { border-left-width: 4px; }
 
 /* Mobile: enlever le cadre du téléphone mockup et utiliser fullscreen */
 @media (max-width: 480px) {
