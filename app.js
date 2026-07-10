@@ -711,6 +711,20 @@ document.getElementById('btn-search').addEventListener('click', () => showScreen
 document.getElementById('btn-scan').addEventListener('click', () => showScreen('scan'));
 document.getElementById('btn-error-back').addEventListener('click', () => showScreen('home'));
 
+// Redesign mode toggle
+const redesignToggle = document.getElementById('redesign-toggle');
+const redesignMode = localStorage.getItem('redesignMode') === 'true';
+if (redesignMode) {
+  document.body.classList.add('redesign-mode');
+  redesignToggle.classList.add('active');
+}
+redesignToggle.addEventListener('click', () => {
+  document.body.classList.toggle('redesign-mode');
+  redesignToggle.classList.toggle('active');
+  const isActive = document.body.classList.contains('redesign-mode');
+  localStorage.setItem('redesignMode', isActive);
+});
+
 // Initialize with home screen
 (async () => {
   await loadAdditivesDatabase();
