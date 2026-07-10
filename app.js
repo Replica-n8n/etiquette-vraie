@@ -303,7 +303,8 @@ async function fetchOFF(url) {
 }
 
 async function searchProducts(term, onRetry) {
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(term)}&search_simple=1&action=process&json=1&page_size=15`;
+  const offUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(term)}&search_simple=1&action=process&json=1&page_size=15`;
+  const url = `https://corsproxy.io/?${encodeURIComponent(offUrl)}`;
   try {
     const response = await fetchOFF(url);
     if (!response.ok) throw new Error('network');
@@ -320,7 +321,8 @@ async function searchProducts(term, onRetry) {
 }
 
 async function fetchProduct(code) {
-  const url = `https://world.openfoodfacts.org/api/v0/product/${code}.json?fields=product_name,ingredients_text,brands,last_modified_t,image_front_small_url,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags`;
+  const offUrl = `https://world.openfoodfacts.org/api/v0/product/${code}.json?fields=product_name,ingredients_text,brands,last_modified_t,image_front_small_url,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags`;
+  const url = `https://corsproxy.io/?${encodeURIComponent(offUrl)}`;
   const response = await fetchOFF(url);
   if (!response.ok) throw new Error('network');
   const data = await response.json();
@@ -332,7 +334,8 @@ async function findAlternative(product) {
   const categories = product.categories_tags;
   if (!Array.isArray(categories) || categories.length === 0) return null;
   const category = categories[categories.length - 1].replace(/^\w+:/, '');
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=10&tagtype_0=categories&tag_contains_0=contains&tag_0=${encodeURIComponent(category)}&sort_by=unique_scans_n`;
+  const offUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=10&tagtype_0=categories&tag_contains_0=contains&tag_0=${encodeURIComponent(category)}&sort_by=unique_scans_n`;
+  const url = `https://corsproxy.io/?${encodeURIComponent(offUrl)}`;
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);
