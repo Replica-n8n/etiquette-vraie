@@ -197,7 +197,7 @@ function showScreen(screen) {
   scanScreen.classList.toggle('hidden', screen !== 'scan');
   resultScreen.classList.toggle('hidden', screen !== 'result');
   backButton.classList.toggle('hidden', screen === 'home');
-  if (screen === 'home') searchInput.value = '';
+  if (screen === 'home' || screen === 'search') searchInput.value = '';
   if (screen === 'scan') startQuaggaScanner();
   else if (quaggaInitialized) stopQuaggaScanner();
 }
