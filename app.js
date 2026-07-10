@@ -333,11 +333,21 @@ async function searchProducts(term, onRetry) {
 async function fetchProduct(code) {
   const offUrl = `https://world.openfoodfacts.org/api/v0/product/${code}.json?fields=product_name,ingredients_text,brands,last_modified_t,image_front_small_url,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags`;
   const url = getProxyUrl(offUrl);
-  const response = await fetchOFF(url);
-  if (!response.ok) throw new Error('network');
-  const data = await response.json();
-  if (data.status !== 1) return null;
-  return data.product;
+
+  // Add timeout to prevent infinite spinning
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Timeout: took too long to fetch product')), 15000)
+  );
+
+  try {
+    const response = await Promise.race([fetchOFF(url), timeoutPromise]);
+    if (!response.ok) throw new Error(`Server error: ${response.status}`);
+    const data = await response.json();
+    if (data.status !== 1) return null;
+    return data.product;
+  } catch (err) {
+    throw new Error(`Failed to fetch product: ${err.message}`);
+  }
 }
 
 async function findAlternative(product) {
