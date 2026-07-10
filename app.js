@@ -114,6 +114,7 @@ const ADDITIVES_DATABASE = {
   'en:e413': { name: 'Gomme d\'acacia', role: 'Épaississant' },
   'en:e414': { name: 'Gomme xanthane', role: 'Épaississant' },
   'en:e415': { name: 'Gomme de xanthane', role: 'Épaississant' },
+  'en:e428': { name: 'Gélatine', role: 'Épaississant d\'origine animale' },
   'en:e433': { name: 'Polysorbate 80', role: 'Émulsifiant' },
   'en:e440': { name: 'Pectine', role: 'Épaississant' },
   'en:e466': { name: 'Carboxyméthylcellulose', role: 'Épaississant / Gélifiant' },
