@@ -382,17 +382,22 @@ function renderResults(products) {
 }
 
 async function selectProduct(code) {
+  console.log('[DEBUG] selectProduct called with code:', code);
   searchStatus.textContent = 'Chargement...';
   try {
+    console.log('[DEBUG] Fetching product...');
     const product = await fetchProduct(code);
+    console.log('[DEBUG] fetchProduct returned:', product);
     if (!product) {
       searchStatus.textContent = 'Fiche produit introuvable sur Open Food Facts.';
+      console.log('[DEBUG] Product is null or undefined');
       return;
     }
     searchStatus.textContent = '';
     renderResult(product);
     showScreen('result');
   } catch (err) {
+    console.log('[DEBUG] Error caught:', err);
     searchStatus.textContent = 'Erreur réseau - réessaie dans un instant.';
   }
 }
