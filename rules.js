@@ -92,9 +92,6 @@ function findFlavorMention(productName) {
   }
 
   const nameNorm = normalize(productName);
-  console.log('[DEBUG] findFlavorMention input:', productName);
-  console.log('[DEBUG] nameNorm:', nameNorm);
-
   const flavors = new Set();
 
   // Cherche toutes les saveurs "saveur X", "goût X", "parfum X"
@@ -108,13 +105,10 @@ function findFlavorMention(productName) {
   const foodWordPattern = new RegExp(`\\b(${pluralWords})\\b`, 'g');
   const directMatches = nameNorm.matchAll(foodWordPattern);
   for (const match of directMatches) {
-    console.log('[DEBUG] directMatch found:', match[1]);
     flavors.add(match[1].trim());
   }
 
-  const result = Array.from(flavors);
-  console.log('[DEBUG] findFlavorMention result:', result);
-  return result;
+  return Array.from(flavors);
 }
 
 // Variante(s) plurielles d'un mot, pour matcher "fraise"/"fraises" mais aussi
@@ -160,8 +154,6 @@ const LEGAL_NOTE_FLAVOR =
  * @returns {{ verdict: 'clean'|'warning'|'misleading'|'unknown', headline: string, legalNote?: string, detail?: object }}
  */
 function detectVerdict(productName, ingredientsText) {
-  console.log('[DEBUG] detectVerdict called with:', { productName, ingredientsTextLength: ingredientsText?.length });
-
   // Exclure les produits "Chocolate X%" - chocolat pur, pas une saveur
   if (/chocolate.+\d+\s*%/i.test(productName)) {
     return {
@@ -172,8 +164,6 @@ function detectVerdict(productName, ingredientsText) {
 
   const nameNorm = normalize(productName);
   const ingredientsNorm = normalize(ingredientsText);
-
-  console.log('[DEBUG] ingredientsNorm (first 200 chars):', ingredientsNorm?.substring(0, 200));
 
   if (!ingredientsNorm) {
     return {
@@ -199,7 +189,6 @@ function detectVerdict(productName, ingredientsText) {
   }
 
   const flavors = findFlavorMention(productName);
-  console.log('[DEBUG] Flavors found:', flavors);
 
   if (flavors.length > 0) {
     // Exclure si c'est "Chocolate X%" - chocolat pur, pas une saveur
@@ -211,12 +200,10 @@ function detectVerdict(productName, ingredientsText) {
 
       for (const flavor of flavors) {
         const position = findIngredientPosition(flavor, ingredientsNorm);
-        console.log(`[DEBUG] Flavor "${flavor}": position =`, position);
         if (position) {
           // Ingrédient trouvé dans la liste → CLEAN (présent réellement)
           // Peu importe la quantité/position, si c'est dans la liste, c'est pas de la tromperie
         } else if (onlyAppearsAsArome(flavor, ingredientsNorm)) {
-          console.log(`[DEBUG] Flavor "${flavor}": only appears as arome`);
           // Pas trouvé comme ingrédient, seulement comme arôme → missing
           missingFlavors.push(flavor);
         }
