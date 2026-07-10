@@ -545,8 +545,29 @@ function renderResult(product) {
   compareRealCol.className = `compare-col real ${meta.className}`;
   if (detail && detail.compareSuggest) {
     compareEl.classList.remove('hidden');
-    document.getElementById('compare-suggest').textContent = detail.compareSuggest;
-    document.getElementById('compare-real').textContent = detail.compareReal;
+    // Affiche en liste si contient des virgules
+    const suggestEl = document.getElementById('compare-suggest');
+    const realEl = document.getElementById('compare-real');
+
+    if (detail.compareSuggest.includes(',')) {
+      suggestEl.innerHTML = detail.compareSuggest.split(',').map(s => `<li>${s.trim()}</li>`).join('');
+      suggestEl.style.listStyle = 'disc';
+      suggestEl.style.paddingLeft = '20px';
+    } else {
+      suggestEl.textContent = detail.compareSuggest;
+      suggestEl.style.listStyle = 'none';
+      suggestEl.style.paddingLeft = '0';
+    }
+
+    if (detail.compareReal.includes(',')) {
+      realEl.innerHTML = detail.compareReal.split(',').map(s => `<li>${s.trim()}</li>`).join('');
+      realEl.style.listStyle = 'disc';
+      realEl.style.paddingLeft = '20px';
+    } else {
+      realEl.textContent = detail.compareReal;
+      realEl.style.listStyle = 'none';
+      realEl.style.paddingLeft = '0';
+    }
   } else {
     compareEl.classList.add('hidden');
   }
