@@ -302,9 +302,17 @@ async function fetchOFF(url) {
   return response;
 }
 
+function getProxyUrl(offUrl) {
+  // Use local Vercel serverless proxy (or fallback to local API)
+  const proxyBase = window.location.hostname === 'localhost'
+    ? 'http://localhost:3000/api/proxy'
+    : '/api/proxy';
+  return `${proxyBase}?url=${encodeURIComponent(offUrl)}`;
+}
+
 async function searchProducts(term, onRetry) {
   const offUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(term)}&search_simple=1&action=process&json=1&page_size=15`;
-  const url = `https://thingproxy.freehostingems.com/fetch/${offUrl}`;
+  const url = getProxyUrl(offUrl);
   try {
     const response = await fetchOFF(url);
     if (!response.ok) throw new Error('network');
@@ -322,7 +330,7 @@ async function searchProducts(term, onRetry) {
 
 async function fetchProduct(code) {
   const offUrl = `https://world.openfoodfacts.org/api/v0/product/${code}.json?fields=product_name,ingredients_text,brands,last_modified_t,image_front_small_url,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags`;
-  const url = `https://thingproxy.freehostingems.com/fetch/${offUrl}`;
+  const url = getProxyUrl(offUrl);
   const response = await fetchOFF(url);
   if (!response.ok) throw new Error('network');
   const data = await response.json();
@@ -335,7 +343,7 @@ async function findAlternative(product) {
   if (!Array.isArray(categories) || categories.length === 0) return null;
   const category = categories[categories.length - 1].replace(/^\w+:/, '');
   const offUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=10&tagtype_0=categories&tag_contains_0=contains&tag_0=${encodeURIComponent(category)}&sort_by=unique_scans_n`;
-  const url = `https://thingproxy.freehostingems.com/fetch/${offUrl}`;
+  const url = getProxyUrl(offUrl);
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);
@@ -382,22 +390,17 @@ function renderResults(products) {
 }
 
 async function selectProduct(code) {
-  console.log('[DEBUG] selectProduct called with code:', code);
   searchStatus.textContent = 'Chargement...';
   try {
-    console.log('[DEBUG] Fetching product...');
     const product = await fetchProduct(code);
-    console.log('[DEBUG] fetchProduct returned:', product);
     if (!product) {
       searchStatus.textContent = 'Fiche produit introuvable sur Open Food Facts.';
-      console.log('[DEBUG] Product is null or undefined');
       return;
     }
     searchStatus.textContent = '';
     renderResult(product);
     showScreen('result');
   } catch (err) {
-    console.log('[DEBUG] Error caught:', err);
     searchStatus.textContent = 'Erreur réseau - réessaie dans un instant.';
   }
 }
