@@ -464,11 +464,18 @@ function buildIngredientExcerpt(ingredientsText, detail) {
     };
   }
 
+  // Extraire les ingrédients à mettre en évidence depuis detail.matched (ex: "boeuf, aubergines, menthe")
+  const matchedIngredients = detail.matched
+    ? detail.matched.split(',').map(s => s.trim().toLowerCase())
+    : [];
+
   const windowStart = Math.max(0, detail.index - 2);
   const windowEnd = Math.min(items.length, detail.index + 3);
   const rows = [];
   for (let i = windowStart; i < windowEnd; i += 1) {
-    rows.push({ num: i + 1, text: items[i], flagged: i === detail.index });
+    // Marquer comme flagged si l'ingrédient est dans la liste à mettre en évidence
+    const isFlagged = matchedIngredients.some(matched => items[i].toLowerCase().includes(matched));
+    rows.push({ num: i + 1, text: items[i], flagged: isFlagged || i === detail.index });
   }
   const hiddenBefore = windowStart;
   const hiddenAfter = items.length - windowEnd;
