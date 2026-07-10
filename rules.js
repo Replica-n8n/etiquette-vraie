@@ -248,12 +248,7 @@ function detectVerdict(productName, ingredientsText) {
 
       // Toutes les saveurs sont présentes correctement
       const firstFlavorPos = findIngredientPosition(flavors[0], ingredientsNorm);
-      const positions = flavors
-        .map(flavor => {
-          const pos = findIngredientPosition(flavor, ingredientsNorm);
-          return pos ? `${flavor} pos ${pos.index + 1}/${pos.total}` : flavor;
-        })
-        .join(', ');
+      const positions = flavors.join(', ');
 
       return {
         verdict: 'clean',
