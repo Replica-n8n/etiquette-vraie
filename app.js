@@ -393,17 +393,20 @@ function renderResults(products) {
 
 async function selectProduct(code) {
   searchStatus.textContent = 'Chargement...';
+  showScreen('result');  // Affiche la page de résultat immédiatement
+
   try {
     const product = await fetchProduct(code);
     if (!product) {
-      searchStatus.textContent = 'Fiche produit introuvable sur Open Food Facts.';
+      document.getElementById('result-error').textContent = 'Fiche produit introuvable sur Open Food Facts.';
+      document.getElementById('result-error').style.display = 'block';
       return;
     }
-    searchStatus.textContent = '';
+    document.getElementById('result-error').style.display = 'none';
     renderResult(product);
-    showScreen('result');
   } catch (err) {
-    searchStatus.textContent = 'Erreur réseau - réessaie dans un instant.';
+    document.getElementById('result-error').textContent = 'Erreur réseau - réessaie dans un instant.';
+    document.getElementById('result-error').style.display = 'block';
   }
 }
 
