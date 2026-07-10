@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Test Moussaka</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="phone">
+  <div class="screen" id="result">
+    <!-- Result screen will be rendered here -->
+  </div>
+</div>
+<script src="./rules.js"></script>
+<script>
+// Test data pour Moussaka
+const productName = "Plat cuisiné Moussaka Boeuf & Aubergines avec une touche de menthe douce";
+const ingredientsText = "Aubergines 21%, viande de bœuf 16%, tomates 14% (tomates, jus de tomates, jus de citron concentré), courgettes 13%, eau, oignons, concentré de tomates, emmental 4,3%, huile de tournesol, amidon de riz, poudre de lait écrémé, gélatine de bœuf, huile de colza, beurre, sel, ail, menthe douce 0,1%, herbes de provence 0,09% (basilic, origan, romarin, thym), épices. Viande de bœuf origine France.";
+
+const result = detectVerdict(productName, ingredientsText);
+console.log("FINAL RESULT:", result);
+
+// Render the result
+const screen = document.getElementById('result');
+screen.innerHTML = `
+  <h1>${productName}</h1>
+  <div class="alert-${result.verdict}">
+    <strong>${result.verdict.toUpperCase()}</strong>
+    <p>${result.headline}</p>
+  </div>
+  <div>
+    <strong>LE NOM SUGGÉRÉ:</strong>
+    <p>${result.detail?.matched || 'N/A'}</p>
+  </div>
+  <div>
+    <strong>IL Y A VRAIMENT:</strong>
+    <p>${result.detail?.compareReal || 'N/A'}</p>
+  </div>
+`;
+</script>
+</body>
+</html>
