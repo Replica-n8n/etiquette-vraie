@@ -214,9 +214,7 @@ function detectVerdict(productName, ingredientsText) {
         console.log(`[DEBUG] Flavor "${flavor}": position =`, position);
         if (position) {
           // Ingrédient trouvé dans la liste → CLEAN (présent réellement)
-          if (position.ratio > 0.7) {
-            suspiciousFlavors.push({ flavor, position });
-          }
+          // Peu importe la quantité/position, si c'est dans la liste, c'est pas de la tromperie
         } else if (onlyAppearsAsArome(flavor, ingredientsNorm)) {
           console.log(`[DEBUG] Flavor "${flavor}": only appears as arome`);
           // Pas trouvé comme ingrédient, seulement comme arôme → missing
@@ -257,23 +255,6 @@ function detectVerdict(productName, ingredientsText) {
             matched: missingFlavors.join(', '),
             compareSuggest: missingFlavors.join(', '),
             compareReal: 'Arômes seuls / absents',
-          },
-        };
-      }
-
-      // Si des saveurs sont en très petite quantité
-      if (suspiciousFlavors.length > 0) {
-        const first = suspiciousFlavors[0];
-        return {
-          verdict: 'warning',
-          headline: `"${first.flavor}" bien présent, mais en toute petite quantité`,
-          legalNote: LEGAL_NOTE_POSITION,
-          detail: {
-            rule: 'position-suspecte',
-            matched: first.flavor,
-            compareSuggest: first.flavor,
-            compareReal: `Présent, position ${first.position.index + 1}/${first.position.total}`,
-            ...first.position,
           },
         };
       }
