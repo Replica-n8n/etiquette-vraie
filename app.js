@@ -307,7 +307,9 @@ function getProxyUrl(offUrl) {
   const proxyBase = window.location.hostname === 'localhost'
     ? 'http://localhost:3000/api/proxy'
     : '/api/proxy';
-  return `${proxyBase}?url=${encodeURIComponent(offUrl)}`;
+  // Use URLSearchParams to avoid double-encoding
+  const params = new URLSearchParams({ url: offUrl });
+  return `${proxyBase}?${params}`;
 }
 
 async function searchProducts(term, onRetry) {
