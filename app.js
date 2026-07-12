@@ -407,19 +407,39 @@ async function selectProduct(code) {
     clearTimeout(timeoutId);
     console.log('[APP] Fetch response:', response.status);
 
-    if (!response.ok) throw new Error('API error');
+    if (!response.ok) {
+      if (response.status >= 500) {
+        throw new Error('off-error-5xx');
+      } else if (response.status === 429) {
+        throw new Error('off-rate-limit');
+      } else {
+        throw new Error('api-error');
+      }
+    }
     const data = await response.json();
     console.log('[APP] Got data:', data.product?.product_name);
 
     if (!data.product) {
-      throw new Error('Product not found');
+      throw new Error('product-not-found');
     }
 
     renderResult(data.product);
   } catch (err) {
     console.log('[APP] Error:', err.message);
     document.getElementById('result-error').style.display = 'block';
-    document.getElementById('result-error').textContent = 'Erreur réseau - réessaie.';
+
+    let errorMsg = 'Erreur réseau - réessaie.';
+    if (err.name === 'AbortError') {
+      errorMsg = 'Open Food Facts ne répond pas assez vite. Réessaie dans quelques secondes.';
+    } else if (err.message === 'off-error-5xx') {
+      errorMsg = 'Open Food Facts est en maintenance. Réessaie dans quelques minutes.';
+    } else if (err.message === 'off-rate-limit') {
+      errorMsg = 'Trop de requêtes. Attends quelques secondes et réessaie.';
+    } else if (err.message === 'product-not-found') {
+      errorMsg = 'Produit non trouvé sur Open Food Facts.';
+    }
+
+    document.getElementById('result-error').textContent = errorMsg;
   }
 }
 
