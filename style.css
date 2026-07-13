@@ -53,6 +53,11 @@ body{
   text-transform:uppercase;
 }
 .brand b{ color:var(--ink); }
+.version{
+  font-family:'IBM Plex Mono', monospace; font-size:9px;
+  color:var(--ink-soft); opacity:0.6; margin-left:4px;
+  font-weight:400; letter-spacing:0;
+}
 
 /* Écran d'accueil */
 .home-screen{ padding:40px 20px; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:400px; }

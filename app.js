@@ -1,3 +1,6 @@
+// Display app version
+document.getElementById('app-version').textContent = 'v1784090400';
+
 const homeScreen = document.getElementById('home-screen');
 const searchScreen = document.getElementById('search-screen');
 const scanScreen = document.getElementById('scan-screen');
@@ -211,6 +214,9 @@ async function startQuaggaScanner() {
   const scanStatus = document.getElementById('scan-status');
   try {
     console.log('[Quagga] Initializing');
+    let lastDetectionTime = 0;
+    const DEBOUNCE_DELAY = 800; // Délai minimum entre détections (pas juste duplicatas)
+
     Quagga.init({
       inputStream: {
         type: 'LiveStream',
@@ -246,6 +252,16 @@ async function startQuaggaScanner() {
     Quagga.onDetected((result) => {
       if (result.codeResult && result.codeResult.code) {
         const code = result.codeResult.code;
+        const now = Date.now();
+
+        // Débounce: ignorer TOUS les codes détectés trop rapidement (même les différents)
+        // Cela évite les lectures erratiques du scanner (7 codes différents en 2s)
+        if (now - lastDetectionTime < DEBOUNCE_DELAY) {
+          console.log('[Quagga] Ignored (debounce):', code);
+          return;
+        }
+
+        lastDetectionTime = now;
         console.log('[Quagga] Code detected:', code);
         handleQrScan(code);
       }
@@ -544,7 +560,10 @@ function renderIngredientExcerpt(ingredientsText, detail, verdictClassName) {
 }
 
 function renderResult(product) {
+  console.log('[APP] renderResult called for:', product.product_name);
+  console.log('[APP] About to call detectVerdict');
   const { verdict, headline, legalNote, detail } = detectVerdict(product.product_name, product.ingredients_text);
+  console.log('[APP] detectVerdict returned:', verdict);
   const meta = VERDICT_META[verdict];
 
   addToHistory(product);

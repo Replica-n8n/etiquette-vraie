@@ -58,7 +58,12 @@ const FOOD_WORDS = [
   'cannelle', 'cinnamon', 'mangue', 'mango', 'peche', 'peach',
   'pistache', 'pistachio', 'abricot', 'apricot', 'ananas', 'pineapple',
   'poire', 'pear', 'grenade', 'pomegranate', 'menthe', 'mint',
-  'boeuf', 'beef', 'aubergine', 'eggplant',
+  'amande', 'almond', 'boeuf', 'beef', 'aubergine', 'eggplant',
+  'cacahuete', 'peanut', 'arachide', 'soja', 'soy', 'soya',
+  'lait', 'milk', 'oeuf', 'egg', 'sesame', 'sésame',
+  'noix', 'walnut', 'cajou', 'cashew', 'macadamia', 'lin', 'flax',
+  'raisin', 'grape', 'kiwi', 'mure', 'blackberry', 'figue', 'fig',
+  'datte', 'date', 'avocat', 'avocado', 'cranberry', 'miel', 'honey',
 ];
 // Pattern created dynamically in findFlavorMention() to support plurals
 
@@ -83,6 +88,41 @@ const INGREDIENT_VARIANTS = {
   'beef': ['boeuf', 'beef', 'beefs'],
   'aubergine': ['aubergine', 'aubergines', 'eggplant', 'eggplants'],
   'eggplant': ['aubergine', 'aubergines', 'eggplant', 'eggplants'],
+  'amande': ['amande', 'amandes', 'almond', 'almonds'],
+  'almond': ['amande', 'amandes', 'almond', 'almonds'],
+  'cacahuete': ['cacahuete', 'cacahuetes', 'peanut', 'peanuts', 'arachide', 'arachides'],
+  'peanut': ['cacahuete', 'cacahuetes', 'peanut', 'peanuts', 'arachide', 'arachides'],
+  'arachide': ['cacahuete', 'cacahuetes', 'peanut', 'peanuts', 'arachide', 'arachides'],
+  'soja': ['soja', 'soy', 'soya', 'soybean', 'soybeans'],
+  'soy': ['soja', 'soy', 'soya', 'soybean', 'soybeans'],
+  'soya': ['soja', 'soy', 'soya', 'soybean', 'soybeans'],
+  'lait': ['lait', 'milk', 'lactose', 'dairy'],
+  'milk': ['lait', 'milk', 'lactose', 'dairy'],
+  'oeuf': ['oeuf', 'oeufs', 'egg', 'eggs'],
+  'egg': ['oeuf', 'oeufs', 'egg', 'eggs'],
+  'sesame': ['sesame', 'sesames', 'sésame', 'sésames'],
+  'sésame': ['sesame', 'sesames', 'sésame', 'sésames'],
+  'noix': ['noix', 'walnut', 'walnuts'],
+  'walnut': ['noix', 'walnut', 'walnuts'],
+  'cajou': ['cajou', 'cashew', 'cashews', 'noix de cajou'],
+  'cashew': ['cajou', 'cashew', 'cashews', 'noix de cajou'],
+  'macadamia': ['macadamia', 'macadamias', 'noix de macadamia'],
+  'lin': ['lin', 'flax', 'graine de lin', 'lin'],
+  'flax': ['lin', 'flax', 'graine de lin'],
+  'raisin': ['raisin', 'raisins', 'grape', 'grapes'],
+  'grape': ['raisin', 'raisins', 'grape', 'grapes'],
+  'kiwi': ['kiwi', 'kiwis'],
+  'mure': ['mure', 'mures', 'blackberry', 'blackberries'],
+  'blackberry': ['mure', 'mures', 'blackberry', 'blackberries'],
+  'figue': ['figue', 'figues', 'fig', 'figs'],
+  'fig': ['figue', 'figues', 'fig', 'figs'],
+  'datte': ['datte', 'dattes', 'date', 'dates'],
+  'date': ['datte', 'dattes', 'date', 'dates'],
+  'avocat': ['avocat', 'avocats', 'avocado', 'avocados'],
+  'avocado': ['avocat', 'avocats', 'avocado', 'avocados'],
+  'cranberry': ['cranberry', 'cranberries'],
+  'miel': ['miel', 'honey'],
+  'honey': ['miel', 'honey'],
 };
 
 function findFlavorMention(productName) {
@@ -148,12 +188,46 @@ const LEGAL_NOTE_POSITION =
 const LEGAL_NOTE_FLAVOR =
   'La mention d\'un ingrédient dans le nom ("saveur / goût X", ou le nom direct d\'un fruit/arôme) décrit une saveur perçue, pas un ingrédient garanti. Le règlement (UE) n°1169/2011 exige seulement que "arôme" figure dans la liste - pas qu\'il précise sa source.';
 
+// Détecte si le texte des ingrédients contient du texte nutritionnel au lieu d'une vraie liste
+function isNutritionFactsInsteadOfIngredients(ingredientsText) {
+  if (!ingredientsText) return false;
+  const normalized = normalize(ingredientsText);
+  const patterns = [
+    'carbohydrate', 'glucide',
+    'protein', 'proteine',
+    'sugar', 'sucre',
+    'cholesterol',
+    'calorie', 'calori',
+    'fat', 'gras',
+    'sodium',
+    'nutrition fact', 'fait nutritionnel',
+    'vitamin', 'vitamine',
+    'fiber', 'fibre',
+    'mineral',
+  ];
+  const matches = patterns.filter(p => new RegExp(`\\b${p}\\b`).test(normalized));
+  console.log('[NUTRITION] Checking ingredients:', ingredientsText.substring(0, 100));
+  console.log('[NUTRITION] Normalized:', normalized.substring(0, 100));
+  console.log('[NUTRITION] Matches found:', matches);
+  console.log('[NUTRITION] Is corrupted:', matches.length >= 2);
+  return matches.length >= 2; // Si 2+ patterns nutritionnels, c'est probablement corromptu
+}
+
 /**
  * @param {string} productName
  * @param {string} ingredientsText
  * @returns {{ verdict: 'clean'|'warning'|'misleading'|'unknown', headline: string, legalNote?: string, detail?: object }}
  */
 function detectVerdict(productName, ingredientsText) {
+  console.log('[DETECT] detectVerdict called for:', productName);
+  // Vérifier si OFF a capturé du texte nutritionnel au lieu d'ingrédients
+  if (isNutritionFactsInsteadOfIngredients(ingredientsText)) {
+    return {
+      verdict: 'unknown',
+      headline: 'Composition indisponible - données Open Food Facts incomplètes',
+    };
+  }
+
   // Exclure les produits "Chocolate X%" - chocolat pur, pas une saveur
   if (/chocolate.+\d+\s*%/i.test(productName)) {
     return {
