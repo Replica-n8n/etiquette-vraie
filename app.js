@@ -1,5 +1,8 @@
 // Display app version
-document.getElementById('app-version').textContent = 'v1784090400';
+const COMMIT_HASH = '8781281';
+const APP_VERSION = 'v1784090400';
+document.getElementById('app-version').textContent = APP_VERSION;
+console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
 const homeScreen = document.getElementById('home-screen');
 const searchScreen = document.getElementById('search-screen');
