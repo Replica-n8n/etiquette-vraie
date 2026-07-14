@@ -1,6 +1,6 @@
 // Display app version
-const COMMIT_HASH = '8781281';
-const APP_VERSION = 'v1784090400';
+const COMMIT_HASH = 'scanner-validation';
+const APP_VERSION = 'v1784100000';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -218,7 +218,38 @@ async function startQuaggaScanner() {
   try {
     console.log('[Quagga] Initializing');
     let lastDetectionTime = 0;
-    const DEBOUNCE_DELAY = 800; // Délai minimum entre détections (pas juste duplicatas)
+    const DEBOUNCE_DELAY = 2000; // 2 secondes - évite faux positifs (listes d'ingrédients, etc.)
+
+    // Validation barcode: vérifier format EAN/UPC valide
+    function isValidBarcode(code) {
+      // Un vrai code barres = 8, 12, 13, ou 14 chiffres
+      if (!/^\d{8}$|^\d{12}$|^\d{13}$|^\d{14}$/.test(code)) {
+        console.log('[Barcode] Invalid format (not 8/12/13/14 digits):', code);
+        return false;
+      }
+
+      // Valider checksum EAN-13/UPC (12 chiffres)
+      if (code.length === 13 || code.length === 12) {
+        return validateEAN13(code);
+      }
+
+      return true;
+    }
+
+    // Validation checksum EAN-13
+    function validateEAN13(code) {
+      const digits = code.split('').map(Number);
+      let sum = 0;
+      for (let i = 0; i < Math.min(digits.length - 1, 12); i++) {
+        sum += digits[i] * (i % 2 === 0 ? 1 : 3);
+      }
+      const checksum = (10 - (sum % 10)) % 10;
+      const isValid = checksum === digits[digits.length - 1];
+      if (!isValid) {
+        console.log('[Barcode] Checksum failed:', code);
+      }
+      return isValid;
+    }
 
     Quagga.init({
       inputStream: {
@@ -255,17 +286,29 @@ async function startQuaggaScanner() {
     Quagga.onDetected((result) => {
       if (result.codeResult && result.codeResult.code) {
         const code = result.codeResult.code;
+        const confidence = result.codeResult.confidence || 0;
         const now = Date.now();
 
-        // Débounce: ignorer TOUS les codes détectés trop rapidement (même les différents)
-        // Cela évite les lectures erratiques du scanner (7 codes différents en 2s)
+        // 1. Vérifier confiance minimum (évite détections floues)
+        if (confidence < 0.8) {
+          console.log('[Quagga] Low confidence:', confidence, 'code:', code);
+          return;
+        }
+
+        // 2. Valider format barcode (EAN/UPC valide, checksum correct)
+        if (!isValidBarcode(code)) {
+          console.log('[Quagga] Invalid barcode structure:', code);
+          return;
+        }
+
+        // 3. Débounce: ignorer les détections trop rapides (évite faux positifs)
         if (now - lastDetectionTime < DEBOUNCE_DELAY) {
           console.log('[Quagga] Ignored (debounce):', code);
           return;
         }
 
         lastDetectionTime = now;
-        console.log('[Quagga] Code detected:', code);
+        console.log('[Quagga] Valid code detected:', code, 'confidence:', confidence.toFixed(2));
         handleQrScan(code);
       }
     });
