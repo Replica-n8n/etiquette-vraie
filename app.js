@@ -261,8 +261,13 @@ async function startQuaggaScanner() {
     let frameCount = 0;
     Quagga.onProcessed((result) => {
       frameCount++;
-      if (frameCount % 30 === 0) {  // Log every 30 frames (~1 per second at 30fps)
-        console.log('[Quagga] Processing frame', frameCount, '- has codeResult:', !!(result && result.codeResult));
+      if (frameCount % 30 === 0) {
+        const hasBox = result && result.boxes && result.boxes.length > 0;
+        const hasCode = !!(result && result.codeResult);
+        console.log('[Quagga] Frame', frameCount, '- boxes:', hasBox ? result.boxes.length : 0, 'codeResult:', hasCode);
+        if (result && result.codeResult) {
+          console.log('  └─ Code:', result.codeResult.code, 'Confidence:', (result.codeResult.confidence || 0).toFixed(2));
+        }
       }
     });
 
@@ -304,13 +309,17 @@ async function startQuaggaScanner() {
       },
       decoder: {
         readers: ['ean_reader', 'ean_8_reader', 'upc_reader', 'upc_e_reader', 'codabar_reader', 'code_128_reader'],
-        debug: false
+        debug: {
+          drawBoundingBox: false,
+          drawScanline: false,
+          showPattern: false
+        }
       },
       locator: {
-        halfSample: false,
+        halfSample: true,
         patchSize: 'medium'
       },
-      frequency: 10,
+      frequency: 30,
       multiple: false
     }, (err) => {
       if (err) {
