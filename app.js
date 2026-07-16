@@ -257,6 +257,32 @@ async function startQuaggaScanner() {
       return checksum === digits[12];
     }
 
+    // Register listener BEFORE init
+    Quagga.onDetected((result) => {
+      if (result.codeResult && result.codeResult.code) {
+        const code = result.codeResult.code;
+        const confidence = result.codeResult.confidence || 0;
+        const now = Date.now();
+        const format = result.codeResult.format || 'unknown';
+
+        console.log('[Quagga] Detected:', code, '| Format:', format, '| Confidence:', confidence.toFixed(2));
+
+        if (!/^\d{7,}$/.test(code)) {
+          console.log('[Quagga] Rejected: not digits or too short');
+          return;
+        }
+
+        if (now - lastDetectionTime < DEBOUNCE_DELAY) {
+          console.log('[Quagga] Rejected: debounce active');
+          return;
+        }
+
+        lastDetectionTime = now;
+        console.log('[Quagga] ✅ ACCEPTED:', code);
+        handleQrScan(code);
+      }
+    });
+
     Quagga.init({
       inputStream: {
         type: 'LiveStream',
@@ -284,38 +310,6 @@ async function startQuaggaScanner() {
         return;
       }
       console.log('[Quagga] ✅ Initialized successfully');
-
-      // IMPORTANT: Enregistrer onDetected AVANT start()
-      Quagga.onDetected((result) => {
-        if (result.codeResult && result.codeResult.code) {
-          const code = result.codeResult.code;
-          const confidence = result.codeResult.confidence || 0;
-          const now = Date.now();
-          const format = result.codeResult.format || 'unknown';
-
-          // DEBUG: Log TOUT ce que Quagga détecte
-          console.log('[Quagga] Detected:', code, '| Format:', format, '| Confidence:', confidence.toFixed(2));
-
-          // 1. Valider format barcode (7+ chiffres)
-          if (!/^\d{7,}$/.test(code)) {
-            console.log('[Quagga] Rejected: not digits or too short');
-            return;
-          }
-
-          // 2. Débounce: ignorer les détections trop rapides
-          if (now - lastDetectionTime < DEBOUNCE_DELAY) {
-            console.log('[Quagga] Rejected: debounce active');
-            return;
-          }
-
-          // Code accepted!
-          lastDetectionTime = now;
-          console.log('[Quagga] ✅ ACCEPTED:', code);
-          handleQrScan(code);
-        }
-      });
-
-      // NOW start scanning (after onDetected is registered)
       Quagga.start();
       console.log('[Quagga] ✅ Started scanning');
       scanStatus.textContent = '✓ Caméra prête - montre un barcode';
