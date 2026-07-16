@@ -293,27 +293,32 @@ async function startQuaggaScanner() {
         const code = result.codeResult.code;
         const confidence = result.codeResult.confidence || 0;
         const now = Date.now();
+        const format = result.codeResult.format || 'unknown';
 
-        // 1. Vérifier confiance minimum (plus tolérant: 60% au lieu de 80%)
-        if (confidence < 0.6) {
-          console.log('[Quagga] Very low confidence:', confidence.toFixed(2), 'code:', code);
+        // DEBUG: Log TOUT ce que Quagga détecte
+        console.log('[Quagga] Detected:', code, '| Format:', format, '| Confidence:', confidence.toFixed(2));
+
+        // 1. Vérifier confiance minimum (très tolérant: 30%)
+        if (confidence < 0.3) {
+          console.log('[Quagga] Rejected: confidence too low');
           return;
         }
 
-        // 2. Valider format barcode (EAN/UPC valide)
-        if (!isValidBarcode(code)) {
-          console.log('[Quagga] Invalid barcode format:', code);
+        // 2. Valider format barcode (assouplissant: n'importe quel nombre de chiffres)
+        if (!/^\d{7,}$/.test(code)) {
+          console.log('[Quagga] Rejected: not all digits or too short. Code:', code);
           return;
         }
 
-        // 3. Débounce: ignorer les détections trop rapides (1.2s - moins strict)
+        // 3. Débounce: ignorer les détections trop rapides
         if (now - lastDetectionTime < DEBOUNCE_DELAY) {
-          console.log('[Quagga] Ignored (debounce):', code);
+          console.log('[Quagga] Rejected: debounce active');
           return;
         }
 
+        // Code accepted!
         lastDetectionTime = now;
-        console.log('[Quagga] Code detected:', code, 'confidence:', confidence.toFixed(2));
+        console.log('[Quagga] ✅ ACCEPTED:', code, '| Confidence:', confidence.toFixed(2));
         handleQrScan(code);
       }
     });
