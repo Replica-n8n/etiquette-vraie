@@ -1,6 +1,6 @@
 // Display app version
 const COMMIT_HASH = 'scanner-validation';
-const APP_VERSION = 'v1784100000';
+const APP_VERSION = 'v1784110000';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
