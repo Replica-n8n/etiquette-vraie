@@ -283,24 +283,9 @@ async function startQuaggaScanner() {
         return;
       }
       console.log('[Quagga] ✅ Initialized successfully');
-      Quagga.start();
-      console.log('[Quagga] ✅ Started scanning');
-      scanStatus.textContent = '✓ Caméra prête - montre un barcode';
-      quaggaInitialized = true;
 
-      // Log every 5 seconds to confirm Quagga is running
-      setInterval(() => {
-        console.log('[Quagga] Still listening...');
-      }, 5000);
-    });
-
-    // Also log if Quagga gets stopped
-    Quagga.onProcessed((result) => {
-      // Just log that Quagga is processing frames
-      // (This happens every frame, so don't spam - only log if something changes)
-    });
-
-    Quagga.onDetected((result) => {
+      // IMPORTANT: Enregistrer onDetected AVANT start()
+      Quagga.onDetected((result) => {
       if (result.codeResult && result.codeResult.code) {
         const code = result.codeResult.code;
         const confidence = result.codeResult.confidence || 0;
@@ -333,6 +318,18 @@ async function startQuaggaScanner() {
         console.log('[Quagga] ✅ ACCEPTED:', code, '| Confidence:', confidence.toFixed(2));
         handleQrScan(code);
       }
+      });
+
+      // NOW start scanning (after onDetected is registered)
+      Quagga.start();
+      console.log('[Quagga] ✅ Started scanning');
+      scanStatus.textContent = '✓ Caméra prête - montre un barcode';
+      quaggaInitialized = true;
+
+      // Log every 5 seconds to confirm Quagga is running
+      setInterval(() => {
+        console.log('[Quagga] Still listening...');
+      }, 5000);
     });
   } catch (err) {
     console.error('[Quagga] Error:', err);
