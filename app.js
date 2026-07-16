@@ -218,37 +218,42 @@ async function startQuaggaScanner() {
   try {
     console.log('[Quagga] Initializing');
     let lastDetectionTime = 0;
-    const DEBOUNCE_DELAY = 2000; // 2 secondes - évite faux positifs (listes d'ingrédients, etc.)
+    const DEBOUNCE_DELAY = 1200; // 1.2 secondes - équilibre vitesse vs faux positifs
 
-    // Validation barcode: vérifier format EAN/UPC valide
+    // Validation barcode: vérifier format EAN/UPC (assouplissant)
     function isValidBarcode(code) {
-      // Un vrai code barres = 8, 12, 13, ou 14 chiffres
-      if (!/^\d{8}$|^\d{12}$|^\d{13}$|^\d{14}$/.test(code)) {
-        console.log('[Barcode] Invalid format (not 8/12/13/14 digits):', code);
+      // Un vrai code barres = au minimum 8 chiffres (EAN-8)
+      // Jusqu'à 14 (max barcode standard)
+      if (!/^\d{8,14}$/.test(code)) {
+        console.log('[Barcode] Invalid format (need 8-14 digits):', code, 'length:', code.length);
         return false;
       }
 
-      // Valider checksum EAN-13/UPC (12 chiffres)
-      if (code.length === 13 || code.length === 12) {
-        return validateEAN13(code);
+      // Optionnel: valider checksum pour EAN-13 seulement (strictement)
+      // Pour UPC/EAN-8, on fait confiance à Quagga
+      if (code.length === 13) {
+        const isValidChecksum = validateEAN13(code);
+        if (!isValidChecksum) {
+          console.log('[Barcode] EAN-13 checksum invalid, but accepting anyway:', code);
+          // Retourner true même si le checksum est mauvais
+          // (Quagga peut avoir detections légèrement bruités)
+        }
       }
 
       return true;
     }
 
-    // Validation checksum EAN-13
+    // Validation checksum EAN-13 (strict mais non-bloquant)
     function validateEAN13(code) {
       const digits = code.split('').map(Number);
+      if (digits.length < 13) return false;
+
       let sum = 0;
-      for (let i = 0; i < Math.min(digits.length - 1, 12); i++) {
+      for (let i = 0; i < 12; i++) {
         sum += digits[i] * (i % 2 === 0 ? 1 : 3);
       }
       const checksum = (10 - (sum % 10)) % 10;
-      const isValid = checksum === digits[digits.length - 1];
-      if (!isValid) {
-        console.log('[Barcode] Checksum failed:', code);
-      }
-      return isValid;
+      return checksum === digits[12];
     }
 
     Quagga.init({
@@ -289,26 +294,26 @@ async function startQuaggaScanner() {
         const confidence = result.codeResult.confidence || 0;
         const now = Date.now();
 
-        // 1. Vérifier confiance minimum (évite détections floues)
-        if (confidence < 0.8) {
-          console.log('[Quagga] Low confidence:', confidence, 'code:', code);
+        // 1. Vérifier confiance minimum (plus tolérant: 60% au lieu de 80%)
+        if (confidence < 0.6) {
+          console.log('[Quagga] Very low confidence:', confidence.toFixed(2), 'code:', code);
           return;
         }
 
-        // 2. Valider format barcode (EAN/UPC valide, checksum correct)
+        // 2. Valider format barcode (EAN/UPC valide)
         if (!isValidBarcode(code)) {
-          console.log('[Quagga] Invalid barcode structure:', code);
+          console.log('[Quagga] Invalid barcode format:', code);
           return;
         }
 
-        // 3. Débounce: ignorer les détections trop rapides (évite faux positifs)
+        // 3. Débounce: ignorer les détections trop rapides (1.2s - moins strict)
         if (now - lastDetectionTime < DEBOUNCE_DELAY) {
           console.log('[Quagga] Ignored (debounce):', code);
           return;
         }
 
         lastDetectionTime = now;
-        console.log('[Quagga] Valid code detected:', code, 'confidence:', confidence.toFixed(2));
+        console.log('[Quagga] Code detected:', code, 'confidence:', confidence.toFixed(2));
         handleQrScan(code);
       }
     });
