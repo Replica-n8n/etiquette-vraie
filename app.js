@@ -278,14 +278,26 @@ async function startQuaggaScanner() {
       multiple: false
     }, (err) => {
       if (err) {
-        console.error('[Quagga] Init error:', err);
-        scanStatus.textContent = 'Erreur d\'accès à la caméra. Vérifie les permissions.';
+        console.error('[Quagga] ❌ INIT ERROR:', err);
+        scanStatus.textContent = 'Erreur caméra - Check console';
         return;
       }
-      console.log('[Quagga] Started successfully');
+      console.log('[Quagga] ✅ Initialized successfully');
       Quagga.start();
-      scanStatus.textContent = '✓ Caméra prête';
+      console.log('[Quagga] ✅ Started scanning');
+      scanStatus.textContent = '✓ Caméra prête - montre un barcode';
       quaggaInitialized = true;
+
+      // Log every 5 seconds to confirm Quagga is running
+      setInterval(() => {
+        console.log('[Quagga] Still listening...');
+      }, 5000);
+    });
+
+    // Also log if Quagga gets stopped
+    Quagga.onProcessed((result) => {
+      // Just log that Quagga is processing frames
+      // (This happens every frame, so don't spam - only log if something changes)
     });
 
     Quagga.onDetected((result) => {
