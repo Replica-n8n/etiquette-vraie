@@ -257,6 +257,15 @@ async function startQuaggaScanner() {
       return checksum === digits[12];
     }
 
+    // Debug: log every frame to see if Quagga is processing
+    let frameCount = 0;
+    Quagga.onProcessed((result) => {
+      frameCount++;
+      if (frameCount % 30 === 0) {  // Log every 30 frames (~1 per second at 30fps)
+        console.log('[Quagga] Processing frame', frameCount, '- has codeResult:', !!result.codeResult);
+      }
+    });
+
     // Register listener BEFORE init
     Quagga.onDetected((result) => {
       if (result.codeResult && result.codeResult.code) {
