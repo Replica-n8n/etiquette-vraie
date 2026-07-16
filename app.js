@@ -1,6 +1,6 @@
 // Display app version
-const COMMIT_HASH = 'scanner-validation';
-const APP_VERSION = 'v1784150000';
+const COMMIT_HASH = 'html5-qrcode';
+const APP_VERSION = 'v1784200000';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -15,9 +15,7 @@ const searchStatus = document.getElementById('search-status');
 const resultsList = document.getElementById('results-list');
 const backButton = document.getElementById('back-button');
 
-let quaggaInitialized = false;
-let listeningInterval = null;
-let barcodeReader = null;
+let scannerInitialized = false;
 let scanningLoop = null;
 let lastOFFRequestTime = 0;
 const OFF_MIN_DELAY_MS = 1000;
@@ -211,12 +209,12 @@ function showScreen(screen) {
     resultsList.innerHTML = '';
     searchStatus.textContent = '';
   }
-  if (screen === 'scan') startQuaggaScanner();
-  else if (quaggaInitialized) stopQuaggaScanner();
+  if (screen === 'scan') startScanner();
+  else if (scannerInitialized) stopScanner();
 }
 
-async function startQuaggaScanner() {
-  if (quaggaInitialized) return;
+async function startScanner() {
+  if (scannerInitialized) return;
   const scanStatus = document.getElementById('scan-status');
   try {
     console.log('[Quagga] Initializing');
@@ -259,102 +257,78 @@ async function startQuaggaScanner() {
       return checksum === digits[12];
     }
 
-    console.log('[Quagga] Initializing with manual frame processing...');
+    console.log('[Scanner] Initializing html5-qrcode...');
 
-    Quagga.init({
-      inputStream: {
-        type: 'LiveStream',
-        constraints: {
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        target: document.querySelector('#qr-reader')
+    const html5QrCode = new Html5Qrcode('qr-reader');
+
+    html5QrCode.start(
+      { facingMode: 'environment' },
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.UPC_A
+        ]
       },
-      decoder: {
-        readers: ['ean_reader', 'ean_8_reader', 'code_128_reader', 'upc_reader'],
-        debug: { drawBoundingBox: false, drawScanline: false, showPattern: false }
+      (decodedText, decodedResult) => {
+        const now = Date.now();
+        console.log('[Scanner] Detected:', decodedText);
+
+        if (!/^\d{7,}$/.test(decodedText)) {
+          console.log('[Scanner] Rejected: format');
+          return;
+        }
+
+        if (now - lastDetectionTime < DEBOUNCE_DELAY) {
+          console.log('[Scanner] Rejected: debounce');
+          return;
+        }
+
+        lastDetectionTime = now;
+        console.log('[Scanner] ✅ ACCEPTED:', decodedText);
+        handleQrScan(decodedText);
       },
-      locator: { halfSample: true, patchSize: 'x-small' },
-      frequency: 60,
-      multiple: false
-    }, (err) => {
-      if (err) {
-        console.error('[Quagga] ❌ INIT ERROR:', err);
-        scanStatus.textContent = 'Erreur caméra';
-        return;
+      (err) => {
+        // Silently ignore frame errors
       }
-      console.log('[Quagga] ✅ Initialized');
-      Quagga.start();
-      console.log('[Quagga] ✅ Started');
+    ).then(() => {
+      console.log('[Scanner] ✅ Started');
       scanStatus.textContent = '✓ Prêt';
-      quaggaInitialized = true;
-
-      // Manual frame processing every 50ms
-      let frameCount = 0;
-      scanningLoop = setInterval(() => {
-        frameCount++;
-        try {
-          Quagga.decodeSingle({
-            src: '#qr-reader canvas',
-            decoder: {
-              readers: ['ean_reader', 'ean_8_reader', 'code_128_reader', 'upc_reader'],
-              debug: false
-            }
-          }, (result) => {
-            if (result && result.codeResult) {
-              const code = result.codeResult.code;
-              const now = Date.now();
-              console.log('[Quagga] Detected:', code);
-
-              if (!/^\d{7,}$/.test(code)) {
-                console.log('[Quagga] Rejected: format');
-                return;
-              }
-
-              if (now - lastDetectionTime < DEBOUNCE_DELAY) {
-                console.log('[Quagga] Rejected: debounce');
-                return;
-              }
-
-              lastDetectionTime = now;
-              console.log('[Quagga] ✅ ACCEPTED:', code);
-              handleQrScan(code);
-            }
-          });
-        } catch (e) {
-          // Silently ignore errors
-        }
-
-        if (frameCount % 30 === 0) {
-          console.log('[Quagga] Still listening... frame', frameCount);
-        }
-      }, 50);
+      scannerInitialized = true;
+      scanningLoop = html5QrCode;
+    }).catch((err) => {
+      console.error('[Scanner] ❌ INIT ERROR:', err);
+      scanStatus.textContent = 'Erreur caméra';
     });
   } catch (err) {
-    console.error('[Quagga] Error:', err);
+    console.error('[Scanner] Error:', err);
     scanStatus.textContent = 'Erreur caméra';
   }
 }
 
-function stopQuaggaScanner() {
-  if (!quaggaInitialized) return;
+function stopScanner() {
+  if (!scannerInitialized) return;
   try {
     if (scanningLoop) {
-      clearInterval(scanningLoop);
-      scanningLoop = null;
+      scanningLoop.stop().then(() => {
+        scannerInitialized = false;
+        console.log('[Scanner] ✅ Stopped');
+      }).catch((err) => {
+        console.error('[Scanner] Stop error:', err);
+      });
     }
-    Quagga.stop();
-    quaggaInitialized = false;
-    console.log('[Quagga] ✅ Stopped');
   } catch (err) {
-    console.error('[Quagga] Stop error:', err);
+    console.error('[Scanner] Stop error:', err);
   }
 }
 
 async function handleQrScan(code) {
   if (!code) return;
-  stopQuaggaScanner();
+  stopScanner();
   showScreen('result');
   showResultLoading();
 
