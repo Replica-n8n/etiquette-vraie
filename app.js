@@ -286,39 +286,32 @@ async function startQuaggaScanner() {
 
       // IMPORTANT: Enregistrer onDetected AVANT start()
       Quagga.onDetected((result) => {
-      if (result.codeResult && result.codeResult.code) {
-        const code = result.codeResult.code;
-        const confidence = result.codeResult.confidence || 0;
-        const now = Date.now();
-        const format = result.codeResult.format || 'unknown';
+        if (result.codeResult && result.codeResult.code) {
+          const code = result.codeResult.code;
+          const confidence = result.codeResult.confidence || 0;
+          const now = Date.now();
+          const format = result.codeResult.format || 'unknown';
 
-        // DEBUG: Log TOUT ce que Quagga détecte
-        console.log('[Quagga] Detected:', code, '| Format:', format, '| Confidence:', confidence.toFixed(2));
+          // DEBUG: Log TOUT ce que Quagga détecte
+          console.log('[Quagga] Detected:', code, '| Format:', format, '| Confidence:', confidence.toFixed(2));
 
-        // 1. Confiance minimum: 0% (accepter même les détections faibles)
-        // Quagga retourne parfois 0.00 même pour des codes valides
-        if (confidence < 0.0) {  // This will never be true, but kept for clarity
-          console.log('[Quagga] Rejected: confidence too low');
-          return;
+          // 1. Valider format barcode (7+ chiffres)
+          if (!/^\d{7,}$/.test(code)) {
+            console.log('[Quagga] Rejected: not digits or too short');
+            return;
+          }
+
+          // 2. Débounce: ignorer les détections trop rapides
+          if (now - lastDetectionTime < DEBOUNCE_DELAY) {
+            console.log('[Quagga] Rejected: debounce active');
+            return;
+          }
+
+          // Code accepted!
+          lastDetectionTime = now;
+          console.log('[Quagga] ✅ ACCEPTED:', code);
+          handleQrScan(code);
         }
-
-        // 2. Valider format barcode (assouplissant: n'importe quel nombre de chiffres)
-        if (!/^\d{7,}$/.test(code)) {
-          console.log('[Quagga] Rejected: not all digits or too short. Code:', code);
-          return;
-        }
-
-        // 3. Débounce: ignorer les détections trop rapides
-        if (now - lastDetectionTime < DEBOUNCE_DELAY) {
-          console.log('[Quagga] Rejected: debounce active');
-          return;
-        }
-
-        // Code accepted!
-        lastDetectionTime = now;
-        console.log('[Quagga] ✅ ACCEPTED:', code, '| Confidence:', confidence.toFixed(2));
-        handleQrScan(code);
-      }
       });
 
       // NOW start scanning (after onDetected is registered)
