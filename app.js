@@ -1,6 +1,6 @@
 // Display app version
 const COMMIT_HASH = 'scanner-validation';
-const APP_VERSION = 'v1784130000';
+const APP_VERSION = 'v1784140000';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -16,7 +16,9 @@ const resultsList = document.getElementById('results-list');
 const backButton = document.getElementById('back-button');
 
 let quaggaInitialized = false;
-let listeningInterval = null;  // Track the "Still listening" interval so we can stop it
+let listeningInterval = null;
+let barcodeReader = null;
+let scanningLoop = null;
 let lastOFFRequestTime = 0;
 const OFF_MIN_DELAY_MS = 1000;
 let currentRiskyAdditives = [];
@@ -257,89 +259,54 @@ async function startQuaggaScanner() {
       return checksum === digits[12];
     }
 
-    // Debug: log every frame to see if Quagga is processing
-    let frameCount = 0;
-    Quagga.onProcessed((result) => {
-      frameCount++;
-      if (frameCount % 30 === 0) {
-        const hasBox = result && result.boxes && result.boxes.length > 0;
-        const hasCode = !!(result && result.codeResult);
-        console.log('[Quagga] Frame', frameCount, '- boxes:', hasBox ? result.boxes.length : 0, 'codeResult:', hasCode);
-        if (result && result.codeResult) {
-          console.log('  └─ Code:', result.codeResult.code, 'Confidence:', (result.codeResult.confidence || 0).toFixed(2));
+    console.log('[ZXing] Initializing...');
+    const videoElement = document.querySelector('#qr-reader');
+
+    // Use ZXing BarcodeReader
+    const codeReader = new ZXing.BrowserBarcodeReader(undefined, { delayMs: 100 });
+    barcodeReader = codeReader;
+
+    codeReader.decodeFromConstraints(
+      { video: { facingMode: 'environment', width: { min: 640 }, height: { min: 480 } } },
+      videoElement,
+      (result, err) => {
+        if (result) {
+          const code = result.getText();
+          const format = result.getFormatName();
+          const now = Date.now();
+
+          console.log('[ZXing] Detected:', code, '| Format:', format);
+
+          if (!/^\d{7,}$/.test(code)) {
+            console.log('[ZXing] Rejected: not digits or too short');
+            return;
+          }
+
+          if (now - lastDetectionTime < DEBOUNCE_DELAY) {
+            console.log('[ZXing] Rejected: debounce active');
+            return;
+          }
+
+          lastDetectionTime = now;
+          console.log('[ZXing] ✅ ACCEPTED:', code);
+          handleQrScan(code);
+        }
+        if (err && !(err instanceof ZXing.NotFoundException)) {
+          console.error('[ZXing] Error:', err);
         }
       }
-    });
+    );
 
-    // Register listener BEFORE init
-    Quagga.onDetected((result) => {
-      if (result.codeResult && result.codeResult.code) {
-        const code = result.codeResult.code;
-        const confidence = result.codeResult.confidence || 0;
-        const now = Date.now();
-        const format = result.codeResult.format || 'unknown';
+    console.log('[ZXing] ✅ Initialized successfully');
+    scanStatus.textContent = '✓ Caméra prête - montre un barcode';
+    quaggaInitialized = true;
 
-        console.log('[Quagga] Detected:', code, '| Format:', format, '| Confidence:', confidence.toFixed(2));
-
-        if (!/^\d{7,}$/.test(code)) {
-          console.log('[Quagga] Rejected: not digits or too short');
-          return;
-        }
-
-        if (now - lastDetectionTime < DEBOUNCE_DELAY) {
-          console.log('[Quagga] Rejected: debounce active');
-          return;
-        }
-
-        lastDetectionTime = now;
-        console.log('[Quagga] ✅ ACCEPTED:', code);
-        handleQrScan(code);
-      }
-    });
-
-    Quagga.init({
-      inputStream: {
-        type: 'LiveStream',
-        constraints: {
-          facingMode: 'environment',
-          width: { min: 640 },
-          height: { min: 480 }
-        },
-        target: document.querySelector('#qr-reader')
-      },
-      decoder: {
-        readers: ['ean_reader', 'ean_8_reader', 'upc_reader', 'upc_e_reader', 'codabar_reader', 'code_128_reader'],
-        debug: {
-          drawBoundingBox: false,
-          drawScanline: false,
-          showPattern: false
-        }
-      },
-      locator: {
-        halfSample: true,
-        patchSize: 'small'
-      },
-      frequency: 30,
-      multiple: false
-    }, (err) => {
-      if (err) {
-        console.error('[Quagga] ❌ INIT ERROR:', err);
-        scanStatus.textContent = 'Erreur caméra - Check console';
-        return;
-      }
-      console.log('[Quagga] ✅ Initialized successfully');
-      Quagga.start();
-      console.log('[Quagga] ✅ Started scanning');
-      scanStatus.textContent = '✓ Caméra prête - montre un barcode';
-      quaggaInitialized = true;
-
-      // Log every 5 seconds to confirm Quagga is running (store so we can stop it)
-      listeningInterval = setInterval(() => {
-        console.log('[Quagga] Still listening...');
-      }, 5000);
-    });
+    // Log every 5 seconds to confirm scanning is running
+    listeningInterval = setInterval(() => {
+      console.log('[ZXing] Still listening...');
+    }, 5000);
   } catch (err) {
-    console.error('[Quagga] Error:', err);
+    console.error('[ZXing] Error:', err);
     scanStatus.textContent = 'Erreur d\'accès à la caméra. Vérifie les permissions.';
   }
 }
@@ -351,14 +318,16 @@ function stopQuaggaScanner() {
     if (listeningInterval) {
       clearInterval(listeningInterval);
       listeningInterval = null;
-      console.log('[Quagga] Stopped listening interval');
+      console.log('[ZXing] Stopped listening interval');
     }
-    // Stop Quagga
-    Quagga.stop();
+    // Stop ZXing
+    if (barcodeReader) {
+      barcodeReader.reset();
+    }
     quaggaInitialized = false;
-    console.log('[Quagga] ✅ Stopped');
+    console.log('[ZXing] ✅ Stopped');
   } catch (err) {
-    console.error('[Quagga] Stop error:', err);
+    console.error('[ZXing] Stop error:', err);
   }
 }
 
