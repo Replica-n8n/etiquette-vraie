@@ -295,8 +295,9 @@ async function startQuaggaScanner() {
         // DEBUG: Log TOUT ce que Quagga détecte
         console.log('[Quagga] Detected:', code, '| Format:', format, '| Confidence:', confidence.toFixed(2));
 
-        // 1. Vérifier confiance minimum (très tolérant: 30%)
-        if (confidence < 0.3) {
+        // 1. Confiance minimum: 0% (accepter même les détections faibles)
+        // Quagga retourne parfois 0.00 même pour des codes valides
+        if (confidence < 0.0) {  // This will never be true, but kept for clarity
           console.log('[Quagga] Rejected: confidence too low');
           return;
         }
