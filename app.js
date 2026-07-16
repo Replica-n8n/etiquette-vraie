@@ -16,6 +16,7 @@ const resultsList = document.getElementById('results-list');
 const backButton = document.getElementById('back-button');
 
 let quaggaInitialized = false;
+let listeningInterval = null;  // Track the "Still listening" interval so we can stop it
 let lastOFFRequestTime = 0;
 const OFF_MIN_DELAY_MS = 1000;
 let currentRiskyAdditives = [];
@@ -320,8 +321,8 @@ async function startQuaggaScanner() {
       scanStatus.textContent = '✓ Caméra prête - montre un barcode';
       quaggaInitialized = true;
 
-      // Log every 5 seconds to confirm Quagga is running
-      setInterval(() => {
+      // Log every 5 seconds to confirm Quagga is running (store so we can stop it)
+      listeningInterval = setInterval(() => {
         console.log('[Quagga] Still listening...');
       }, 5000);
     });
@@ -334,8 +335,14 @@ async function startQuaggaScanner() {
 function stopQuaggaScanner() {
   if (!quaggaInitialized) return;
   try {
+    // Stop the listening interval
+    if (listeningInterval) {
+      clearInterval(listeningInterval);
+      listeningInterval = null;
+      console.log('[Quagga] Stopped listening interval');
+    }
+    // Stop Quagga
     Quagga.stop();
-    // Note: Quagga.offDetected() may not exist - just stop is enough
     quaggaInitialized = false;
     console.log('[Quagga] ✅ Stopped');
   } catch (err) {
