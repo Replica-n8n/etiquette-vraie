@@ -1,6 +1,6 @@
 // Display app version
 const COMMIT_HASH = 'html5-qrcode';
-const APP_VERSION = 'v1784200000';
+const APP_VERSION = 'v1784210000';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -259,7 +259,14 @@ async function startScanner() {
 
     console.log('[Scanner] Initializing html5-qrcode...');
 
-    const html5QrCode = new Html5Qrcode('qr-reader');
+    // Vérifier que la libraire est chargée
+    if (typeof window.Html5Qrcode === 'undefined') {
+      console.error('[Scanner] Html5Qrcode not loaded');
+      scanStatus.textContent = 'Erreur: libraire non chargée';
+      return;
+    }
+
+    const html5QrCode = new window.Html5Qrcode('qr-reader');
 
     html5QrCode.start(
       { facingMode: 'environment' },
@@ -268,10 +275,10 @@ async function startScanner() {
         qrbox: { width: 250, height: 250 },
         aspectRatio: 1.0,
         formatsToSupport: [
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.UPC_A
+          window.Html5QrcodeSupportedFormats.EAN_13,
+          window.Html5QrcodeSupportedFormats.EAN_8,
+          window.Html5QrcodeSupportedFormats.CODE_128,
+          window.Html5QrcodeSupportedFormats.UPC_A
         ]
       },
       (decodedText, decodedResult) => {
