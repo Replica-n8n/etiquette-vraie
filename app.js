@@ -1,6 +1,6 @@
 // Display app version
 const COMMIT_HASH = 'html5-qrcode';
-const APP_VERSION = 'v1784210000';
+const APP_VERSION = 'v1784220000';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -257,60 +257,65 @@ async function startScanner() {
       return checksum === digits[12];
     }
 
-    console.log('[Scanner] Initializing html5-qrcode...');
+    console.log('[Scanner] Initializing Barcode Detection API...');
 
-    // Vérifier que la libraire est chargée
-    if (typeof window.Html5Qrcode === 'undefined') {
-      console.error('[Scanner] Html5Qrcode not loaded');
-      scanStatus.textContent = 'Erreur: libraire non chargée';
-      return;
+    // Check if BarcodeDetector is supported (native API - no CDN needed)
+    if ('BarcodeDetector' in window) {
+      console.log('[Scanner] Using native Barcode Detection API');
+      const formats = [
+        window.BarcodeFormat?.EAN_13,
+        window.BarcodeFormat?.EAN_8,
+        window.BarcodeFormat?.CODE_128,
+        window.BarcodeFormat?.UPC_A
+      ].filter(Boolean);
+
+      const detector = new window.BarcodeDetector({ formats });
+      const videoElement = document.createElement('video');
+      const canvas = document.getElementById('qr-reader');
+
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+      }).then((stream) => {
+        videoElement.srcObject = stream;
+        videoElement.play();
+        console.log('[Scanner] ✅ Camera started');
+        scanStatus.textContent = '✓ Prêt';
+        scannerInitialized = true;
+
+        scanningLoop = setInterval(async () => {
+          try {
+            const barcodes = await detector.detect(videoElement);
+            if (barcodes.length > 0) {
+              const code = barcodes[0].rawValue;
+              const now = Date.now();
+              console.log('[Scanner] Detected:', code);
+
+              if (!/^\d{7,}$/.test(code)) {
+                console.log('[Scanner] Rejected: format');
+                return;
+              }
+
+              if (now - lastDetectionTime < DEBOUNCE_DELAY) {
+                console.log('[Scanner] Rejected: debounce');
+                return;
+              }
+
+              lastDetectionTime = now;
+              console.log('[Scanner] ✅ ACCEPTED:', code);
+              handleQrScan(code);
+            }
+          } catch (err) {
+            // Silently ignore frame errors
+          }
+        }, 100);
+      }).catch((err) => {
+        console.error('[Scanner] Camera error:', err);
+        scanStatus.textContent = 'Erreur caméra';
+      });
+    } else {
+      console.warn('[Scanner] BarcodeDetector not supported - fallback needed');
+      scanStatus.textContent = 'Scanner non supporté sur cet appareil';
     }
-
-    const html5QrCode = new window.Html5Qrcode('qr-reader');
-
-    html5QrCode.start(
-      { facingMode: 'environment' },
-      {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
-        formatsToSupport: [
-          window.Html5QrcodeSupportedFormats.EAN_13,
-          window.Html5QrcodeSupportedFormats.EAN_8,
-          window.Html5QrcodeSupportedFormats.CODE_128,
-          window.Html5QrcodeSupportedFormats.UPC_A
-        ]
-      },
-      (decodedText, decodedResult) => {
-        const now = Date.now();
-        console.log('[Scanner] Detected:', decodedText);
-
-        if (!/^\d{7,}$/.test(decodedText)) {
-          console.log('[Scanner] Rejected: format');
-          return;
-        }
-
-        if (now - lastDetectionTime < DEBOUNCE_DELAY) {
-          console.log('[Scanner] Rejected: debounce');
-          return;
-        }
-
-        lastDetectionTime = now;
-        console.log('[Scanner] ✅ ACCEPTED:', decodedText);
-        handleQrScan(decodedText);
-      },
-      (err) => {
-        // Silently ignore frame errors
-      }
-    ).then(() => {
-      console.log('[Scanner] ✅ Started');
-      scanStatus.textContent = '✓ Prêt';
-      scannerInitialized = true;
-      scanningLoop = html5QrCode;
-    }).catch((err) => {
-      console.error('[Scanner] ❌ INIT ERROR:', err);
-      scanStatus.textContent = 'Erreur caméra';
-    });
   } catch (err) {
     console.error('[Scanner] Error:', err);
     scanStatus.textContent = 'Erreur caméra';
@@ -321,13 +326,11 @@ function stopScanner() {
   if (!scannerInitialized) return;
   try {
     if (scanningLoop) {
-      scanningLoop.stop().then(() => {
-        scannerInitialized = false;
-        console.log('[Scanner] ✅ Stopped');
-      }).catch((err) => {
-        console.error('[Scanner] Stop error:', err);
-      });
+      clearInterval(scanningLoop);
+      scanningLoop = null;
     }
+    scannerInitialized = false;
+    console.log('[Scanner] ✅ Stopped');
   } catch (err) {
     console.error('[Scanner] Stop error:', err);
   }
