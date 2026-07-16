@@ -335,8 +335,9 @@ function stopQuaggaScanner() {
   if (!quaggaInitialized) return;
   try {
     Quagga.stop();
-    Quagga.offDetected();
+    // Note: Quagga.offDetected() may not exist - just stop is enough
     quaggaInitialized = false;
+    console.log('[Quagga] ✅ Stopped');
   } catch (err) {
     console.error('[Quagga] Stop error:', err);
   }
