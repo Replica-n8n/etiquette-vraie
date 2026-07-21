@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(app.js)|Write(app.js)",
+            "command": "echo '{\"systemMessage\": \"⚠️  REMINDER: You just modified app.js. Follow Rule 1 from validation_rules.md: START DEV SERVER → OPEN BROWSER → TEST THE FEATURE LOCALLY → Verify it works (not just should work). ONLY THEN ask user to test. Do not skip this.\"}'",
+            "statusMessage": "Testing reminder..."
+          }
+        ]
+      }
+    ]
+  }
+}

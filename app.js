@@ -1,6 +1,6 @@
 // Display app version
-const COMMIT_HASH = 'html5-qrcode';
-const APP_VERSION = 'v1784220000';
+const COMMIT_HASH = 'barcode-detector-logging';
+const APP_VERSION = 'v1784220001';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
