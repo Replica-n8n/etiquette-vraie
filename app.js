@@ -259,7 +259,7 @@ async function startScanner() {
 
     console.log('[Scanner] Initializing Barcode Detection API...');
 
-    // Check if BarcodeDetector is supported (native API - no CDN needed)
+    // Check if BarcodeDetector is supported (native API - Android only)
     if ('BarcodeDetector' in window) {
       console.log('[Scanner] Using native Barcode Detection API');
       const formats = [
@@ -309,8 +309,26 @@ async function startScanner() {
           }
         }, 100);
       }).catch((err) => {
-        console.error('[Scanner] Camera error:', err);
-        scanStatus.textContent = 'Erreur caméra';
+        const errInfo = {
+          name: err.name,
+          message: err.message,
+          code: err.code,
+          toString: err.toString()
+        };
+        console.error('[Scanner] Camera error - full details:', errInfo);
+
+        let userMsg = 'Erreur caméra';
+        if (err.name === 'NotAllowedError') {
+          userMsg = 'Permissions caméra refusées. Va dans les paramètres du téléphone et autorise l\'accès à la caméra.';
+        } else if (err.name === 'NotFoundError') {
+          userMsg = 'Pas de caméra trouvée sur l\'appareil.';
+        } else if (err.name === 'NotReadableError') {
+          userMsg = 'La caméra est déjà utilisée. Essaie plus tard.';
+        } else if (err.name === 'SecurityError') {
+          userMsg = 'Contexte non sécurisé. L\'app doit utiliser HTTPS.';
+        }
+
+        scanStatus.textContent = userMsg;
       });
     } else {
       console.warn('[Scanner] BarcodeDetector not supported - fallback needed');
