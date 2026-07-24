@@ -1,6 +1,6 @@
 // Display app version
-const COMMIT_HASH = 'fix-barcode-formats-and-video-dom';
-const APP_VERSION = 'v1784220002';
+const COMMIT_HASH = 'oats-bio-additive-color';
+const APP_VERSION = 'v1784220003';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -135,6 +135,62 @@ const ADDITIVES_DATABASE = {
   'en:e951': { name: 'Aspartame', role: 'Édulcorant' },
   'en:e952': { name: 'Cyclamate', role: 'Édulcorant' },
   'en:e955': { name: 'Sucralose', role: 'Édulcorant' },
+  // Colorants / minéraux
+  'en:e100': { name: 'Curcumine', role: 'Colorant jaune' },
+  'en:e160b': { name: 'Rocou (annatto)', role: 'Colorant orange' },
+  'en:e170': { name: 'Carbonate de calcium', role: 'Régulateur d\'acidité / Colorant' },
+  // Acides / régulateurs d'acidité
+  'en:e260': { name: 'Acide acétique', role: 'Régulateur d\'acidité' },
+  'en:e270': { name: 'Acide lactique', role: 'Régulateur d\'acidité' },
+  'en:e296': { name: 'Acide malique', role: 'Régulateur d\'acidité' },
+  'en:e300': { name: 'Acide ascorbique (Vitamine C)', role: 'Antioxydant' },
+  'en:e322': { name: 'Lécithines', role: 'Émulsifiant' },
+  'en:e325': { name: 'Lactate de sodium', role: 'Régulateur d\'acidité' },
+  'en:e330': { name: 'Acide citrique', role: 'Régulateur d\'acidité' },
+  'en:e331': { name: 'Citrates de sodium', role: 'Régulateur d\'acidité' },
+  'en:e332': { name: 'Citrates de potassium', role: 'Régulateur d\'acidité' },
+  'en:e333': { name: 'Citrates de calcium', role: 'Régulateur d\'acidité' },
+  'en:e336': { name: 'Tartrates de potassium', role: 'Régulateur d\'acidité' },
+  'en:e338': { name: 'Acide phosphorique', role: 'Régulateur d\'acidité' },
+  'en:e340': { name: 'Phosphates de potassium', role: 'Régulateur d\'acidité' },
+  'en:e341': { name: 'Phosphates de calcium', role: 'Anti-agglomérant / Poudre à lever' },
+  'en:e392': { name: 'Extraits de romarin', role: 'Antioxydant' },
+  // Épaississants / gélifiants / stabilisants
+  'en:e401': { name: 'Alginate de sodium', role: 'Épaississant' },
+  'en:e406': { name: 'Agar-agar', role: 'Gélifiant' },
+  'en:e418': { name: 'Gomme gellane', role: 'Épaississant / Stabilisant' },
+  'en:e420': { name: 'Sorbitol', role: 'Édulcorant / Humectant' },
+  'en:e422': { name: 'Glycérol', role: 'Humectant' },
+  'en:e450': { name: 'Diphosphates', role: 'Poudre à lever / Stabilisant' },
+  'en:e451': { name: 'Triphosphates', role: 'Stabilisant' },
+  'en:e460': { name: 'Cellulose', role: 'Épaississant / Anti-agglomérant' },
+  'en:e461': { name: 'Méthylcellulose', role: 'Épaississant' },
+  'en:e464': { name: 'Hydroxypropylméthylcellulose', role: 'Épaississant' },
+  'en:e470': { name: 'Sels d\'acides gras', role: 'Émulsifiant / Anti-agglomérant' },
+  'en:e472e': { name: 'Esters d\'acides gras', role: 'Émulsifiant' },
+  'en:e476': { name: 'Polyricinoléate de polyglycérol', role: 'Émulsifiant' },
+  'en:e481': { name: 'Stéaroyl-2-lactylate de sodium', role: 'Émulsifiant' },
+  // Poudres à lever / sels minéraux
+  'en:e500': { name: 'Carbonates de sodium', role: 'Poudre à lever / Régulateur d\'acidité' },
+  'en:e503': { name: 'Carbonates d\'ammonium', role: 'Poudre à lever' },
+  'en:e504': { name: 'Carbonates de magnésium', role: 'Anti-agglomérant' },
+  'en:e509': { name: 'Chlorure de calcium', role: 'Affermissant' },
+  'en:e575': { name: 'Glucono-delta-lactone', role: 'Régulateur d\'acidité' },
+  // Exhausteurs de goût
+  'en:e627': { name: 'Guanylate disodique', role: 'Exhausteur de goût' },
+  'en:e631': { name: 'Inosinate disodique', role: 'Exhausteur de goût' },
+  // Enzymes
+  'en:e1100': { name: 'Amylase', role: 'Enzyme' },
+  'en:e1103': { name: 'Invertase', role: 'Enzyme' },
+  'en:e1105': { name: 'Lysozyme', role: 'Enzyme / Conservateur' },
+  // Amidons modifiés / divers
+  'en:e1400': { name: 'Dextrines', role: 'Épaississant' },
+  'en:e1404': { name: 'Amidon oxydé', role: 'Épaississant' },
+  'en:e1412': { name: 'Phosphate de diamidon', role: 'Épaississant' },
+  'en:e1414': { name: 'Phosphate de diamidon acétylé', role: 'Épaississant' },
+  'en:e1420': { name: 'Amidon acétylé', role: 'Épaississant' },
+  'en:e1442': { name: 'Phosphate de diamidon hydroxypropylé', role: 'Épaississant' },
+  'en:e1450': { name: 'Octényle succinate d\'amidon sodique', role: 'Émulsifiant / Épaississant' },
 };
 
 // Catégorisation des additifs: ok (vert), to-limit (orange), risky (rouge)
@@ -187,17 +243,39 @@ function findFlaggedAdditives(additivesTags) {
   return { risky, limited };
 }
 
-function additivesMeta(additivesN) {
-  if (additivesN === undefined || additivesN === null) return null;
-  if (additivesN === 0) return { color: '#2F6F4F', icon: '0', label: 'Aucun' };
-  if (additivesN <= 2) return { color: '#B5792A', icon: String(additivesN), label: `${additivesN} additif${additivesN > 1 ? 's' : ''}` };
-  return { color: '#C0392B', icon: String(additivesN), label: `${additivesN} additifs` };
+// La couleur reflète le niveau le PLUS dangereux des additifs présents
+// (rouge = risqué, orange = à limiter, vert = ok), pas le nombre.
+// worstCategory: 'risky' | 'limited' | 'ok' | undefined (inconnu).
+function additivesMeta(count, worstCategory) {
+  if (count === undefined || count === null) return null;
+  if (count === 0) return { color: '#2F6F4F', icon: '0', label: 'Aucun' };
+  const colorByCat = { risky: '#C0392B', limited: '#B5792A', ok: '#2F6F4F' };
+  // Additifs présents mais catégorie inconnue -> orange par prudence.
+  const color = colorByCat[worstCategory] || '#B5792A';
+  return { color, icon: String(count), label: `${count} additif${count > 1 ? 's' : ''}` };
 }
 
-function bioMeta(labelsTags) {
-  const isBio = Array.isArray(labelsTags) && labelsTags.some((tag) => BIO_LABEL_TAGS.includes(tag));
-  if (isBio) return { color: '#2F6F4F', icon: '✓', label: 'Certifié' };
+function bioMeta(labelsTags, ingredientsText) {
+  // 1) Label bio officiel = certifié
+  const certified = Array.isArray(labelsTags) && labelsTags.some((tag) => BIO_LABEL_TAGS.includes(tag));
+  if (certified) return { color: '#2F6F4F', icon: '✓', label: 'Certifié' };
+
+  // 2) Sinon, ingrédients marqués "organic"/"biologique" (souvent OFF n'a pas le label)
+  const norm = (ingredientsText || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  if (/\borganic\b|\bbiologique\b|agriculture biologique/.test(norm)) {
+    return { color: '#2F6F4F', icon: '✓', label: 'Ingrédients bio' };
+  }
   return null;
+}
+
+// Recherche l'info d'un additif, avec repli sur le code de base si sous-forme
+// (ex. 'en:e340ii' -> 'en:e340', 'en:e170i' -> 'en:e170').
+function additiveInfo(tag) {
+  if (ADDITIVES_DATABASE[tag]) return ADDITIVES_DATABASE[tag];
+  const base = tag.replace(/(?:i+|v|x)$/, '');
+  if (base !== tag && ADDITIVES_DATABASE[base]) return ADDITIVES_DATABASE[base];
+  return {};
 }
 
 function showScreen(screen) {
@@ -693,10 +771,10 @@ function renderResult(product) {
     const isRisky = RISKY_ADDITIVES[tag];
     const isLimited = LIMITED_ADDITIVES[tag];
     const category = isRisky ? 'risky' : (isLimited ? 'limited' : 'ok');
-    const info = ADDITIVES_DATABASE[tag] || {};
+    const info = additiveInfo(tag);
     return {
       code: tag.replace('en:', '').toUpperCase(),
-      name: info.name || 'Additif inconnu',
+      name: info.name || null,
       role: info.role || '',
       category: category,
       reason: isRisky ? isRisky.reason : (isLimited ? isLimited.reason : null)
@@ -755,8 +833,14 @@ function renderResult(product) {
     : null;
   renderScoreTile('nova-icon', 'nova-value', novaMeta, 'Non renseigné');
 
-  renderScoreTile('additives-icon', 'additives-value', additivesMeta(product.additives_n !== undefined ? product.additives_n : currentAllAdditives.length), 'Non renseigné');
-  renderScoreTile('bio-icon', 'bio-value', bioMeta(product.labels_tags), 'Non certifié');
+  // Couleur de la tuile additifs = niveau le plus dangereux présent (pas le nombre)
+  let worstAdditiveCat;
+  if (currentAllAdditives.some((a) => a.category === 'risky')) worstAdditiveCat = 'risky';
+  else if (currentAllAdditives.some((a) => a.category === 'limited')) worstAdditiveCat = 'limited';
+  else if (currentAllAdditives.length > 0) worstAdditiveCat = 'ok';
+  const additivesCount = product.additives_n !== undefined ? product.additives_n : currentAllAdditives.length;
+  renderScoreTile('additives-icon', 'additives-value', additivesMeta(additivesCount, worstAdditiveCat), 'Non renseigné');
+  renderScoreTile('bio-icon', 'bio-value', bioMeta(product.labels_tags, product.ingredients_text), 'Non certifié');
 
   const legalAccordion = document.getElementById('legal-accordion');
   if (legalNote && verdict === 'misleading') {
@@ -883,13 +967,14 @@ document.getElementById('additives-info-btn').addEventListener('click', () => {
     body.innerHTML = '<div class="additive-item" style="border-left-color:var(--green)"><div class="additive-code">Aucun additif</div></div>';
   } else {
     body.innerHTML = currentAllAdditives.map(additive => {
-      const borderColorMap = { ok: 'var(--green)', 'to-limit': 'var(--amber)', risky: 'var(--red)' };
+      const borderColorMap = { ok: 'var(--green)', limited: 'var(--amber)', risky: 'var(--red)' };
       const borderColor = borderColorMap[additive.category] || 'var(--green)';
+      const title = additive.name ? `${additive.code} - ${additive.name}` : additive.code;
       const roleHtml = additive.role ? `<div class="additive-role">${additive.role}</div>` : '';
       const reasonHtml = additive.reason ? `<div class="additive-reason">${additive.reason}</div>` : '';
       return `
       <div class="additive-item" style="border-left-color:${borderColor}">
-        <div class="additive-code">${additive.code} - ${additive.name}</div>
+        <div class="additive-code">${title}</div>
         ${roleHtml}
         ${reasonHtml}
       </div>

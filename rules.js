@@ -64,6 +64,7 @@ const FOOD_WORDS = [
   'noix', 'walnut', 'cajou', 'cashew', 'macadamia', 'lin', 'flax',
   'raisin', 'grape', 'kiwi', 'mure', 'blackberry', 'figue', 'fig',
   'datte', 'date', 'avocat', 'avocado', 'cranberry', 'miel', 'honey',
+  'avoine', 'oat',
 ];
 // Pattern created dynamically in findFlavorMention() to support plurals
 
@@ -123,6 +124,8 @@ const INGREDIENT_VARIANTS = {
   'cranberry': ['cranberry', 'cranberries'],
   'miel': ['miel', 'honey'],
   'honey': ['miel', 'honey'],
+  'avoine': ['avoine', 'avoines', 'oat', 'oats'],
+  'oat': ['avoine', 'avoines', 'oat', 'oats'],
 };
 
 function findFlavorMention(productName) {
