@@ -1,4 +1,4 @@
-const CACHE_NAME = 'etiquette-vraie-1784220001';
+const CACHE_NAME = 'etiquette-vraie-1784220002';
 const OFFLINE_URL = '/etiquette-vraie/index.html';
 
 const urlsToCache = [

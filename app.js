@@ -1,6 +1,6 @@
 // Display app version
-const COMMIT_HASH = 'barcode-detector-logging';
-const APP_VERSION = 'v1784220001';
+const COMMIT_HASH = 'fix-barcode-formats-and-video-dom';
+const APP_VERSION = 'v1784220002';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -17,6 +17,8 @@ const backButton = document.getElementById('back-button');
 
 let scannerInitialized = false;
 let scanningLoop = null;
+let currentStream = null;
+let currentVideo = null;
 let lastOFFRequestTime = 0;
 const OFF_MIN_DELAY_MS = 1000;
 let currentRiskyAdditives = [];
@@ -210,7 +212,7 @@ function showScreen(screen) {
     searchStatus.textContent = '';
   }
   if (screen === 'scan') startScanner();
-  else if (scannerInitialized) stopScanner();
+  else stopScanner();
 }
 
 async function startScanner() {
@@ -259,93 +261,129 @@ async function startScanner() {
 
     console.log('[Scanner] Initializing Barcode Detection API...');
 
-    // Check if BarcodeDetector is supported (native API - Android only)
-    if ('BarcodeDetector' in window) {
-      console.log('[Scanner] Using native Barcode Detection API');
-      const formats = [
-        window.BarcodeFormat?.EAN_13,
-        window.BarcodeFormat?.EAN_8,
-        window.BarcodeFormat?.CODE_128,
-        window.BarcodeFormat?.UPC_A
-      ].filter(Boolean);
+    const qrReader = document.getElementById('qr-reader');
 
-      const detector = new window.BarcodeDetector({ formats });
-      const videoElement = document.createElement('video');
-      const canvas = document.getElementById('qr-reader');
-
-      navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-      }).then((stream) => {
-        videoElement.srcObject = stream;
-        videoElement.play();
-        console.log('[Scanner] ✅ Camera started');
-        scanStatus.textContent = '✓ Prêt';
-        scannerInitialized = true;
-
-        scanningLoop = setInterval(async () => {
-          try {
-            const barcodes = await detector.detect(videoElement);
-            if (barcodes.length > 0) {
-              const code = barcodes[0].rawValue;
-              const now = Date.now();
-              console.log('[Scanner] Detected:', code);
-
-              if (!/^\d{7,}$/.test(code)) {
-                console.log('[Scanner] Rejected: format');
-                return;
-              }
-
-              if (now - lastDetectionTime < DEBOUNCE_DELAY) {
-                console.log('[Scanner] Rejected: debounce');
-                return;
-              }
-
-              lastDetectionTime = now;
-              console.log('[Scanner] ✅ ACCEPTED:', code);
-              handleQrScan(code);
-            }
-          } catch (err) {
-            // Silently ignore frame errors
-          }
-        }, 100);
-      }).catch((err) => {
-        const errInfo = {
-          name: err.name,
-          message: err.message,
-          code: err.code,
-          toString: err.toString()
-        };
-        console.error('[Scanner] Camera error - full details:', errInfo);
-
-        let userMsg = 'Erreur caméra';
-        if (err.name === 'NotAllowedError') {
-          userMsg = 'Permissions caméra refusées. Va dans les paramètres du téléphone et autorise l\'accès à la caméra.';
-        } else if (err.name === 'NotFoundError') {
-          userMsg = 'Pas de caméra trouvée sur l\'appareil.';
-        } else if (err.name === 'NotReadableError') {
-          userMsg = 'La caméra est déjà utilisée. Essaie plus tard.';
-        } else if (err.name === 'SecurityError') {
-          userMsg = 'Contexte non sécurisé. L\'app doit utiliser HTTPS.';
-        }
-
-        scanStatus.textContent = userMsg;
-      });
-    } else {
-      console.warn('[Scanner] BarcodeDetector not supported - fallback needed');
-      scanStatus.textContent = 'Scanner non supporté sur cet appareil';
+    // BarcodeDetector est natif sur Chrome Android. Sinon on ne peut pas scanner.
+    if (!('BarcodeDetector' in window)) {
+      console.warn('[Scanner] BarcodeDetector non supporté sur ce navigateur');
+      scanStatus.textContent = 'Scanner non supporté ici. Utilise Chrome sur Android, ou cherche par nom.';
+      return;
     }
+
+    console.log('[Scanner] Using native Barcode Detection API');
+
+    // IMPORTANT: l'API BarcodeDetector attend des noms de format en CHAÎNE
+    // ('ean_13', ...), PAS un enum window.BarcodeFormat (qui n'existe pas).
+    // Un tableau formats vide fait planter le constructeur -> on l'évite.
+    const wanted = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'];
+    let supported = [];
+    try {
+      supported = await window.BarcodeDetector.getSupportedFormats();
+    } catch (e) {
+      console.warn('[Scanner] getSupportedFormats a échoué:', e);
+    }
+    const formats = wanted.filter((f) => supported.includes(f));
+    console.log('[Scanner] Formats supportés:', supported, '| utilisés:', formats);
+
+    // Si aucun format ne matche, on construit sans option (détecte tout).
+    const detector = formats.length > 0
+      ? new window.BarcodeDetector({ formats })
+      : new window.BarcodeDetector();
+
+    // Créer l'élément vidéo ET L'AJOUTER AU DOM pour afficher le flux caméra.
+    const videoElement = document.createElement('video');
+    videoElement.setAttribute('playsinline', 'true'); // lecture inline mobile
+    videoElement.muted = true;
+    videoElement.style.width = '100%';
+    videoElement.style.height = '100%';
+    videoElement.style.objectFit = 'cover';
+    qrReader.innerHTML = '';
+    qrReader.appendChild(videoElement);
+    currentVideo = videoElement;
+
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+    } catch (err) {
+      console.error('[Scanner] Erreur caméra:', { name: err.name, message: err.message });
+      scanStatus.textContent = cameraErrorMessage(err);
+      return;
+    }
+
+    currentStream = stream;
+    videoElement.srcObject = stream;
+    await videoElement.play();
+    console.log('[Scanner] ✅ Caméra démarrée');
+    scanStatus.textContent = '✓ Prêt — pointe vers un code-barres';
+    scannerInitialized = true;
+
+    scanningLoop = setInterval(async () => {
+      try {
+        const barcodes = await detector.detect(videoElement);
+        if (barcodes.length > 0) {
+          const code = barcodes[0].rawValue;
+          const now = Date.now();
+          console.log('[Scanner] Detected:', code);
+
+          if (!/^\d{7,}$/.test(code)) {
+            console.log('[Scanner] Rejected: format');
+            return;
+          }
+
+          if (now - lastDetectionTime < DEBOUNCE_DELAY) {
+            console.log('[Scanner] Rejected: debounce');
+            return;
+          }
+
+          lastDetectionTime = now;
+          console.log('[Scanner] ✅ ACCEPTED:', code);
+          handleQrScan(code);
+        }
+      } catch (err) {
+        // Ignorer silencieusement les erreurs de décodage par frame
+      }
+    }, 100);
   } catch (err) {
     console.error('[Scanner] Error:', err);
-    scanStatus.textContent = 'Erreur caméra';
+    scanStatus.textContent = `Erreur caméra: ${err.name || err.message || 'inconnue'}`;
   }
 }
 
+// Message d'erreur caméra clair selon le type d'échec getUserMedia.
+function cameraErrorMessage(err) {
+  switch (err.name) {
+    case 'NotAllowedError':
+      return 'Permissions caméra refusées. Autorise la caméra dans les réglages du site.';
+    case 'NotFoundError':
+      return 'Aucune caméra trouvée sur l\'appareil.';
+    case 'NotReadableError':
+      return 'La caméra est déjà utilisée par une autre app. Ferme-la et réessaie.';
+    case 'SecurityError':
+      return 'Contexte non sécurisé. L\'app doit être en HTTPS.';
+    case 'OverconstrainedError':
+      return 'Caméra arrière indisponible. Réessaie.';
+    default:
+      return `Erreur caméra: ${err.name || err.message || 'inconnue'}`;
+  }
+}
+
+// Idempotent : nettoie tout ce qui existe (boucle, flux caméra, élément vidéo).
 function stopScanner() {
-  if (!scannerInitialized) return;
   try {
     if (scanningLoop) {
       clearInterval(scanningLoop);
       scanningLoop = null;
+    }
+    if (currentStream) {
+      currentStream.getTracks().forEach((t) => t.stop());
+      currentStream = null;
+    }
+    if (currentVideo) {
+      currentVideo.srcObject = null;
+      currentVideo.remove();
+      currentVideo = null;
     }
     scannerInitialized = false;
     console.log('[Scanner] ✅ Stopped');
