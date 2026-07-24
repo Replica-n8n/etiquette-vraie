@@ -3,8 +3,8 @@ const DEBUG = false;
 function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Display app version
-const COMMIT_HASH = 'fix-nutrition-false-positive';
-const APP_VERSION = 'v1784220007';
+const COMMIT_HASH = 'search-lang-filter';
+const APP_VERSION = 'v1784220008';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -507,21 +507,47 @@ function fetchErrorMessage(err) {
   return 'Erreur réseau - réessaie.';
 }
 
+// Langues lisibles par l'utilisateur. La recherche mondiale d'OFF renvoie des
+// produits du monde entier (ingrédients en arabe, japonais...) : on garde ceux
+// lisibles en français ou anglais. Filtre côté client (le CGI ne sait pas faire
+// "fr OU en" en une requête, et son endpoint de recherche est instable).
+const READABLE_LANGS = ['fr', 'en'];
+
+// Scripts non lisibles pour un utilisateur fr/en : arabe, hébreu, cyrillique,
+// grec, CJK (chinois/japonais/coréen), thaï, devanagari. Un nom qui en contient
+// signale un produit non pertinent (ex. yaourts maghrébins avec nom en arabe).
+const FOREIGN_SCRIPT = /[֐-׿؀-ۿͰ-ϿЀ-ӿऀ-ॿ฀-๿぀-ヿ一-鿿가-힯]/;
+
+function isReadableProduct(p) {
+  if (FOREIGN_SCRIPT.test(p.product_name || '')) return false;
+  if (READABLE_LANGS.includes(p.lang)) return true;
+  const tags = p.languages_tags || [];
+  return tags.includes('en:french') || tags.includes('en:english');
+}
+
 async function searchProducts(term, onRetry) {
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(term)}&search_simple=1&action=process&json=1&page_size=15`;
-  try {
+  // page_size élargi : on récupère plus de candidats puis on filtre par langue.
+  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(term)}&search_simple=1&action=process&json=1&page_size=40&fields=code,product_name,brands,image_front_small_url,lang,languages_tags`;
+  const runFetch = async () => {
     const response = await fetchOFF(url);
     if (!response.ok) throw new Error('network');
     const data = await response.json();
     return (data.products || []).filter((p) => p.product_name);
+  };
+
+  let products;
+  try {
+    products = await runFetch();
   } catch (err) {
     if (onRetry) onRetry();
     await wait(5000);
-    const response = await fetchOFF(url);
-    if (!response.ok) throw new Error('network');
-    const data = await response.json();
-    return (data.products || []).filter((p) => p.product_name);
+    products = await runFetch();
   }
+
+  // Garder les produits lisibles (fr/en). Repli : si aucun, tout garder
+  // (mieux vaut des résultats en langue étrangère que rien).
+  const readable = products.filter(isReadableProduct);
+  return (readable.length > 0 ? readable : products).slice(0, 15);
 }
 
 // Champs demandés à OFF - partagés par le scan ET la recherche pour une UX cohérente.
