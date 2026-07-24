@@ -3,8 +3,8 @@ const DEBUG = false;
 function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Display app version
-const COMMIT_HASH = 'audit-cleanup-unify-fetch';
-const APP_VERSION = 'v1784220006';
+const COMMIT_HASH = 'fix-nutrition-false-positive';
+const APP_VERSION = 'v1784220007';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 

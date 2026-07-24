@@ -208,25 +208,28 @@ const LEGAL_NOTE_POSITION =
 const LEGAL_NOTE_FLAVOR =
   'La mention d\'un ingrédient dans le nom ("saveur / goût X", ou le nom direct d\'un fruit/arôme) décrit une saveur perçue, pas un ingrédient garanti. Le règlement (UE) n°1169/2011 exige seulement que "arôme" figure dans la liste - pas qu\'il précise sa source.';
 
-// Détecte si le texte des ingrédients contient du texte nutritionnel au lieu d'une vraie liste
+// Détecte si le champ "ingrédients" d'OFF contient en fait un TABLEAU NUTRITIONNEL
+// (donnée corrompue) au lieu d'une vraie liste. On n'utilise QUE des marqueurs forts
+// qui n'apparaissent jamais dans une liste d'ingrédients (unités d'énergie, "pour
+// 100 g", lignes de tableau) - pas des mots d'ingrédients courants comme "sucre" ou
+// "sodium" (qui faisaient de faux positifs sur des produits normaux).
 function isNutritionFactsInsteadOfIngredients(ingredientsText) {
   if (!ingredientsText) return false;
-  const normalized = normalize(ingredientsText);
-  const patterns = [
-    'carbohydrate', 'glucide',
-    'protein', 'proteine',
-    'sugar', 'sucre',
-    'cholesterol',
-    'calorie', 'calori',
-    'fat', 'gras',
-    'sodium',
-    'nutrition fact', 'fait nutritionnel',
-    'vitamin', 'vitamine',
-    'fiber', 'fibre',
-    'mineral',
+  const n = normalize(ingredientsText);
+  const strongMarkers = [
+    /\bkj\b/,                                 // énergie en kilojoules
+    /\bkcal\b/,                               // énergie en kilocalories
+    /pour\s*100\s*(g|ml)/,                    // "pour 100 g"
+    /per\s*100\s*(g|ml)/,                     // "per 100 g"
+    /valeurs?\s+nutritionnel/,                // "valeurs nutritionnelles"
+    /nutrition(al)?\s+(facts|information|value)/,
+    /dont\s+acides\s+gras/,                   // ligne "dont acides gras saturés"
+    /dont\s+sucres/,                          // ligne "glucides dont sucres"
+    /of\s+which\s+(saturates|sugars)/,
+    /\benergie\b/, /\benergy\b/,
   ];
-  const matches = patterns.filter(p => new RegExp(`\\b${p}\\b`).test(normalized));
-  return matches.length >= 2; // Si 2+ patterns nutritionnels, c'est probablement corrompu
+  const hits = strongMarkers.filter((re) => re.test(n)).length;
+  return hits >= 2; // 2+ marqueurs forts = vrai tableau nutritionnel
 }
 
 /**
