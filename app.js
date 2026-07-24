@@ -1,6 +1,6 @@
 // Display app version
-const COMMIT_HASH = 'oats-bio-additive-color';
-const APP_VERSION = 'v1784220003';
+const COMMIT_HASH = 'portable-relative-paths';
+const APP_VERSION = 'v1784220004';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
