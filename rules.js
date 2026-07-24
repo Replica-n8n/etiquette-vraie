@@ -44,6 +44,23 @@ const NON_CONFORME_PATTERNS = [
   },
 ];
 
+// Expressions / jeux de mots français où un mot d'aliment est FIGURÉ (pas une
+// allégation sur la composition). Ex. "La Vie En Orange" (jeu de mot sur "la vie
+// en rose"). Le produit n'affirme pas contenir l'aliment -> ne pas signaler.
+// Patterns en forme normalisée (sans accents, minuscules).
+const NON_LITERAL_EXPRESSIONS = [
+  /\bla vie en \w+/,               // "La Vie En Orange"
+  /\bpresser le citron\b/,
+  /\bramener sa fraise\b/,
+  /\btomber dans les pommes\b/,
+  /\bhaut comme trois pommes\b/,
+  /\bmi-figue mi-raisin\b/,
+  /\bpour des prunes\b/,
+  /\braconter des salades\b/,
+  /\bla cerise sur le gateau\b/,
+  /\bmettre du beurre dans les epinards\b/,
+];
+
 const FLAVOR_PATTERN = /(?:saveur|gout|parfum|essence|extrait|concentre)\s+(?:de\s+)?([a-z]+(?:\s+[a-z]+)?)/g;
 
 // Mots d'ingrédients/fruits assez identifiables pour qu'on les vérifie quand ils
@@ -261,6 +278,16 @@ function detectVerdict(productName, ingredientsText) {
           compareSuggest: rule.compareSuggest,
           compareReal: rule.compareReal,
         },
+      };
+    }
+  }
+
+  // Jeu de mots / expression figurée : le mot d'aliment n'est pas une allégation.
+  for (const expr of NON_LITERAL_EXPRESSIONS) {
+    if (expr.test(nameNorm)) {
+      return {
+        verdict: 'clean',
+        headline: 'Jeu de mots / expression - pas une allégation sur la composition',
       };
     }
   }

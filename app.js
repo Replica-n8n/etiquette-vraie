@@ -1,6 +1,6 @@
 // Display app version
-const COMMIT_HASH = 'portable-relative-paths';
-const APP_VERSION = 'v1784220004';
+const COMMIT_HASH = 'scanner-checksum-colors-puns';
+const APP_VERSION = 'v1784220005';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -37,17 +37,19 @@ const VERDICT_META = {
   unknown: { label: 'Impossible de vérifier', className: 'v-unknown' },
 };
 
+// Couleurs alignées sur les 3 tokens du design system (var --green/--amber/--red)
+// pour rester cohérent avec les autres badges : vert = bon, orange = moyen, rouge = mauvais.
 const NUTRISCORE_META = {
   a: { color: '#2F6F4F', label: 'Très favorable' },
-  b: { color: '#8CA13A', label: 'Favorable' },
+  b: { color: '#2F6F4F', label: 'Favorable' },
   c: { color: '#B5792A', label: 'Moyen' },
-  d: { color: '#C97A1F', label: 'Peu favorable' },
+  d: { color: '#C0392B', label: 'Peu favorable' },
   e: { color: '#C0392B', label: 'Défavorable' },
 };
 
 const NOVA_META = {
   1: { color: '#2F6F4F', label: 'Non transformé' },
-  2: { color: '#8CA13A', label: 'Peu transformé' },
+  2: { color: '#2F6F4F', label: 'Peu transformé' },
   3: { color: '#B5792A', label: 'Transformé' },
   4: { color: '#C0392B', label: 'Ultra-transformé' },
 };
@@ -301,40 +303,27 @@ async function startScanner() {
     let lastDetectionTime = 0;
     const DEBOUNCE_DELAY = 1200; // 1.2 secondes - équilibre vitesse vs faux positifs
 
-    // Validation barcode: vérifier format EAN/UPC (assouplissant)
+    // Validation STRICTE d'un code-barres : longueur standard (EAN-8/UPC-A/EAN-13)
+    // ET chiffre de contrôle GS1 valide. Rejette le bruit que BarcodeDetector
+    // peut renvoyer sur une image sans vrai code-barres.
     function isValidBarcode(code) {
-      // Un vrai code barres = au minimum 8 chiffres (EAN-8)
-      // Jusqu'à 14 (max barcode standard)
-      if (!/^\d{8,14}$/.test(code)) {
-        console.log('[Barcode] Invalid format (need 8-14 digits):', code, 'length:', code.length);
-        return false;
-      }
-
-      // Optionnel: valider checksum pour EAN-13 seulement (strictement)
-      // Pour UPC/EAN-8, on fait confiance à Quagga
-      if (code.length === 13) {
-        const isValidChecksum = validateEAN13(code);
-        if (!isValidChecksum) {
-          console.log('[Barcode] EAN-13 checksum invalid, but accepting anyway:', code);
-          // Retourner true même si le checksum est mauvais
-          // (Quagga peut avoir detections légèrement bruités)
-        }
-      }
-
-      return true;
+      if (!/^\d+$/.test(code)) return false;
+      if (![8, 12, 13].includes(code.length)) return false;
+      return validateGS1Checksum(code);
     }
 
-    // Validation checksum EAN-13 (strict mais non-bloquant)
-    function validateEAN13(code) {
+    // Chiffre de contrôle GS1 (EAN-13, EAN-8, UPC-A) : depuis la droite,
+    // on pondère les chiffres (hors clé) par 3,1,3,1... ; clé = (10 - somme%10)%10.
+    function validateGS1Checksum(code) {
       const digits = code.split('').map(Number);
-      if (digits.length < 13) return false;
-
+      const check = digits.pop();
       let sum = 0;
-      for (let i = 0; i < 12; i++) {
-        sum += digits[i] * (i % 2 === 0 ? 1 : 3);
+      let weight = 3;
+      for (let i = digits.length - 1; i >= 0; i--) {
+        sum += digits[i] * weight;
+        weight = weight === 3 ? 1 : 3;
       }
-      const checksum = (10 - (sum % 10)) % 10;
-      return checksum === digits[12];
+      return (10 - (sum % 10)) % 10 === check;
     }
 
     console.log('[Scanner] Initializing Barcode Detection API...');
@@ -397,28 +386,50 @@ async function startScanner() {
     scanStatus.textContent = '✓ Prêt — pointe vers un code-barres';
     scannerInitialized = true;
 
+    // Anti-faux-positifs : exiger 2 lectures identiques d'affilée d'un code
+    // dont le chiffre de contrôle est valide, avant d'accepter.
+    let lastCandidate = null;
+    let candidateCount = 0;
+    const REQUIRED_CONSECUTIVE = 2;
+
     scanningLoop = setInterval(async () => {
       try {
         const barcodes = await detector.detect(videoElement);
-        if (barcodes.length > 0) {
-          const code = barcodes[0].rawValue;
-          const now = Date.now();
-          console.log('[Scanner] Detected:', code);
-
-          if (!/^\d{7,}$/.test(code)) {
-            console.log('[Scanner] Rejected: format');
-            return;
-          }
-
-          if (now - lastDetectionTime < DEBOUNCE_DELAY) {
-            console.log('[Scanner] Rejected: debounce');
-            return;
-          }
-
-          lastDetectionTime = now;
-          console.log('[Scanner] ✅ ACCEPTED:', code);
-          handleQrScan(code);
+        if (barcodes.length === 0) {
+          lastCandidate = null;
+          candidateCount = 0;
+          return;
         }
+
+        const code = barcodes[0].rawValue;
+
+        if (!isValidBarcode(code)) {
+          console.log('[Scanner] Rejected: format/checksum invalide', code);
+          lastCandidate = null;
+          candidateCount = 0;
+          return;
+        }
+
+        // Stabilité : même code lu plusieurs frames de suite
+        if (code === lastCandidate) {
+          candidateCount += 1;
+        } else {
+          lastCandidate = code;
+          candidateCount = 1;
+        }
+        if (candidateCount < REQUIRED_CONSECUTIVE) {
+          return;
+        }
+
+        const now = Date.now();
+        if (now - lastDetectionTime < DEBOUNCE_DELAY) {
+          console.log('[Scanner] Rejected: debounce');
+          return;
+        }
+
+        lastDetectionTime = now;
+        console.log('[Scanner] ✅ ACCEPTED:', code);
+        handleQrScan(code);
       } catch (err) {
         // Ignorer silencieusement les erreurs de décodage par frame
       }
@@ -663,6 +674,7 @@ function renderScoreTile(iconId, valueId, meta, fallbackLabel) {
   const valueEl = document.getElementById(valueId);
   if (meta) {
     iconEl.style.background = meta.color;
+    iconEl.style.color = '#fff'; // texte blanc sur badge coloré (évite un gris résiduel)
     iconEl.textContent = meta.icon;
     valueEl.textContent = meta.label;
   } else {
