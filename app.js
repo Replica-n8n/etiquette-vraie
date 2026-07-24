@@ -1,6 +1,10 @@
+// Logs de debug silencieux en prod. Passer à true pour diagnostiquer.
+const DEBUG = false;
+function dbg(...args) { if (DEBUG) console.log(...args); }
+
 // Display app version
-const COMMIT_HASH = 'scanner-checksum-colors-puns';
-const APP_VERSION = 'v1784220005';
+const COMMIT_HASH = 'audit-cleanup-unify-fetch';
+const APP_VERSION = 'v1784220006';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -63,7 +67,7 @@ async function loadAdditivesDatabase() {
     const data = await response.json();
     RISKY_ADDITIVES = data.risky || {};
     LIMITED_ADDITIVES = data.limited || {};
-    console.log('[Additives] Loaded:', Object.keys(RISKY_ADDITIVES).length, 'risky,', Object.keys(LIMITED_ADDITIVES).length, 'limited');
+    dbg('[Additives] Loaded:', Object.keys(RISKY_ADDITIVES).length, 'risky,', Object.keys(LIMITED_ADDITIVES).length, 'limited');
   } catch (err) {
     console.error('[Additives] Failed to load:', err.message);
     loadFallbackAdditives();
@@ -85,7 +89,7 @@ function loadFallbackAdditives() {
     'en:e951': { name: 'Aspartame', reason: 'Possible carcinogène' }
   };
   LIMITED_ADDITIVES = {};
-  console.log('[Additives] Fallback loaded (11 codes)');
+  dbg('[Additives] Fallback loaded (11 codes)');
 }
 
 // Base de données des additifs courants avec nom et rôle
@@ -195,37 +199,6 @@ const ADDITIVES_DATABASE = {
   'en:e1450': { name: 'Octényle succinate d\'amidon sodique', role: 'Émulsifiant / Épaississant' },
 };
 
-// Catégorisation des additifs: ok (vert), to-limit (orange), risky (rouge)
-const ADDITIVE_CATEGORY_MAP = {
-  'en:e250': 'risky',
-  'en:e251': 'risky',
-  'en:e252': 'risky',
-  'en:e320': 'risky',
-  'en:e321': 'risky',
-  'en:e102': 'to-limit',
-  'en:e110': 'to-limit',
-  'en:e124': 'to-limit',
-  'en:e129': 'to-limit',
-  'en:e171': 'risky',
-  'en:e951': 'to-limit',
-};
-
-// Additifs faisant l'objet d'un signalement sanitaire documenté (avis EFSA/CIRC),
-// pas une liste exhaustive de tous les additifs à controverse.
-const ADDITIVE_RISK_MAP = {
-  'en:e250': 'Nitrite de sodium - classe cancerogene probable pour l\'homme (CIRC, groupe 2A) en lien avec la charcuterie',
-  'en:e251': 'Nitrate de sodium - precurseur de nitrites, memes reserves que E250',
-  'en:e252': 'Nitrate de potassium - precurseur de nitrites, memes reserves que E250',
-  'en:e320': 'BHA - suspecte perturbateur endocrinien, classe possiblement cancerogene (CIRC, groupe 2B)',
-  'en:e321': 'BHT - suspecte perturbateur endocrinien',
-  'en:e102': 'Tartrazine - associee a un risque d\'hyperactivite chez l\'enfant (avis EFSA)',
-  'en:e110': 'Jaune orange S - associe a un risque d\'hyperactivite chez l\'enfant (avis EFSA)',
-  'en:e124': 'Rouge cochenille A - associe a un risque d\'hyperactivite chez l\'enfant (avis EFSA)',
-  'en:e129': 'Rouge allura AC - associe a un risque d\'hyperactivite chez l\'enfant (avis EFSA)',
-  'en:e171': 'Dioxyde de titane - additif interdit dans l\'alimentation en UE depuis 2022 (preoccupations de genotoxicite)',
-  'en:e951': 'Aspartame - classe possiblement cancerogene (CIRC, groupe 2B)',
-};
-
 function findFlaggedAdditives(additivesTags) {
   if (!Array.isArray(additivesTags)) return { risky: [], limited: [] };
   const risky = additivesTags
@@ -299,7 +272,6 @@ async function startScanner() {
   if (scannerInitialized) return;
   const scanStatus = document.getElementById('scan-status');
   try {
-    console.log('[Quagga] Initializing');
     let lastDetectionTime = 0;
     const DEBOUNCE_DELAY = 1200; // 1.2 secondes - équilibre vitesse vs faux positifs
 
@@ -326,7 +298,7 @@ async function startScanner() {
       return (10 - (sum % 10)) % 10 === check;
     }
 
-    console.log('[Scanner] Initializing Barcode Detection API...');
+    dbg('[Scanner] Initializing Barcode Detection API...');
 
     const qrReader = document.getElementById('qr-reader');
 
@@ -337,7 +309,7 @@ async function startScanner() {
       return;
     }
 
-    console.log('[Scanner] Using native Barcode Detection API');
+    dbg('[Scanner] Using native Barcode Detection API');
 
     // IMPORTANT: l'API BarcodeDetector attend des noms de format en CHAÎNE
     // ('ean_13', ...), PAS un enum window.BarcodeFormat (qui n'existe pas).
@@ -350,7 +322,7 @@ async function startScanner() {
       console.warn('[Scanner] getSupportedFormats a échoué:', e);
     }
     const formats = wanted.filter((f) => supported.includes(f));
-    console.log('[Scanner] Formats supportés:', supported, '| utilisés:', formats);
+    dbg('[Scanner] Formats supportés:', supported, '| utilisés:', formats);
 
     // Si aucun format ne matche, on construit sans option (détecte tout).
     const detector = formats.length > 0
@@ -382,7 +354,7 @@ async function startScanner() {
     currentStream = stream;
     videoElement.srcObject = stream;
     await videoElement.play();
-    console.log('[Scanner] ✅ Caméra démarrée');
+    dbg('[Scanner] ✅ Caméra démarrée');
     scanStatus.textContent = '✓ Prêt — pointe vers un code-barres';
     scannerInitialized = true;
 
@@ -404,7 +376,7 @@ async function startScanner() {
         const code = barcodes[0].rawValue;
 
         if (!isValidBarcode(code)) {
-          console.log('[Scanner] Rejected: format/checksum invalide', code);
+          dbg('[Scanner] Rejected: format/checksum invalide', code);
           lastCandidate = null;
           candidateCount = 0;
           return;
@@ -423,12 +395,12 @@ async function startScanner() {
 
         const now = Date.now();
         if (now - lastDetectionTime < DEBOUNCE_DELAY) {
-          console.log('[Scanner] Rejected: debounce');
+          dbg('[Scanner] Rejected: debounce');
           return;
         }
 
         lastDetectionTime = now;
-        console.log('[Scanner] ✅ ACCEPTED:', code);
+        dbg('[Scanner] ✅ ACCEPTED:', code);
         handleQrScan(code);
       } catch (err) {
         // Ignorer silencieusement les erreurs de décodage par frame
@@ -475,7 +447,7 @@ function stopScanner() {
       currentVideo = null;
     }
     scannerInitialized = false;
-    console.log('[Scanner] ✅ Stopped');
+    dbg('[Scanner] ✅ Stopped');
   } catch (err) {
     console.error('[Scanner] Stop error:', err);
   }
@@ -487,6 +459,7 @@ async function handleQrScan(code) {
   showScreen('result');
   showResultLoading();
 
+  let lastError = new Error('product-not-found');
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const product = await fetchProduct(code);
@@ -494,22 +467,27 @@ async function handleQrScan(code) {
         renderResult(product);
         return;
       }
+      lastError = new Error('product-not-found');
     } catch (err) {
-      // Erreur réseau, réessayer
+      lastError = err; // erreur réseau/timeout, on réessaie
     }
     if (attempt < 2) {
       await wait(5000);
     }
   }
 
-  showResultError('Produit non trouvé sur Open Food Facts. Vérifie le code-barres et réessaie.');
+  showResultError(
+    lastError.message === 'product-not-found'
+      ? 'Produit non trouvé sur Open Food Facts. Vérifie le code-barres et réessaie.'
+      : fetchErrorMessage(lastError)
+  );
 }
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function fetchOFF(url) {
+async function fetchOFF(url, options) {
   const now = Date.now();
   const timeSinceLastRequest = now - lastOFFRequestTime;
   if (timeSinceLastRequest < OFF_MIN_DELAY_MS) {
@@ -517,8 +495,16 @@ async function fetchOFF(url) {
   }
   lastOFFRequestTime = Date.now();
 
-  const response = await fetch(url);
-  return response;
+  return fetch(url, options);
+}
+
+// Message d'erreur clair selon le type d'échec d'un fetch produit OFF.
+function fetchErrorMessage(err) {
+  if (err.name === 'AbortError') return 'Open Food Facts ne répond pas assez vite. Réessaie dans quelques secondes.';
+  if (err.message === 'off-error-5xx') return 'Open Food Facts est en maintenance. Réessaie dans quelques minutes.';
+  if (err.message === 'off-rate-limit') return 'Trop de requêtes. Attends quelques secondes et réessaie.';
+  if (err.message === 'product-not-found') return 'Produit non trouvé sur Open Food Facts.';
+  return 'Erreur réseau - réessaie.';
 }
 
 async function searchProducts(term, onRetry) {
@@ -538,13 +524,26 @@ async function searchProducts(term, onRetry) {
   }
 }
 
+// Champs demandés à OFF - partagés par le scan ET la recherche pour une UX cohérente.
+const PRODUCT_FIELDS = 'product_name,ingredients_text,brands,last_modified_t,image_front_small_url,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags';
+
 async function fetchProduct(code) {
-  const url = `https://world.openfoodfacts.org/api/v0/product/${code}.json?fields=product_name,ingredients_text,brands,last_modified_t,image_front_small_url,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags`;
-  const response = await fetchOFF(url);
-  if (!response.ok) throw new Error('network');
-  const data = await response.json();
-  if (data.status !== 1) return null;
-  return data.product;
+  const url = `https://world.openfoodfacts.org/api/v0/product/${code}.json?fields=${PRODUCT_FIELDS}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetchOFF(url, { signal: controller.signal });
+    if (!response.ok) {
+      if (response.status >= 500) throw new Error('off-error-5xx');
+      if (response.status === 429) throw new Error('off-rate-limit');
+      throw new Error('api-error');
+    }
+    const data = await response.json();
+    if (data.status !== 1 || !data.product) return null;
+    return data.product;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 async function findAlternative(product) {
@@ -555,7 +554,7 @@ async function findAlternative(product) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);
-    const response = await fetchOFF(url);
+    const response = await fetchOFF(url, { signal: controller.signal });
     clearTimeout(timeout);
     if (!response.ok) return null;
     const data = await response.json();
@@ -598,62 +597,18 @@ function renderResults(products) {
 }
 
 async function selectProduct(code) {
-  console.log('[APP] selectProduct called, showing result screen');
-  // Show result page immediately with loading state
   showScreen('result');
-  document.getElementById('result-error').style.display = 'none';
-  console.log('[APP] Result screen shown');
-
+  showResultLoading();
   try {
-    console.log('[APP] Starting fetch for code:', code);
-    // Fetch with 5 second timeout max
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      console.log('[APP] Fetch timeout!');
-      controller.abort();
-    }, 5000);
-
-    const response = await fetch(
-      `https://world.openfoodfacts.org/api/v0/product/${code}.json?fields=product_name,ingredients_text,brands,image_front_small_url,code,nutriscore_grade,nova_group,additives_tags,labels_tags,categories_tags`,
-      { signal: controller.signal }
-    );
-
-    clearTimeout(timeoutId);
-    console.log('[APP] Fetch response:', response.status);
-
-    if (!response.ok) {
-      if (response.status >= 500) {
-        throw new Error('off-error-5xx');
-      } else if (response.status === 429) {
-        throw new Error('off-rate-limit');
-      } else {
-        throw new Error('api-error');
-      }
+    const product = await fetchProduct(code);
+    if (!product) {
+      showResultError(fetchErrorMessage(new Error('product-not-found')));
+      return;
     }
-    const data = await response.json();
-    console.log('[APP] Got data:', data.product?.product_name);
-
-    if (!data.product) {
-      throw new Error('product-not-found');
-    }
-
-    renderResult(data.product);
+    renderResult(product);
   } catch (err) {
-    console.log('[APP] Error:', err.message);
-    document.getElementById('result-error').style.display = 'block';
-
-    let errorMsg = 'Erreur réseau - réessaie.';
-    if (err.name === 'AbortError') {
-      errorMsg = 'Open Food Facts ne répond pas assez vite. Réessaie dans quelques secondes.';
-    } else if (err.message === 'off-error-5xx') {
-      errorMsg = 'Open Food Facts est en maintenance. Réessaie dans quelques minutes.';
-    } else if (err.message === 'off-rate-limit') {
-      errorMsg = 'Trop de requêtes. Attends quelques secondes et réessaie.';
-    } else if (err.message === 'product-not-found') {
-      errorMsg = 'Produit non trouvé sur Open Food Facts.';
-    }
-
-    document.getElementById('result-error').textContent = errorMsg;
+    dbg('[APP] selectProduct error:', err.message);
+    showResultError(fetchErrorMessage(err));
   }
 }
 
@@ -759,10 +714,7 @@ function renderIngredientExcerpt(ingredientsText, detail, verdictClassName) {
 }
 
 function renderResult(product) {
-  console.log('[APP] renderResult called for:', product.product_name);
-  console.log('[APP] About to call detectVerdict');
   const { verdict, headline, legalNote, detail } = detectVerdict(product.product_name, product.ingredients_text);
-  console.log('[APP] detectVerdict returned:', verdict);
   const meta = VERDICT_META[verdict];
 
   addToHistory(product);
@@ -964,7 +916,7 @@ document.getElementById('btn-error-back').addEventListener('click', () => showSc
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js', { scope: './' }).then((registration) => {
-    console.log('[SW] Registered:', registration);
+    dbg('[SW] Registered:', registration);
   }).catch((err) => {
     console.error('[SW] Registration failed:', err);
   });

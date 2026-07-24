@@ -226,11 +226,7 @@ function isNutritionFactsInsteadOfIngredients(ingredientsText) {
     'mineral',
   ];
   const matches = patterns.filter(p => new RegExp(`\\b${p}\\b`).test(normalized));
-  console.log('[NUTRITION] Checking ingredients:', ingredientsText.substring(0, 100));
-  console.log('[NUTRITION] Normalized:', normalized.substring(0, 100));
-  console.log('[NUTRITION] Matches found:', matches);
-  console.log('[NUTRITION] Is corrupted:', matches.length >= 2);
-  return matches.length >= 2; // Si 2+ patterns nutritionnels, c'est probablement corromptu
+  return matches.length >= 2; // Si 2+ patterns nutritionnels, c'est probablement corrompu
 }
 
 /**
@@ -239,7 +235,6 @@ function isNutritionFactsInsteadOfIngredients(ingredientsText) {
  * @returns {{ verdict: 'clean'|'warning'|'misleading'|'unknown', headline: string, legalNote?: string, detail?: object }}
  */
 function detectVerdict(productName, ingredientsText) {
-  console.log('[DETECT] detectVerdict called for:', productName);
   // Vérifier si OFF a capturé du texte nutritionnel au lieu d'ingrédients
   if (isNutritionFactsInsteadOfIngredients(ingredientsText)) {
     return {
