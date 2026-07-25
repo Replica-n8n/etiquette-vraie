@@ -1,0 +1,10 @@
+# Dépendances (l'app est 100% vanilla JS servie en statique — node_modules n'est
+# PAS utilisé à l'exécution ; vestige de l'essai Vite/Quagga2 abandonné).
+node_modules/
+
+# Sortie générée par graphify (regénérable via /graphify, ne pas déployer).
+graphify-out/
+
+# Divers
+.DS_Store
+*.log
