@@ -3,8 +3,8 @@ const DEBUG = false;
 function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Display app version
-const COMMIT_HASH = 'search-error-ux';
-const APP_VERSION = 'v1784220011';
+const COMMIT_HASH = 'search-via-proxy';
+const APP_VERSION = 'v1784220012';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -571,9 +571,14 @@ function countryScore(p) {
   return best;
 }
 
+// Proxy de recherche (Cloudflare Worker) : appelle la nouvelle API OFF fiable
+// côté serveur, met en cache, et renvoie du JSON avec CORS. Bien plus fiable que
+// le vieux endpoint CGI. Voir cloudflare-worker/search-proxy.js.
+const SEARCH_PROXY = 'https://etiquette-vraie-search.jfrxdi0zz.workers.dev/search';
+
 async function searchProducts(term, onRetry, signal) {
   // page_size élargi : on récupère plus de candidats puis on filtre/trie.
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(term)}&search_simple=1&action=process&json=1&page_size=40&fields=code,product_name,brands,image_front_small_url,lang,languages_tags,countries_tags`;
+  const url = `${SEARCH_PROXY}?q=${encodeURIComponent(term)}&page_size=40`;
   const SEARCH_TIMEOUT_MS = 7000;
   const runFetch = async () => {
     const response = await fetchOFFWithTimeout(url, SEARCH_TIMEOUT_MS, signal);
@@ -585,8 +590,9 @@ async function searchProducts(term, onRetry, signal) {
     try {
       data = await response.json();
     } catch (e) {
-      throw new Error('off-search-down'); // OFF a renvoyé une page HTML d'erreur
+      throw new Error('off-search-down'); // réponse non-JSON = souci
     }
+    if (data.error) throw new Error('off-search-down'); // le proxy signale une panne OFF
     return (data.products || []).filter((p) => p.product_name);
   };
 
