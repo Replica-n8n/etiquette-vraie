@@ -3,8 +3,8 @@ const DEBUG = false;
 function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Display app version
-const COMMIT_HASH = 'search-lang-filter';
-const APP_VERSION = 'v1784220008';
+const COMMIT_HASH = 'search-country-priority';
+const APP_VERSION = 'v1784220009';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -525,9 +525,26 @@ function isReadableProduct(p) {
   return tags.includes('en:french') || tags.includes('en:english');
 }
 
+// Priorité de pays : on remonte les produits vendus au Canada (pays de
+// l'utilisateur), puis en France, en tête des résultats. Ne crée pas de données,
+// réordonne juste ce qu'OFF renvoie.
+const COUNTRY_PRIORITY = [
+  { tag: 'en:canada', score: 2 },
+  { tag: 'en:france', score: 1 },
+];
+
+function countryScore(p) {
+  const tags = p.countries_tags || [];
+  let best = 0;
+  for (const { tag, score } of COUNTRY_PRIORITY) {
+    if (tags.includes(tag) && score > best) best = score;
+  }
+  return best;
+}
+
 async function searchProducts(term, onRetry) {
-  // page_size élargi : on récupère plus de candidats puis on filtre par langue.
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(term)}&search_simple=1&action=process&json=1&page_size=40&fields=code,product_name,brands,image_front_small_url,lang,languages_tags`;
+  // page_size élargi : on récupère plus de candidats puis on filtre/trie.
+  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(term)}&search_simple=1&action=process&json=1&page_size=40&fields=code,product_name,brands,image_front_small_url,lang,languages_tags,countries_tags`;
   const runFetch = async () => {
     const response = await fetchOFF(url);
     if (!response.ok) throw new Error('network');
@@ -544,10 +561,13 @@ async function searchProducts(term, onRetry) {
     products = await runFetch();
   }
 
-  // Garder les produits lisibles (fr/en). Repli : si aucun, tout garder
-  // (mieux vaut des résultats en langue étrangère que rien).
+  // Garder les produits lisibles (fr/en). Repli : si aucun, tout garder.
   const readable = products.filter(isReadableProduct);
-  return (readable.length > 0 ? readable : products).slice(0, 15);
+  const list = readable.length > 0 ? readable : products;
+
+  // Tri stable : Canada puis France en tête, reste dans l'ordre de pertinence OFF.
+  const sorted = [...list].sort((a, b) => countryScore(b) - countryScore(a));
+  return sorted.slice(0, 15);
 }
 
 // Champs demandés à OFF - partagés par le scan ET la recherche pour une UX cohérente.
