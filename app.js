@@ -3,8 +3,8 @@ const DEBUG = false;
 function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Display app version
-const COMMIT_HASH = 'search-timeout-cancel';
-const APP_VERSION = 'v1784220010';
+const COMMIT_HASH = 'search-error-ux';
+const APP_VERSION = 'v1784220011';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -524,6 +524,18 @@ function fetchErrorMessage(err) {
   return 'Erreur réseau - réessaie.';
 }
 
+// Message de recherche : attribue clairement les pannes à Open Food Facts
+// (pas à l'app) et oriente vers le scan, qui utilise un service fiable et séparé.
+function searchErrorMessage(err) {
+  if (err.name === 'AbortError' || err.name === 'TimeoutError' || err.message === 'off-search-down') {
+    return 'La recherche Open Food Facts est momentanément indisponible (pas l\'app). Réessaie, ou scanne le code-barres — c\'est plus fiable.';
+  }
+  if (err.message === 'off-rate-limit') {
+    return 'Trop de recherches d\'un coup. Attends quelques secondes et réessaie.';
+  }
+  return 'Problème de connexion. Vérifie ton réseau et réessaie.';
+}
+
 // Langues lisibles par l'utilisateur. La recherche mondiale d'OFF renvoie des
 // produits du monde entier (ingrédients en arabe, japonais...) : on garde ceux
 // lisibles en français ou anglais. Filtre côté client (le CGI ne sait pas faire
@@ -565,8 +577,16 @@ async function searchProducts(term, onRetry, signal) {
   const SEARCH_TIMEOUT_MS = 7000;
   const runFetch = async () => {
     const response = await fetchOFFWithTimeout(url, SEARCH_TIMEOUT_MS, signal);
+    // Erreurs typées pour distinguer "OFF en panne" d'un vrai "aucun résultat".
+    if (response.status >= 500) throw new Error('off-search-down');
+    if (response.status === 429) throw new Error('off-rate-limit');
     if (!response.ok) throw new Error('network');
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (e) {
+      throw new Error('off-search-down'); // OFF a renvoyé une page HTML d'erreur
+    }
     return (data.products || []).filter((p) => p.product_name);
   };
 
@@ -642,7 +662,7 @@ async function findAlternative(product) {
 function renderResults(products) {
   resultsList.innerHTML = '';
   if (products.length === 0) {
-    searchStatus.textContent = 'Aucun produit trouvé - essaie un autre nom ou une autre marque.';
+    searchStatus.textContent = 'Aucun produit à ce nom. Vérifie l\'orthographe, essaie une marque, ou scanne le code-barres.';
     return;
   }
   searchStatus.textContent = '';
@@ -972,9 +992,7 @@ searchForm.addEventListener('submit', async (event) => {
     renderResults(products);
   } catch (err) {
     if (!isCurrent()) return; // annulée/remplacée : ne pas afficher d'erreur
-    searchStatus.textContent = (err.name === 'AbortError' || err.name === 'TimeoutError')
-      ? 'Open Food Facts est lent ou indisponible. Réessaie.'
-      : 'Erreur réseau - réessaie dans un instant.';
+    searchStatus.textContent = searchErrorMessage(err);
   } finally {
     if (isCurrent()) currentSearchController = null;
   }
