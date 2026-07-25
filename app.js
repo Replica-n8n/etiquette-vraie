@@ -3,8 +3,8 @@ const DEBUG = false;
 function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Display app version
-const COMMIT_HASH = 'search-country-priority';
-const APP_VERSION = 'v1784220009';
+const COMMIT_HASH = 'search-timeout-cancel';
+const APP_VERSION = 'v1784220010';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -25,6 +25,7 @@ let currentStream = null;
 let currentVideo = null;
 let lastOFFRequestTime = 0;
 const OFF_MIN_DELAY_MS = 1000;
+let currentSearchController = null; // pour annuler une recherche en cours
 let currentRiskyAdditives = [];
 let currentAllAdditives = [];
 let productHistory = [];
@@ -498,6 +499,22 @@ async function fetchOFF(url, options) {
   return fetch(url, options);
 }
 
+// fetch OFF avec un timeout par tentative + annulation externe optionnelle.
+// Évite qu'une requête reste bloquée indéfiniment quand OFF est lent/KO.
+function fetchOFFWithTimeout(url, ms, externalSignal) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(new DOMException('Délai dépassé', 'TimeoutError')), ms);
+  const onAbort = () => ctrl.abort();
+  if (externalSignal) {
+    if (externalSignal.aborted) ctrl.abort();
+    else externalSignal.addEventListener('abort', onAbort, { once: true });
+  }
+  return fetchOFF(url, { signal: ctrl.signal }).finally(() => {
+    clearTimeout(timer);
+    if (externalSignal) externalSignal.removeEventListener('abort', onAbort);
+  });
+}
+
 // Message d'erreur clair selon le type d'échec d'un fetch produit OFF.
 function fetchErrorMessage(err) {
   if (err.name === 'AbortError') return 'Open Food Facts ne répond pas assez vite. Réessaie dans quelques secondes.';
@@ -542,11 +559,12 @@ function countryScore(p) {
   return best;
 }
 
-async function searchProducts(term, onRetry) {
+async function searchProducts(term, onRetry, signal) {
   // page_size élargi : on récupère plus de candidats puis on filtre/trie.
   const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(term)}&search_simple=1&action=process&json=1&page_size=40&fields=code,product_name,brands,image_front_small_url,lang,languages_tags,countries_tags`;
+  const SEARCH_TIMEOUT_MS = 7000;
   const runFetch = async () => {
-    const response = await fetchOFF(url);
+    const response = await fetchOFFWithTimeout(url, SEARCH_TIMEOUT_MS, signal);
     if (!response.ok) throw new Error('network');
     const data = await response.json();
     return (data.products || []).filter((p) => p.product_name);
@@ -556,8 +574,9 @@ async function searchProducts(term, onRetry) {
   try {
     products = await runFetch();
   } catch (err) {
+    if (signal && signal.aborted) throw err; // recherche annulée/remplacée : ne pas réessayer
     if (onRetry) onRetry();
-    await wait(5000);
+    await wait(1500);
     products = await runFetch();
   }
 
@@ -935,15 +954,29 @@ searchForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const term = searchInput.value.trim();
   if (!term) return;
+
+  // Annuler la recherche précédente encore en cours (évite qu'une vieille
+  // réponse lente écrase la nouvelle).
+  if (currentSearchController) currentSearchController.abort();
+  const controller = new AbortController();
+  currentSearchController = controller;
+  const isCurrent = () => controller === currentSearchController;
+
   searchStatus.textContent = 'Recherche...';
   resultsList.innerHTML = '';
   try {
     const products = await searchProducts(term, () => {
-      searchStatus.textContent = 'Ça bloque un peu, nouvelle tentative...';
-    });
+      if (isCurrent()) searchStatus.textContent = 'Ça bloque un peu, nouvelle tentative...';
+    }, controller.signal);
+    if (!isCurrent()) return; // une recherche plus récente a pris le relais
     renderResults(products);
   } catch (err) {
-    searchStatus.textContent = 'Erreur réseau - réessaie dans un instant.';
+    if (!isCurrent()) return; // annulée/remplacée : ne pas afficher d'erreur
+    searchStatus.textContent = (err.name === 'AbortError' || err.name === 'TimeoutError')
+      ? 'Open Food Facts est lent ou indisponible. Réessaie.'
+      : 'Erreur réseau - réessaie dans un instant.';
+  } finally {
+    if (isCurrent()) currentSearchController = null;
   }
 });
 
