@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#2F6F4F">
 <meta name="description" content="Vérifie si le nom d'un produit correspond vraiment à sa composition">
 <title>Étiquette Vraie</title>
 <link rel="manifest" href="./manifest.json">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23000' width='192' height='192'/><text x='96' y='120' font-size='100' font-weight='bold' fill='%23fff' text-anchor='middle'>É</text></svg>">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23000' width='192' height='192'/><text x='96' y='120' font-size='100' font-weight='bold' fill='%23fff' text-anchor='middle'>É</text></svg>">
+<link rel="icon" type="image/png" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./style.css?v=1784220013">
 </head>
 <body>
 
@@ -19,17 +19,23 @@
   <div class="screen">
 
     <div class="topbar">
-      <div class="back" id="back-button">←</div>
+      <button class="back" id="back-button" type="button" aria-label="Retour">←</button>
       <div class="brand">Étiquette <b>Vraie</b> <span class="version" id="app-version"></span></div>
-      <div style="width:34px;"></div>
+      <div style="width:40px;"></div>
     </div>
 
     <div id="home-screen" class="home-screen">
       <div class="home-content">
         <div class="home-title">Vérifier un produit</div>
         <div class="home-subtitle">Découvre si le nom d'un produit correspond vraiment à sa composition</div>
-        <button id="btn-search" class="home-button">🔤 Chercher par nom</button>
-        <button id="btn-scan" class="home-button scan">📷 Scanner un code-barres</button>
+        <button id="btn-scan" class="home-button scan" type="button">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5v14M7 5v14M11 5v14M14.5 5v14M18 5v14M21 5v14"/></svg>
+          Scanner un code-barres
+        </button>
+        <button id="btn-search" class="home-button" type="button">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4.3-4.3"/></svg>
+          Chercher par nom
+        </button>
         <div id="history-section" class="history-section hidden">
           <div class="history-title">Derniers produits</div>
           <ul id="history-list" class="history-list"></ul>
@@ -66,10 +72,10 @@
       </div>
 
       <div id="result-error" class="result-error hidden">
-        <div class="error-icon">⚠️</div>
+        <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
         <div class="error-title">Produit non trouvé</div>
         <div class="error-text" id="error-message"></div>
-        <button id="btn-error-back" class="error-button">Retour</button>
+        <button id="btn-error-back" class="error-button" type="button">Retour</button>
       </div>
 
       <div id="result-content" class="result-content hidden">
@@ -185,6 +191,6 @@
 </div>
 
 <script src="./rules.js?v=1784220007" defer></script>
-<script src="./app.js?v=1784220012" defer></script>
+<script src="./app.js?v=1784220013" defer></script>
 </body>
 </html>

@@ -5,6 +5,9 @@ node_modules/
 # Sortie générée par graphify (regénérable via /graphify, ne pas déployer).
 graphify-out/
 
+# Skills Claude installés (outillage perso, réinstallables ; garder settings.json).
+.claude/skills/
+
 # Divers
 .DS_Store
 *.log

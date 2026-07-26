@@ -10,6 +10,9 @@
   --green-soft:#E7F1EC;
   --amber:#B5792A;
   --amber-soft:#FBF1E3;
+  /* Courbes d'easing custom (Emil Kowalski) - plus de punch que les natives */
+  --ease-out:cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer:cubic-bezier(0.32, 0.72, 0, 1);
 }
 *{box-sizing:border-box; margin:0; padding:0;}
 body{
@@ -75,13 +78,17 @@ body{
 .home-button{
   display:flex; align-items:center; justify-content:center; gap:10px;
   width:100%; padding:14px 16px; margin-bottom:12px;
-  border:none; border-radius:14px; background:var(--card); border:1.5px solid var(--line);
+  border-radius:14px; background:var(--card); border:1.5px solid var(--line);
   font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px;
-  color:var(--ink); cursor:pointer; transition:all 0.2s;
+  color:var(--ink); cursor:pointer;
+  transition:transform 160ms var(--ease-out), border-color 160ms ease, background 160ms ease;
 }
 .home-button:hover{ border-color:var(--ink); background:var(--paper); }
-.home-button.scan{ border-color:var(--green); color:var(--green); }
-.home-button.scan:hover{ background:var(--green-soft); }
+.home-button:active{ transform:scale(0.97); }
+/* Scanner = action principale (bouton plein vert) */
+.home-button.scan{ background:var(--green); border-color:var(--green); color:#fff; }
+.home-button.scan:hover{ background:#276044; border-color:#276044; }
+.home-button .btn-icon{ width:18px; height:18px; flex-shrink:0; }
 
 /* Écran de recherche */
 .search-screen{ padding:2px 20px 20px; }
@@ -247,7 +254,7 @@ body{
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   min-height:300px; gap:16px; text-align:center;
 }
-.error-icon{ font-size:48px; }
+.error-icon{ width:44px; height:44px; color:var(--amber); }
 .error-title{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:18px; color:var(--ink); }
 .error-text{ font-size:13px; color:var(--ink-soft); line-height:1.5; margin-bottom:12px; }
 .error-button{
@@ -308,6 +315,54 @@ body{
 .additive-role{ font-size:12px; color:var(--ink); margin-top:2px; font-weight:500; }
 .additive-reason{ font-size:12px; color:var(--ink-soft); margin-top:4px; line-height:1.4; }
 
+
+/* ===== Mouvement & accessibilité (Emil Kowalski + impeccable) ===== */
+
+/* Feedback de pression : les boutons "répondent" au doigt */
+.search-button, .error-button{
+  transition:transform 140ms var(--ease-out), background 140ms ease;
+}
+.search-button:active, .error-button:active{ transform:scale(0.97); }
+.result-item, .history-item{ transition:transform 140ms var(--ease-out), border-color 140ms ease; }
+.result-item:active, .history-item:active{ transform:scale(0.985); }
+.back{ transition:transform 140ms var(--ease-out), background 140ms ease; }
+.back:active{ transform:scale(0.92); }
+
+/* Anneaux de focus visibles au clavier */
+.home-button:focus-visible, .search-button:focus-visible, .error-button:focus-visible,
+.back:focus-visible, .result-item:focus-visible, .history-item:focus-visible,
+.info-btn:focus-visible, .modal-close:focus-visible, .accordion summary:focus-visible{
+  outline:2px solid var(--ink); outline-offset:2px;
+}
+
+/* Cibles tactiles >= 44px */
+.back{ width:40px; height:40px; }
+.info-btn{ width:44px; height:44px; bottom:6px; right:6px; }
+
+/* Transition d'écran : léger fondu montant à chaque apparition */
+@keyframes screenIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+.home-screen, .search-screen, .scan-screen, #result-screen{
+  animation:screenIn 190ms var(--ease-out);
+}
+
+/* Backdrop du modal : fondu (au lieu d'apparaître d'un coup) */
+@keyframes backdropIn{ from{ opacity:0; } to{ opacity:1; } }
+.modal-backdrop{ animation:backdropIn 200ms ease; }
+.modal-content{ animation:slideUp 320ms var(--ease-drawer); }
+
+/* Spinner un peu plus rapide = chargement perçu plus court */
+.loader{ animation:spin 0.6s linear infinite; }
+
+/* Boutons pressables : retirer le tap-highlight bleu mobile */
+button, .back, .result-item, .history-item{ -webkit-tap-highlight-color:transparent; }
+
+/* Respect de prefers-reduced-motion : on garde les fondus utiles, on coupe le mouvement */
+@media (prefers-reduced-motion: reduce){
+  .home-screen, .search-screen, .scan-screen, #result-screen{ animation:none; }
+  .modal-content{ animation:backdropIn 160ms ease; }
+  *:active{ transform:none !important; }
+  .accordion[open] summary .chev{ transition:none; }
+}
 
 /* Mobile: enlever le cadre du téléphone mockup et utiliser fullscreen */
 @media (max-width: 480px) {

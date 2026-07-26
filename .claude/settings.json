@@ -1,4 +1,22 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Browser__read_console_messages",
+      "mcp__Claude_Browser__read_page",
+      "mcp__Claude_Browser__read_network_requests",
+      "mcp__Claude_Browser__get_page_text",
+      "mcp__Claude_Browser__preview_console_logs",
+      "mcp__Claude_Browser__preview_screenshot",
+      "mcp__Claude_Browser__preview_logs",
+      "mcp__Claude_Browser__preview_snapshot",
+      "mcp__Claude_Preview__preview_screenshot",
+      "mcp__Claude_Preview__preview_snapshot",
+      "mcp__Claude_Preview__preview_console_logs",
+      "mcp__Claude_Preview__preview_network",
+      "mcp__Claude_Preview__preview_list",
+      "mcp__visualize__read_me"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {

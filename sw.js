@@ -1,4 +1,4 @@
-const CACHE_NAME = 'etiquette-vraie-1784220012';
+const CACHE_NAME = 'etiquette-vraie-1784220013';
 // Chemins RELATIFS (résolus par rapport à l'emplacement de sw.js) pour que
 // l'app fonctionne à n'importe quelle URL (prod, sous-dossier, dépôt de test).
 const OFFLINE_URL = './index.html';
@@ -9,7 +9,9 @@ const urlsToCache = [
   './style.css',
   './app.js',
   './rules.js',
-  './manifest.json'
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {

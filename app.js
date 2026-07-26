@@ -3,8 +3,8 @@ const DEBUG = false;
 function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Display app version
-const COMMIT_HASH = 'search-via-proxy';
-const APP_VERSION = 'v1784220012';
+const COMMIT_HASH = 'motion-a11y-scanner-first-logo';
+const APP_VERSION = 'v1784220013';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -675,6 +675,8 @@ function renderResults(products) {
   products.forEach((product) => {
     const li = document.createElement('li');
     li.className = 'result-item';
+    li.setAttribute('role', 'button');
+    li.setAttribute('tabindex', '0');
     li.innerHTML = `
       <img class="result-thumb" src="${product.image_front_small_url || ''}" alt="" onerror="this.style.visibility='hidden'">
       <div class="result-text">
@@ -682,7 +684,11 @@ function renderResults(products) {
         <div class="result-brand">${product.brands || ''}</div>
       </div>
     `;
-    li.addEventListener('click', () => selectProduct(product.code));
+    const open = () => selectProduct(product.code);
+    li.addEventListener('click', open);
+    li.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+    });
     resultsList.appendChild(li);
   });
 }
@@ -965,7 +971,7 @@ function renderHistory() {
   }
   historySection.classList.remove('hidden');
   historyList.innerHTML = productHistory.map(product => `
-    <li class="history-item" onclick="loadFromHistory('${product.code}')">
+    <li class="history-item" role="button" tabindex="0" onclick="loadFromHistory('${product.code}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();loadFromHistory('${product.code}')}">
       <img class="history-thumb" src="${product.image_front_small_url || ''}" alt="" onerror="this.style.visibility='hidden'">
       <div class="history-name">${product.product_name}</div>
     </li>
