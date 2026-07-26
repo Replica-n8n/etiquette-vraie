@@ -3,8 +3,8 @@ const DEBUG = false;
 function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Display app version
-const COMMIT_HASH = 'motion-a11y-scanner-first-logo';
-const APP_VERSION = 'v1784220013';
+const COMMIT_HASH = 'dark-mode-tokens';
+const APP_VERSION = 'v1784220014';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -730,8 +730,8 @@ function renderScoreTile(iconId, valueId, meta, fallbackLabel) {
     iconEl.textContent = meta.icon;
     valueEl.textContent = meta.label;
   } else {
-    iconEl.style.background = '#E8E9EB';
-    iconEl.style.color = '#999';
+    iconEl.style.background = 'var(--tile-empty)';
+    iconEl.style.color = 'var(--tile-empty-ink)';
     iconEl.textContent = '-';
     valueEl.textContent = fallbackLabel;
   }

@@ -7,6 +7,8 @@ graphify-out/
 
 # Skills Claude installés (outillage perso, réinstallables ; garder settings.json).
 .claude/skills/
+.claude/settings.local.json
+skills-lock.json
 
 # Divers
 .DS_Store

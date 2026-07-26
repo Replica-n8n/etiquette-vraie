@@ -10,13 +10,51 @@
   --green-soft:#E7F1EC;
   --amber:#B5792A;
   --amber-soft:#FBF1E3;
+  /* Encre foncée des textes d'alerte (sur fond soft) */
+  --red-ink:#7A2318;
+  --amber-ink:#6E4715;
+  --green-ink:#1C4531;
+  --green-dark:#276044;
+  /* Neutres additionnels (étaient codés en dur) */
+  --ink-2:#39424D;
+  --muted:#B4B8BC;
+  --body-bg:#D8DBDD;
+  --frame:#171B22;
+  --tile-empty:#E8E9EB;
+  --tile-empty-ink:#999999;
+  /* Marque (fixe dans les 2 modes : le CTA doit garder du texte blanc lisible) */
+  --brand:#2F6F4F;
+  --brand-hover:#276044;
+  --btn-text:#ffffff; /* texte des boutons pleins "encre" (s'inverse en dark) */
   /* Courbes d'easing custom (Emil Kowalski) - plus de punch que les natives */
   --ease-out:cubic-bezier(0.23, 1, 0.32, 1);
   --ease-drawer:cubic-bezier(0.32, 0.72, 0, 1);
 }
+
+/* ===== Dark mode : on ne fait qu'inverser les tokens ===== */
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#1A1F26;
+    --card:#232B34;
+    --ink:#E7ECEF;
+    --ink-soft:#9AA5B1;
+    --ink-2:#C4CCD4;
+    --muted:#586069;
+    --line:#333C46;
+    --body-bg:#0F1319;
+    --frame:#05070A;
+    --tile-empty:#2A323B;
+    --tile-empty-ink:#8A939D;
+    --btn-text:#12161B; /* texte foncé sur bouton "encre" désormais clair */
+    /* Accents éclaircis pour rester lisibles sur surfaces sombres */
+    --red:#E0736A;    --red-soft:#382019;   --red-ink:#F2B5AD;
+    --green:#5FB08C;  --green-soft:#1B2C25;  --green-ink:#A9DAC1;  --green-dark:#6FC098;
+    --amber:#D6A05E;  --amber-soft:#312716;  --amber-ink:#ECC99C;
+  }
+}
 *{box-sizing:border-box; margin:0; padding:0;}
 body{
-  background:#D8DBDD;
+  background:var(--body-bg);
   font-family:'Inter', sans-serif;
   color:var(--ink);
   display:flex;
@@ -32,7 +70,7 @@ body{
   border-radius:36px;
   overflow:hidden;
   box-shadow:0 30px 60px -20px rgba(20,25,35,0.35);
-  border:8px solid #171B22;
+  border:8px solid var(--frame);
 }
 .screen{ min-height:900px; display:flex; flex-direction:column; }
 
@@ -85,9 +123,9 @@ body{
 }
 .home-button:hover{ border-color:var(--ink); background:var(--paper); }
 .home-button:active{ transform:scale(0.97); }
-/* Scanner = action principale (bouton plein vert) */
-.home-button.scan{ background:var(--green); border-color:var(--green); color:#fff; }
-.home-button.scan:hover{ background:#276044; border-color:#276044; }
+/* Scanner = action principale (bouton plein vert de marque, fixe en dark) */
+.home-button.scan{ background:var(--brand); border-color:var(--brand); color:#fff; }
+.home-button.scan:hover{ background:var(--brand-hover); border-color:var(--brand-hover); }
 .home-button .btn-icon{ width:18px; height:18px; flex-shrink:0; }
 
 /* Écran de recherche */
@@ -103,7 +141,7 @@ body{
 }
 .search-input:focus{ outline:2px solid var(--ink-soft); outline-offset:1px; }
 .search-button{
-  border:none; border-radius:12px; background:var(--ink); color:#fff;
+  border:none; border-radius:12px; background:var(--ink); color:var(--btn-text);
   font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13px;
   padding:11px 16px; cursor:pointer;
 }
@@ -172,9 +210,9 @@ body{
 .stamp .dot{ width:6px; height:6px; border-radius:50%; background:currentColor; }
 
 .alert-text{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14.5px; line-height:1.35; position:relative; }
-.v-misleading .alert-text{ color:#7A2318; }
-.v-warning .alert-text{ color:#6E4715; }
-.v-clean .alert-text{ color:#1C4531; }
+.v-misleading .alert-text{ color:var(--red-ink); }
+.v-warning .alert-text{ color:var(--amber-ink); }
+.v-clean .alert-text{ color:var(--green-ink); }
 .v-unknown .alert-text{ color:var(--ink-soft); }
 
 /* Comparaison : hauteur naturelle */
@@ -209,10 +247,10 @@ body{
 .accordion summary::-webkit-details-marker{ display:none; }
 .accordion summary .chev{ font-size:11px; color:var(--ink-soft); transition:transform 0.2s; }
 .accordion[open] summary .chev{ transform:rotate(180deg); }
-.accordion-body{ padding:0 14px 14px; border-top:1px solid var(--line); font-size:11.5px; color:#39424D; line-height:1.55; }
+.accordion-body{ padding:0 14px 14px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-2); line-height:1.55; }
 
 .ingredient-list{ font-family:'IBM Plex Mono', monospace; font-size:11px; line-height:1.85; padding-top:10px; max-height:180px; overflow-y:auto; overflow-x:hidden; padding-right:8px; }
-.ingredient-list .idx{ color:#B4B8BC; margin-right:6px; }
+.ingredient-list .idx{ color:var(--muted); margin-right:6px; }
 .ingredient-list .flagged{ font-weight:600; padding:1px 4px; border-radius:4px; }
 .ingredient-list .flagged.v-misleading{ background:var(--red-soft); color:var(--red); }
 .ingredient-list .flagged.v-warning{ background:var(--amber-soft); color:var(--amber); }
@@ -258,7 +296,7 @@ body{
 .error-title{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:18px; color:var(--ink); }
 .error-text{ font-size:13px; color:var(--ink-soft); line-height:1.5; margin-bottom:12px; }
 .error-button{
-  border:none; border-radius:12px; background:var(--ink); color:#fff;
+  border:none; border-radius:12px; background:var(--ink); color:var(--btn-text);
   font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13px;
   padding:11px 20px; cursor:pointer;
 }
