@@ -226,6 +226,8 @@ body{
 .compare-col.real.v-clean{ border-color:var(--green); }
 .compare-col.real.v-clean .compare-label{ color:var(--green); }
 .compare-value{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13px; margin-bottom:2px; }
+.compare-list{ margin:0; padding-left:15px; list-style:disc; }
+.compare-list li{ margin:0; }
 
 /* Scores : chaque tuile garde sa hauteur naturelle */
 .score-grid{ margin:10px 16px 0; display:grid; grid-template-columns:1fr 1fr; gap:8px; }

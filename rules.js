@@ -78,12 +78,19 @@ const FOOD_WORDS = [
   'amande', 'almond', 'boeuf', 'beef', 'aubergine', 'eggplant',
   'cacahuete', 'peanut', 'arachide', 'soja', 'soy', 'soya',
   'lait', 'milk', 'oeuf', 'egg', 'sesame', 'sésame',
-  'noix', 'walnut', 'cajou', 'cashew', 'macadamia', 'lin', 'flax',
+  'noix', 'nut', 'walnut', 'cajou', 'cashew', 'macadamia', 'lin', 'flax',
   'raisin', 'grape', 'kiwi', 'mure', 'blackberry', 'figue', 'fig',
   'datte', 'date', 'avocat', 'avocado', 'cranberry', 'miel', 'honey',
   'avoine', 'oat',
 ];
 // Pattern created dynamically in findFlavorMention() to support plurals
+
+// Famille des fruits à coque : sert aux termes génériques "noix" / "nut".
+const NUT_FAMILY = [
+  'noix', 'noisette', 'amande', 'almond', 'cacahuete', 'peanut', 'arachide',
+  'cajou', 'cashew', 'pistache', 'pistachio', 'pecan', 'macadamia',
+  'walnut', 'hazelnut', 'nut', 'noyer', 'pignon',
+];
 
 const INGREDIENT_VARIANTS = {
   'pistache': ['pistache', 'pistaches', 'pistachio', 'pistachios'],
@@ -120,7 +127,6 @@ const INGREDIENT_VARIANTS = {
   'egg': ['oeuf', 'oeufs', 'egg', 'eggs'],
   'sesame': ['sesame', 'sesames', 'sésame', 'sésames'],
   'sésame': ['sesame', 'sesames', 'sésame', 'sésames'],
-  'noix': ['noix', 'walnut', 'walnuts'],
   'walnut': ['noix', 'walnut', 'walnuts'],
   'cajou': ['cajou', 'cashew', 'cashews', 'noix de cajou'],
   'cashew': ['cajou', 'cashew', 'cashews', 'noix de cajou'],
@@ -143,6 +149,12 @@ const INGREDIENT_VARIANTS = {
   'honey': ['miel', 'honey'],
   'avoine': ['avoine', 'avoines', 'oat', 'oats'],
   'oat': ['avoine', 'avoines', 'oat', 'oats'],
+  // "noix" (fr) et "nut" (en) sont des termes GÉNÉRIQUES de fruit à coque : une
+  // barre "chocolat noir et noix" peut légitimement contenir cacahuètes,
+  // amandes, noisettes... N'importe quel fruit à coque satisfait donc la
+  // promesse (sinon on accuse à tort - cf. Nature Valley 0016000407619).
+  'noix': NUT_FAMILY,
+  'nut': NUT_FAMILY,
 };
 
 function findFlavorMention(productName) {
@@ -301,14 +313,14 @@ function detectVerdict(productName, ingredientsText) {
       const suspiciousFlavors = [];
 
       for (const flavor of flavors) {
-        const position = findIngredientPosition(flavor, ingredientsNorm);
-        if (position) {
-          // Ingrédient trouvé dans la liste → CLEAN (présent réellement)
-          // Peu importe la quantité/position, si c'est dans la liste, c'est pas de la tromperie
-        } else if (onlyAppearsAsArome(flavor, ingredientsNorm)) {
-          // Pas trouvé comme ingrédient, seulement comme arôme → missing
+        // On teste l'arôme EN PREMIER : sinon un ingrédient "arôme noix" était
+        // compté comme de la vraie noix (findIngredientPosition matche le mot
+        // même collé à "arôme"), ce qui laissait passer de vraies tromperies.
+        if (onlyAppearsAsArome(flavor, ingredientsNorm)) {
+          // Absent, ou présent uniquement en tant qu'arôme → manquant
           missingFlavors.push(flavor);
         }
+        // Sinon : présent comme vrai ingrédient → rien à signaler (clean)
       }
 
       // Si des saveurs sont manquantes
@@ -333,6 +345,8 @@ function detectVerdict(productName, ingredientsText) {
           };
         }
 
+        // Les saveurs annoncées qui sont bien présentes (à distinguer des absentes)
+        const presentFlavors = flavors.filter((f) => !missingFlavors.includes(f));
         return {
           verdict: 'misleading',
           headline: missingFlavors.length === 1
@@ -341,9 +355,14 @@ function detectVerdict(productName, ingredientsText) {
           legalNote: LEGAL_NOTE_FLAVOR,
           detail: {
             rule: 'saveur-sans-ingredient',
-            matched: missingFlavors.join(', '),
-            compareSuggest: missingFlavors.join(', '),
-            compareReal: 'Arômes seuls / absents',
+            // Surligner ce qui est réellement là (rien à surligner pour l'absent)
+            matched: presentFlavors.join(', '),
+            // "Le nom suggère" = TOUT ce que le nom annonce, pas juste ce qui manque
+            compareSuggest: flavors.join(', '),
+            compareReal: [
+              ...missingFlavors.map((f) => `${f} : arôme seul`),
+              ...presentFlavors.map((f) => `${f} : présent`),
+            ].join(', '),
           },
         };
       }

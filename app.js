@@ -3,8 +3,8 @@ const DEBUG = false;
 function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Display app version
-const COMMIT_HASH = 'dark-mode-tokens';
-const APP_VERSION = 'v1784220014';
+const COMMIT_HASH = 'fix-nut-generic-additive-dedupe';
+const APP_VERSION = 'v1784220015';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -28,6 +28,7 @@ const OFF_MIN_DELAY_MS = 1000;
 let currentSearchController = null; // pour annuler une recherche en cours
 let currentRiskyAdditives = [];
 let currentAllAdditives = [];
+let currentAdditivesCount = 0;
 let productHistory = [];
 const MAX_HISTORY = 4;
 
@@ -245,11 +246,18 @@ function bioMeta(labelsTags, ingredientsText) {
   return null;
 }
 
-// Recherche l'info d'un additif, avec repli sur le code de base si sous-forme
-// (ex. 'en:e340ii' -> 'en:e340', 'en:e170i' -> 'en:e170').
+// Code de base d'un additif : retire le suffixe de sous-forme en chiffres
+// romains ('en:e322i' -> 'en:e322', 'en:e500ii' -> 'en:e500'). Une sous-forme
+// désigne le MÊME additif que sa base (les lettres type e150a/e472e sont, elles,
+// de vraies variantes distinctes et ne sont pas touchées).
+function additiveBaseCode(tag) {
+  return tag.replace(/(?:iii|ii|iv|vii|vi|v|i)$/, '');
+}
+
+// Recherche l'info d'un additif, avec repli sur le code de base si sous-forme.
 function additiveInfo(tag) {
   if (ADDITIVES_DATABASE[tag]) return ADDITIVES_DATABASE[tag];
-  const base = tag.replace(/(?:i+|v|x)$/, '');
+  const base = additiveBaseCode(tag);
   if (base !== tag && ADDITIVES_DATABASE[base]) return ADDITIVES_DATABASE[base];
   return {};
 }
@@ -810,6 +818,25 @@ function renderIngredientExcerpt(ingredientsText, detail, verdictClassName) {
   captionEl.textContent = caption;
 }
 
+// "Le nom suggère" / "Il y a vraiment" : vraie <ul> quand il y a plusieurs
+// valeurs (avant : des <li> posés dans un <div>, HTML invalide).
+function renderCompareValue(el, text) {
+  el.innerHTML = '';
+  const parts = String(text || '').split(',').map((s) => s.trim()).filter(Boolean);
+  if (parts.length <= 1) {
+    el.textContent = parts[0] || '';
+    return;
+  }
+  const ul = document.createElement('ul');
+  ul.className = 'compare-list';
+  for (const part of parts) {
+    const li = document.createElement('li');
+    li.textContent = part;
+    ul.appendChild(li);
+  }
+  el.appendChild(ul);
+}
+
 function renderResult(product) {
   const { verdict, headline, legalNote, detail } = detectVerdict(product.product_name, product.ingredients_text);
   const meta = VERDICT_META[verdict];
@@ -827,20 +854,27 @@ function renderResult(product) {
   const flaggedAdditives = findFlaggedAdditives(product.additives_tags);
   currentRiskyAdditives = flaggedAdditives.risky;
 
-  // Stocker TOUS les additifs du produit
-  currentAllAdditives = (product.additives_tags || []).map(tag => {
-    const isRisky = RISKY_ADDITIVES[tag];
-    const isLimited = LIMITED_ADDITIVES[tag];
+  // Stocker les additifs du produit, DÉDOUBLONNÉS par code de base : OFF liste
+  // les sous-formes en plus de la base (e322 + e322i, e500 + e500ii) alors que
+  // c'est le même additif - sans regroupement, le popup en affichait 6 pour 4.
+  const seenAdditiveBases = new Set();
+  currentAllAdditives = (product.additives_tags || []).reduce((list, tag) => {
+    const base = additiveBaseCode(tag);
+    if (seenAdditiveBases.has(base)) return list;
+    seenAdditiveBases.add(base);
+    const isRisky = RISKY_ADDITIVES[tag] || RISKY_ADDITIVES[base];
+    const isLimited = LIMITED_ADDITIVES[tag] || LIMITED_ADDITIVES[base];
     const category = isRisky ? 'risky' : (isLimited ? 'limited' : 'ok');
-    const info = additiveInfo(tag);
-    return {
-      code: tag.replace('en:', '').toUpperCase(),
+    const info = additiveInfo(base);
+    list.push({
+      code: base.replace('en:', '').toUpperCase(),
       name: info.name || null,
       role: info.role || '',
       category: category,
       reason: isRisky ? isRisky.reason : (isLimited ? isLimited.reason : null)
-    };
-  });
+    });
+    return list;
+  }, []);
 
   const additiveAlertEl = document.getElementById('additive-alert');
   if (currentRiskyAdditives.length > 0) {
@@ -861,25 +895,8 @@ function renderResult(product) {
     const suggestEl = document.getElementById('compare-suggest');
     const realEl = document.getElementById('compare-real');
 
-    if (detail.compareSuggest.includes(',')) {
-      suggestEl.innerHTML = detail.compareSuggest.split(',').map(s => `<li>${s.trim()}</li>`).join('');
-      suggestEl.style.listStyle = 'disc';
-      suggestEl.style.paddingLeft = '20px';
-    } else {
-      suggestEl.textContent = detail.compareSuggest;
-      suggestEl.style.listStyle = 'none';
-      suggestEl.style.paddingLeft = '0';
-    }
-
-    if (detail.compareReal.includes(',')) {
-      realEl.innerHTML = detail.compareReal.split(',').map(s => `<li>${s.trim()}</li>`).join('');
-      realEl.style.listStyle = 'disc';
-      realEl.style.paddingLeft = '20px';
-    } else {
-      realEl.textContent = detail.compareReal;
-      realEl.style.listStyle = 'none';
-      realEl.style.paddingLeft = '0';
-    }
+    renderCompareValue(suggestEl, detail.compareSuggest);
+    renderCompareValue(realEl, detail.compareReal);
   } else {
     compareEl.classList.add('hidden');
   }
@@ -899,7 +916,12 @@ function renderResult(product) {
   if (currentAllAdditives.some((a) => a.category === 'risky')) worstAdditiveCat = 'risky';
   else if (currentAllAdditives.some((a) => a.category === 'limited')) worstAdditiveCat = 'limited';
   else if (currentAllAdditives.length > 0) worstAdditiveCat = 'ok';
-  const additivesCount = product.additives_n !== undefined ? product.additives_n : currentAllAdditives.length;
+  // Le compteur affiché DOIT correspondre à la liste du popup : on compte la
+  // liste dédoublonnée. additives_n (OFF) ne sert que si aucun tag n'est fourni.
+  const additivesCount = currentAllAdditives.length > 0
+    ? currentAllAdditives.length
+    : (product.additives_n || 0);
+  currentAdditivesCount = additivesCount;
   renderScoreTile('additives-icon', 'additives-value', additivesMeta(additivesCount, worstAdditiveCat), 'Non renseigné');
   renderScoreTile('bio-icon', 'bio-value', bioMeta(product.labels_tags, product.ingredients_text), 'Non certifié');
 
@@ -1037,7 +1059,10 @@ document.getElementById('additives-info-btn').addEventListener('click', () => {
   const body = document.getElementById('additives-modal-body');
 
   if (currentAllAdditives.length === 0) {
-    body.innerHTML = '<div class="additive-item" style="border-left-color:var(--green)"><div class="additive-code">Aucun additif</div></div>';
+    // Cas honnête : OFF annonce un nombre mais ne fournit pas la liste des codes.
+    body.innerHTML = currentAdditivesCount > 0
+      ? `<div class="additive-item" style="border-left-color:var(--amber)"><div class="additive-code">${currentAdditivesCount} additif${currentAdditivesCount > 1 ? 's' : ''}</div><div class="additive-reason">Liste détaillée non fournie par Open Food Facts.</div></div>`
+      : '<div class="additive-item" style="border-left-color:var(--green)"><div class="additive-code">Aucun additif</div></div>';
   } else {
     body.innerHTML = currentAllAdditives.map(additive => {
       const borderColorMap = { ok: 'var(--green)', limited: 'var(--amber)', risky: 'var(--red)' };
