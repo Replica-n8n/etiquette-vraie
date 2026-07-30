@@ -356,6 +356,31 @@ body{
 .additive-reason{ font-size:12px; color:var(--ink-soft); margin-top:4px; line-height:1.4; }
 
 
+/* ===== Contribution à Open Food Facts (produit absent) ===== */
+.contribute-block{ width:100%; margin-top:18px; padding-top:16px; border-top:1px solid var(--line); text-align:left; }
+.contribute-block.hidden{ display:none; }
+.contribute-open{
+  width:100%; padding:12px 14px; border-radius:12px; cursor:pointer;
+  background:var(--card); border:1.5px solid var(--green); color:var(--green);
+  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13px;
+  transition:transform 140ms var(--ease-out), background 140ms ease;
+}
+.contribute-open:hover{ background:var(--green-soft); }
+.contribute-open:active{ transform:scale(0.97); }
+.contribute-form{ margin-top:12px; display:flex; flex-direction:column; gap:6px; }
+.contribute-form.hidden{ display:none; }
+.contribute-label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--ink-soft); margin-top:6px; }
+.contribute-input{
+  border:1px solid var(--line); border-radius:12px; padding:11px 14px;
+  font-size:16px; font-family:'Inter', sans-serif; background:var(--card); color:var(--ink);
+}
+.contribute-input:focus{ outline:2px solid var(--ink-soft); outline-offset:1px; }
+.contribute-file{ font-size:12px; color:var(--ink-soft); padding:6px 0; }
+.contribute-note{ font-size:11px; color:var(--ink-soft); line-height:1.5; }
+.contribute-status{ font-size:12px; min-height:18px; line-height:1.5; }
+.contribute-status.ok{ color:var(--green); font-weight:600; }
+.contribute-status.err{ color:var(--red); }
+
 /* ===== Mouvement & accessibilité (Emil Kowalski + impeccable) ===== */
 
 /* Feedback de pression : les boutons "répondent" au doigt */

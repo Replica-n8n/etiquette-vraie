@@ -3,8 +3,8 @@ const DEBUG = false;
 function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Display app version
-const COMMIT_HASH = 'deep-link-product';
-const APP_VERSION = 'v1784220016';
+const COMMIT_HASH = 'contribute-to-off';
+const APP_VERSION = 'v1784220017';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -485,10 +485,12 @@ async function handleQrScan(code) {
     }
   }
 
+  const notFound = lastError.message === 'product-not-found';
   showResultError(
-    lastError.message === 'product-not-found'
+    notFound
       ? 'Produit non trouvé sur Open Food Facts. Vérifie le code-barres et réessaie.'
-      : fetchErrorMessage(lastError)
+      : fetchErrorMessage(lastError),
+    notFound ? code : null
   );
 }
 
@@ -707,7 +709,7 @@ async function selectProduct(code) {
   try {
     const product = await fetchProduct(code);
     if (!product) {
-      showResultError(fetchErrorMessage(new Error('product-not-found')));
+      showResultError(fetchErrorMessage(new Error('product-not-found')), code);
       return;
     }
     renderResult(product);
@@ -970,11 +972,114 @@ function showResultContent() {
   document.getElementById('result-content').classList.remove('hidden');
 }
 
-function showResultError(message) {
+function showResultError(message, missingCode) {
   document.getElementById('result-loading').classList.add('hidden');
   document.getElementById('result-error').classList.remove('hidden');
   document.getElementById('result-content').classList.add('hidden');
   document.getElementById('error-message').textContent = message;
+  // Proposer de contribuer UNIQUEMENT si le produit est absent d'OFF
+  // (inutile de le proposer sur une panne réseau : le produit existe peut-être).
+  setContributeTarget(missingCode || null);
+}
+
+// ===== Contribution à Open Food Facts ======================================
+const CONTRIBUTE_URL = SEARCH_PROXY.replace(/\/search$/, '/contribute');
+let contributeCode = null;
+let contributePhoto = null; // data URL compressée
+
+// Identifiant anonyme et stable, pour qu'OFF puisse modérer un utilisateur
+// précis sans bannir toute l'app. Aucune donnée personnelle.
+function anonUuid() {
+  try {
+    let id = localStorage.getItem('ev-uuid');
+    if (!id) {
+      id = 'ev-' + (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2));
+      localStorage.setItem('ev-uuid', id);
+    }
+    return id;
+  } catch (e) {
+    return 'ev-anon';
+  }
+}
+
+function setContributeTarget(code) {
+  contributeCode = code;
+  contributePhoto = null;
+  const block = document.getElementById('contribute-block');
+  if (!block) return;
+  block.classList.toggle('hidden', !code);
+  document.getElementById('contribute-form').classList.add('hidden');
+  document.getElementById('contribute-status').textContent = '';
+  document.getElementById('contribute-status').className = 'contribute-status';
+  document.getElementById('contrib-photo-info').textContent = '';
+  document.getElementById('contrib-name').value = '';
+  document.getElementById('contrib-photo').value = '';
+}
+
+// Une photo de téléphone fait 3-8 Mo : on la réduit avant l'envoi (OFF exige
+// au moins 640x160, 1600px de côté est largement suffisant pour l'OCR).
+async function compressImage(file, maxSide = 1600, quality = 0.82) {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  const w = Math.max(1, Math.round(bitmap.width * scale));
+  const h = Math.max(1, Math.round(bitmap.height * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+  bitmap.close && bitmap.close();
+  return { dataUrl: canvas.toDataURL('image/jpeg', quality), w, h };
+}
+
+async function sendContribution() {
+  const statusEl = document.getElementById('contribute-status');
+  const sendBtn = document.getElementById('btn-contribute-send');
+  const name = document.getElementById('contrib-name').value.trim();
+
+  if (!contributeCode) return;
+  if (!name && !contributePhoto) {
+    statusEl.className = 'contribute-status err';
+    statusEl.textContent = 'Ajoute au moins le nom ou une photo.';
+    return;
+  }
+
+  sendBtn.disabled = true;
+  statusEl.className = 'contribute-status';
+  statusEl.textContent = 'Envoi en cours...';
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+    const res = await fetch(CONTRIBUTE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: contributeCode,
+        product_name: name || undefined,
+        image: contributePhoto || undefined,
+        lang: 'fr',
+        uuid: anonUuid(),
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) {
+      statusEl.className = 'contribute-status ok';
+      statusEl.textContent = 'Merci ! Ta contribution est envoyée à Open Food Facts.';
+      document.getElementById('contribute-form').classList.add('hidden');
+    } else {
+      statusEl.className = 'contribute-status err';
+      statusEl.textContent = 'Envoi impossible pour le moment. Réessaie plus tard.';
+    }
+  } catch (err) {
+    statusEl.className = 'contribute-status err';
+    statusEl.textContent = (err.name === 'AbortError')
+      ? 'Envoi trop long. Réessaie.'
+      : 'Problème de connexion. Réessaie.';
+  } finally {
+    sendBtn.disabled = false;
+  }
 }
 
 function addToHistory(product) {
@@ -1037,6 +1142,34 @@ backButton.addEventListener('click', () => showScreen('home'));
 document.getElementById('btn-search').addEventListener('click', () => showScreen('search'));
 document.getElementById('btn-scan').addEventListener('click', () => showScreen('scan'));
 document.getElementById('btn-error-back').addEventListener('click', () => showScreen('home'));
+
+// --- Contribution : ouverture du formulaire, photo, envoi ---
+document.getElementById('btn-contribute').addEventListener('click', () => {
+  document.getElementById('contribute-form').classList.remove('hidden');
+  document.getElementById('contrib-name').focus();
+});
+
+document.getElementById('contrib-photo').addEventListener('change', async (event) => {
+  const file = event.target.files && event.target.files[0];
+  const info = document.getElementById('contrib-photo-info');
+  contributePhoto = null;
+  if (!file) { info.textContent = ''; return; }
+  info.textContent = 'Préparation de la photo...';
+  try {
+    const { dataUrl, w, h } = await compressImage(file);
+    if (w < 640 || h < 160) {
+      info.textContent = 'Photo trop petite pour être lisible. Reprends-la de plus près.';
+      return;
+    }
+    contributePhoto = dataUrl;
+    const kb = Math.round((dataUrl.length * 0.75) / 1024);
+    info.textContent = `Photo prête (${w}×${h}, ~${kb} Ko).`;
+  } catch (err) {
+    info.textContent = 'Impossible de lire cette image.';
+  }
+});
+
+document.getElementById('btn-contribute-send').addEventListener('click', sendContribution);
 
 // Initialize with home screen
 (async () => {
