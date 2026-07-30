@@ -3,8 +3,8 @@ const DEBUG = false;
 function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Display app version
-const COMMIT_HASH = 'fix-nut-generic-additive-dedupe';
-const APP_VERSION = 'v1784220015';
+const COMMIT_HASH = 'deep-link-product';
+const APP_VERSION = 'v1784220016';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -1041,6 +1041,13 @@ document.getElementById('btn-error-back').addEventListener('click', () => showSc
 // Initialize with home screen
 (async () => {
   await loadAdditivesDatabase();
+  // Lien direct vers un produit : ...?code=0065633468191
+  // Permet de partager une fiche et de tester un produit sans l'avoir en main.
+  const deepCode = (new URLSearchParams(location.search).get('code') || '').trim();
+  if (/^\d{8,14}$/.test(deepCode)) {
+    selectProduct(deepCode);
+    return;
+  }
   showScreen('home');
 })();
 
