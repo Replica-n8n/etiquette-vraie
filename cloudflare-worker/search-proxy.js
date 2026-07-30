@@ -53,6 +53,34 @@ function dataUrlToBlob(dataUrl) {
   return new Blob([bytes], { type: match[1] });
 }
 
+// Vérifie les identifiants OFF SANS rien écrire (utile pour diagnostiquer).
+// Ne renvoie jamais les valeurs, seulement leur longueur (repère les espaces
+// collés par erreur lors du copier/coller dans Cloudflare).
+async function handleAuthCheck(env) {
+  if (!env || !env.OFF_USER_ID || !env.OFF_PASSWORD) return json({ error: 'not-configured' }, 503);
+  const base = offBase(env);
+  const form = new FormData();
+  form.append('user_id', env.OFF_USER_ID);
+  form.append('password', env.OFF_PASSWORD);
+  try {
+    const res = await fetch(`${base}/cgi/session.pl`, {
+      method: 'POST', body: form,
+      headers: { 'User-Agent': `${APP_NAME}/${APP_VERSION} (etiquette-vraie)` },
+    });
+    return json({
+      base,
+      ok: res.status === 200,
+      http: res.status,
+      user_id_length: env.OFF_USER_ID.length,
+      password_length: env.OFF_PASSWORD.length,
+      user_id_trimmed_ok: env.OFF_USER_ID === env.OFF_USER_ID.trim(),
+      password_trimmed_ok: env.OFF_PASSWORD === env.OFF_PASSWORD.trim(),
+    });
+  } catch (e) {
+    return json({ base, error: e.message }, 502);
+  }
+}
+
 async function handleContribute(request, env) {
   if (request.method !== 'POST') return json({ error: 'method' }, 405);
   if (!env || !env.OFF_USER_ID || !env.OFF_PASSWORD) {
@@ -126,9 +154,10 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
 
     const url = new URL(request.url);
+    if (url.pathname === '/auth-check') return handleAuthCheck(env);
     if (url.pathname === '/contribute') return handleContribute(request, env);
     if (url.pathname !== '/search') {
-      return new Response('Etiquette Vraie proxy — /search?q=... ou POST /contribute', { headers: CORS });
+      return new Response('Etiquette Vraie proxy — /search?q=... · POST /contribute · /auth-check', { headers: CORS });
     }
 
     const q = (url.searchParams.get('q') || '').trim();
