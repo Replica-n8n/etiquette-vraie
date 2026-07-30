@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#2F6F4F">
-<meta name="description" content="Vérifie si le nom d'un produit correspond vraiment à sa composition">
+<meta name="description" content="Scanne un produit alimentaire et vérifie si son nom correspond vraiment à sa composition">
 <title>Étiquette Vraie</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" href="./icon-192.png">
@@ -26,8 +26,8 @@
 
     <div id="home-screen" class="home-screen">
       <div class="home-content">
-        <div class="home-title">Vérifier un produit</div>
-        <div class="home-subtitle">Découvre si le nom d'un produit correspond vraiment à sa composition</div>
+        <div class="home-title">Vérifier un aliment</div>
+        <div class="home-subtitle">Scanne un produit <b>alimentaire</b> emballé : on compare ce que son nom promet à sa vraie composition.</div>
         <button id="btn-scan" class="home-button scan" type="button">
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5v14M7 5v14M11 5v14M14.5 5v14M18 5v14M21 5v14"/></svg>
           Scanner un code-barres
@@ -45,8 +45,8 @@
 
     <div id="search-screen" class="search-screen hidden">
       <div class="search-head">
-        <div class="search-title">Vérifier un produit</div>
-        <div class="search-hint">Tape le nom d'un produit (ex. "Oreo", "Nutella") pour voir si son nom correspond à sa vraie composition.</div>
+        <div class="search-title">Chercher un aliment</div>
+        <div class="search-hint">Tape le nom d'un produit <b>alimentaire</b> (ex. "Oreo", "Nutella") pour voir si son nom correspond à sa vraie composition.</div>
       </div>
       <form id="search-form" class="search-form">
         <input id="search-input" class="search-input" type="text" placeholder="Nom du produit..." autocomplete="off">
@@ -59,7 +59,7 @@
     <div id="scan-screen" class="scan-screen hidden">
       <div class="scan-header">
         <div class="scan-title">Scanner un code-barres</div>
-        <div class="scan-hint">Pointe la caméra vers le code-barres de l'emballage</div>
+        <div class="scan-hint">Pointe la caméra vers le code-barres d'un produit <b>alimentaire</b> emballé.</div>
       </div>
       <div id="qr-reader" class="qr-reader"></div>
       <div id="scan-status" class="scan-status"></div>
@@ -212,6 +212,6 @@
 </div>
 
 <script src="./rules.js?v=1784220015" defer></script>
-<script src="./app.js?v=1784220017" defer></script>
+<script src="./app.js?v=1784220018" defer></script>
 </body>
 </html>

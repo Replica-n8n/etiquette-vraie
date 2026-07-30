@@ -3,8 +3,8 @@ const DEBUG = false;
 function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Display app version
-const COMMIT_HASH = 'contribute-to-off';
-const APP_VERSION = 'v1784220017';
+const COMMIT_HASH = 'clarify-food-only';
+const APP_VERSION = 'v1784220018';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
 
@@ -488,7 +488,7 @@ async function handleQrScan(code) {
   const notFound = lastError.message === 'product-not-found';
   showResultError(
     notFound
-      ? 'Produit non trouvé sur Open Food Facts. Vérifie le code-barres et réessaie.'
+      ? 'Introuvable dans Open Food Facts. Rappel : cette app ne couvre que les produits alimentaires emballés (pas les cosmétiques, livres, etc.).'
       : fetchErrorMessage(lastError),
     notFound ? code : null
   );
@@ -530,7 +530,7 @@ function fetchErrorMessage(err) {
   if (err.name === 'AbortError') return 'Open Food Facts ne répond pas assez vite. Réessaie dans quelques secondes.';
   if (err.message === 'off-error-5xx') return 'Open Food Facts est en maintenance. Réessaie dans quelques minutes.';
   if (err.message === 'off-rate-limit') return 'Trop de requêtes. Attends quelques secondes et réessaie.';
-  if (err.message === 'product-not-found') return 'Produit non trouvé sur Open Food Facts.';
+  if (err.message === 'product-not-found') return 'Introuvable dans Open Food Facts. Cette app ne couvre que les produits alimentaires emballés.';
   return 'Erreur réseau - réessaie.';
 }
 
