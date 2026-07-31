@@ -69,7 +69,7 @@ const FLAVOR_PATTERN = /(?:saveur|gout|parfum|essence|extrait|concentre)\s+(?:de
 // ambigus (fruits, arômes classiques) - pas les noms de marque ("Nutella").
 const FOOD_WORDS = [
   'myrtille', 'blueberry', 'fraise', 'strawberry', 'framboise', 'raspberry',
-  'vanille', 'vanilla', 'chocolat', 'chocolate', 'cacao', 'cocoa', 'noisette', 'hazelnut',
+  'vanille', 'vanilla', 'chocolat', 'chocolate', 'chocolatey', 'cacao', 'cocoa', 'noisette', 'hazelnut',
   'citron', 'lemon', 'orange', 'banane', 'banana', 'pomme', 'apple',
   'cerise', 'cherry', 'coco', 'coconut', 'caramel', 'cafe', 'coffee',
   'cannelle', 'cinnamon', 'mangue', 'mango', 'peche', 'peach',
@@ -80,7 +80,7 @@ const FOOD_WORDS = [
   'lait', 'milk', 'oeuf', 'egg', 'sesame', 'sésame',
   'noix', 'nut', 'walnut', 'cajou', 'cashew', 'macadamia', 'lin', 'flax',
   'raisin', 'grape', 'kiwi', 'mure', 'blackberry', 'figue', 'fig',
-  'datte', 'date', 'avocat', 'avocado', 'cranberry', 'miel', 'honey',
+  'datte', 'date', 'avocat', 'avocado', 'cranberry', 'canneberge', 'miel', 'honey',
   'avoine', 'oat',
 ];
 // Pattern created dynamically in findFlavorMention() to support plurals
@@ -103,6 +103,9 @@ const INGREDIENT_VARIANTS = {
   'chocolate': ['chocolat', 'chocolats', 'chocolate', 'chocolates', 'cacao', 'cacaos', 'cocoa'],
   'cacao': ['chocolat', 'chocolats', 'chocolate', 'chocolates', 'cacao', 'cacaos', 'cocoa'],
   'cocoa': ['chocolat', 'chocolats', 'chocolate', 'chocolates', 'cacao', 'cacaos', 'cocoa'],
+  // "chocolatey" (EN) = mot de réserve : on le rattache à la famille chocolat
+  // pour aller chercher s'il y a du vrai chocolat dans les ingrédients.
+  'chocolatey': ['chocolat', 'chocolats', 'chocolate', 'chocolates', 'cacao', 'cacaos', 'cocoa'],
   'vanille': ['vanille', 'vanilla'],
   'vanilla': ['vanille', 'vanilla'],
   'noisette': ['noisette', 'noisettes', 'hazelnut', 'hazelnuts'],
@@ -144,7 +147,8 @@ const INGREDIENT_VARIANTS = {
   'date': ['datte', 'dattes', 'date', 'dates'],
   'avocat': ['avocat', 'avocats', 'avocado', 'avocados'],
   'avocado': ['avocat', 'avocats', 'avocado', 'avocados'],
-  'cranberry': ['cranberry', 'cranberries'],
+  'cranberry': ['cranberry', 'cranberries', 'canneberge', 'canneberges'],
+  'canneberge': ['cranberry', 'cranberries', 'canneberge', 'canneberges'],
   'miel': ['miel', 'honey'],
   'honey': ['miel', 'honey'],
   'avoine': ['avoine', 'avoines', 'oat', 'oats'],
@@ -156,6 +160,27 @@ const INGREDIENT_VARIANTS = {
   'noix': NUT_FAMILY,
   'nut': NUT_FAMILY,
 };
+
+// Affichage en français des mots détectés : normalize() enlève les accents,
+// donc "chocolaté" devient "chocolate", qui a l'air anglais à l'écran. On
+// réaffiche le mot français attendu par l'utilisateur.
+const DISPLAY_FR = {
+  chocolate: 'chocolat', chocolatey: 'chocolat', chocolates: 'chocolat', cocoa: 'cacao',
+  strawberry: 'fraise', raspberry: 'framboise', blueberry: 'myrtille',
+  blackberry: 'mûre', cranberry: 'canneberge', cherry: 'cerise', apple: 'pomme',
+  banana: 'banane', lemon: 'citron', peach: 'pêche', pear: 'poire',
+  pineapple: 'ananas', apricot: 'abricot', mango: 'mangue', grape: 'raisin',
+  vanilla: 'vanille', hazelnut: 'noisette', almond: 'amande', walnut: 'noix',
+  peanut: 'cacahuète', cashew: 'noix de cajou', pistachio: 'pistache',
+  coconut: 'noix de coco', honey: 'miel', mint: 'menthe', cinnamon: 'cannelle',
+  coffee: 'café', milk: 'lait', egg: 'oeuf', beef: 'boeuf', eggplant: 'aubergine',
+  oat: 'avoine', oats: 'avoine', nut: 'fruit à coque', soy: 'soja', fig: 'figue',
+  date: 'datte', avocado: 'avocat', pomegranate: 'grenade',
+};
+
+function displayFlavor(word) {
+  return DISPLAY_FR[word] || word;
+}
 
 function findFlavorMention(productName) {
   // Exclure les produits "Chocolate X%", "Dark Chocolate Y%", etc.
@@ -191,17 +216,36 @@ function pluralPattern(word) {
   return alternatives.join('|');
 }
 
-// Vrai si le mot n'apparaît dans les ingrédients que collé à "arôme(s)",
-// jamais comme ingrédient réel autonome.
+// Marqueurs signalant une SAVEUR et non l'ingrédient réel. "arôme" ne suffit
+// pas : les fabricants écrivent aussi "à saveur de chocolat", "goût vanille",
+// "dark chocolate flavoured chunks"... (cas réel : mélange BASSÉ, où
+// "morceaux à saveur de chocolat noir" était compté comme du vrai chocolat).
+const FLAVOUR_MARKER = /arom[ae]s?|saveur|gout|parfum|flavou?red?|chocolate?y/;
+
+// Vrai si le mot n'apparaît dans les ingrédients que comme saveur/arôme,
+// jamais comme ingrédient réel. On raisonne par ingrédient (séparés par des
+// virgules) : le marqueur peut précéder OU suivre le mot selon la langue.
 function onlyAppearsAsArome(word, ingredientsNorm) {
   const allVariants = INGREDIENT_VARIANTS[word] || [word];
   const variants = allVariants.map(v => pluralPattern(v)).join('|');
-  const wordRe = new RegExp(`\\b(?:${variants})\\b`, 'g');
-  const occurrences = ingredientsNorm.match(wordRe) || [];
-  if (occurrences.length === 0) return true; // absent = pareil qu'arôme seul
-  const aromeContextRe = new RegExp(`arom[ae]s?[^,]{0,25}\\b(?:${variants})\\b`, 'g');
-  const aromeOccurrences = ingredientsNorm.match(aromeContextRe) || [];
-  return aromeOccurrences.length >= occurrences.length;
+  const wordRe = new RegExp(`\\b(?:${variants})\\b`);
+  const items = ingredientsNorm.split(',').map(s => s.trim()).filter(Boolean);
+  const mentions = items.filter(item => wordRe.test(item));
+  if (mentions.length === 0) return true; // absent = pareil qu'arôme seul
+  return mentions.every(item => FLAVOUR_MARKER.test(item));
+}
+
+// Le NOM contient-il une réserve ("chocolaté", "saveur X", "goût X",
+// "chocolatey", "flavoured") ? Si oui, le fabricant a prévenu : c'est légal et
+// déclaré -> "À vérifier", pas "Trompeur".
+// Attention : on teste le nom BRUT car normalize() transforme "chocolaté" en
+// "chocolate", qui deviendrait indiscernable de l'anglais "chocolate".
+function hasHedgeWord(productName) {
+  const raw = String(productName || '');
+  if (/chocolat[éÉ]/i.test(raw)) return true;           // chocolaté / CHOCOLATÉ
+  if (/\bchocolate?y\b/i.test(raw)) return true;         // chocolatey (anglais)
+  if (/\bflavou?red?\b/i.test(raw)) return true;         // flavoured / flavor
+  return /arom|saveur|gout|parfum/.test(normalize(raw)); // arôme / saveur / goût
 }
 
 function findIngredientPosition(word, ingredientsNorm) {
@@ -216,6 +260,9 @@ function findIngredientPosition(word, ingredientsNorm) {
 
 const LEGAL_NOTE_POSITION =
   'L\'ordre de la liste d\'ingrédients doit refléter leur quantité décroissante (règlement (UE) n°1169/2011, art. 18). La position d\'un ingrédient est donc un signal fiable de sa proportion réelle.';
+
+const LEGAL_NOTE_HEDGE =
+  'Une mention comme "chocolaté", "saveur X" ou "goût X" est légalement autorisée pour un produit qui ne contient PAS l\'ingrédient : elle décrit une saveur, pas une présence. Ainsi "chocolaté" ne peut pas être appelé "chocolat", faute de beurre de cacao en quantité suffisante. Le fabricant respecte donc l\'étiquetage - mais le nom reste trompeur à la lecture rapide, d\'où cette mise en garde plutôt qu\'une accusation.';
 
 const LEGAL_NOTE_FLAVOR =
   'La mention d\'un ingrédient dans le nom ("saveur / goût X", ou le nom direct d\'un fruit/arôme) décrit une saveur perçue, pas un ingrédient garanti. Le règlement (UE) n°1169/2011 exige seulement que "arôme" figure dans la liste - pas qu\'il précise sa source.';
@@ -323,65 +370,62 @@ function detectVerdict(productName, ingredientsText) {
         // Sinon : présent comme vrai ingrédient → rien à signaler (clean)
       }
 
-      // Si des saveurs sont manquantes
+      // Si des saveurs sont manquantes : deux cas très différents.
       if (missingFlavors.length > 0) {
-        // Exception: si le nom dit "aromatisé" / "saveur" / "goût" / "parfum", c'est normal que ce soit que des arômes
-        // (tous ces termes signalent un produit aromatisé, légalement conforme)
-        const isAromatized = /arom|saveur|gout|parfum/i.test(nameNorm);
-        if (isAromatized) {
-          // C'est un produit aromatisé, ce n'est pas une fraude
-          const firstFlavorPos = findIngredientPosition(missingFlavors[0], ingredientsNorm);
+        const presentFlavors = flavors.filter((f) => !missingFlavors.includes(f));
+        const detail = {
+          // Surligner ce qui est réellement là (mot BRUT : il doit correspondre
+          // au texte des ingrédients, pas à sa traduction d'affichage)
+          matched: presentFlavors.join(', '),
+          // "Le nom suggère" = TOUT ce que le nom annonce, pas juste ce qui manque
+          compareSuggest: flavors.map(displayFlavor).join(', '),
+          compareReal: [
+            ...missingFlavors.map((f) => `${displayFlavor(f)} : saveur seule`),
+            ...presentFlavors.map((f) => `${displayFlavor(f)} : présent`),
+          ].join(', '),
+        };
+        const liste = missingFlavors.map(displayFlavor).join(', ');
+
+        // CAS 1 - Le fabricant a PRÉVENU ("chocolaté", "saveur X", "goût X") :
+        // c'est légal et déclaré. Ni "clean" (le client mérite de le savoir),
+        // ni "trompeur" (ils n'ont pas menti) -> À vérifier.
+        if (hasHedgeWord(productName)) {
           return {
-            verdict: 'clean',
-            headline: `Produit aromatisé - arôme${missingFlavors.length > 1 ? 's' : ''} de ${missingFlavors.join(', ')}`,
-            legalNote: LEGAL_NOTE_FLAVOR,
-            detail: {
-              rule: 'ingredient-confirme',
-              matched: missingFlavors.join(', '),
-              compareSuggest: missingFlavors.join(', '),
-              compareReal: `Arôme${missingFlavors.length > 1 ? 's' : ''} - conforme`,
-              ...(firstFlavorPos && { index: firstFlavorPos.index, total: firstFlavorPos.total, ratio: firstFlavorPos.ratio }),
-            },
+            verdict: 'warning',
+            headline: missingFlavors.length === 1
+              ? `"${liste}" est une saveur, pas l'ingrédient`
+              : `${liste} : des saveurs, pas les ingrédients`,
+            legalNote: LEGAL_NOTE_HEDGE,
+            detail: { ...detail, rule: 'saveur-annoncee' },
           };
         }
 
-        // Les saveurs annoncées qui sont bien présentes (à distinguer des absentes)
-        const presentFlavors = flavors.filter((f) => !missingFlavors.includes(f));
+        // CAS 2 - Le nom AFFIRME l'ingrédient sans réserve, et il est absent.
         return {
           verdict: 'misleading',
           headline: missingFlavors.length === 1
-            ? `"${missingFlavors[0]}" absent - seulement un arôme`
-            : `${missingFlavors.length} saveur${missingFlavors.length > 1 ? 's' : ''} absent${missingFlavors.length > 1 ? 'es' : ''} - seulement des arômes`,
+            ? `"${liste}" absent - seulement un arôme`
+            : `${missingFlavors.length} saveurs absentes - seulement des arômes`,
           legalNote: LEGAL_NOTE_FLAVOR,
-          detail: {
-            rule: 'saveur-sans-ingredient',
-            // Surligner ce qui est réellement là (rien à surligner pour l'absent)
-            matched: presentFlavors.join(', '),
-            // "Le nom suggère" = TOUT ce que le nom annonce, pas juste ce qui manque
-            compareSuggest: flavors.join(', '),
-            compareReal: [
-              ...missingFlavors.map((f) => `${f} : arôme seul`),
-              ...presentFlavors.map((f) => `${f} : présent`),
-            ].join(', '),
-          },
+          detail: { ...detail, rule: 'saveur-sans-ingredient' },
         };
       }
 
       // Toutes les saveurs sont présentes correctement
       const firstFlavorPos = findIngredientPosition(flavors[0], ingredientsNorm);
-      const positions = flavors.join(', ');
+      const shown = flavors.map(displayFlavor).join(', ');
 
       return {
         verdict: 'clean',
         headline: flavors.length === 1
-          ? `"${flavors[0]}" confirmé dans la composition réelle`
+          ? `"${displayFlavor(flavors[0])}" confirmé dans la composition réelle`
           : `Toutes les saveurs confirmées dans la composition réelle`,
         legalNote: LEGAL_NOTE_POSITION,
         detail: {
           rule: 'ingredient-confirme',
-          matched: flavors.join(', '),
-          compareSuggest: flavors.join(', '),
-          compareReal: positions,
+          matched: flavors.join(', '), // mot brut pour le surlignage
+          compareSuggest: shown,
+          compareReal: shown,
           ...(firstFlavorPos && { index: firstFlavorPos.index, total: firstFlavorPos.total, ratio: firstFlavorPos.ratio }),
         },
       };

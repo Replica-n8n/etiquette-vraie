@@ -2,11 +2,14 @@
 const DEBUG = false;
 function dbg(...args) { if (DEBUG) console.log(...args); }
 
-// Display app version
-const COMMIT_HASH = 'clarify-food-only';
-const APP_VERSION = 'v1784220018';
+// Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
+// (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
+const APP_VERSION = 'v1.20';
+// Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
+// et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
+const BUILD = '1784220021';
 document.getElementById('app-version').textContent = APP_VERSION;
-console.log(`[APP] Version: ${APP_VERSION} | Commit: ${COMMIT_HASH}`);
+console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
 const homeScreen = document.getElementById('home-screen');
 const searchScreen = document.getElementById('search-screen');
@@ -272,6 +275,11 @@ function showScreen(screen) {
     searchInput.value = '';
     resultsList.innerHTML = '';
     searchStatus.textContent = '';
+  }
+  // Le code-barres n'a de sens que sur la fiche produit
+  if (screen !== 'result') {
+    const codeEl = document.getElementById('app-product-code');
+    if (codeEl) codeEl.textContent = '';
   }
   if (screen === 'scan') startScanner();
   else stopScanner();
@@ -820,6 +828,13 @@ function renderIngredientExcerpt(ingredientsText, detail, verdictClassName) {
   captionEl.textContent = caption;
 }
 
+// OFF contient parfois la chaîne littérale "null"/"undefined" (saisie ou import
+// de travers) : ne jamais l'afficher telle quelle à l'utilisateur.
+function cleanText(value) {
+  const text = String(value == null ? '' : value).trim();
+  return (text === 'null' || text === 'undefined') ? '' : text;
+}
+
 // "Le nom suggère" / "Il y a vraiment" : vraie <ul> quand il y a plusieurs
 // valeurs (avant : des <li> posés dans un <div>, HTML invalide).
 function renderCompareValue(el, text) {
@@ -845,8 +860,12 @@ function renderResult(product) {
 
   addToHistory(product);
 
-  document.getElementById('product-name').textContent = product.product_name;
-  document.getElementById('product-sub').textContent = product.brands || '';
+  document.getElementById('product-name').textContent = cleanText(product.product_name);
+  document.getElementById('product-sub').textContent = cleanText(product.brands);
+  // Code-barres affiché près de la version : permet à un utilisateur de nous
+  // signaler un produit précis sans avoir l'emballage sous la main.
+  const codeEl = document.getElementById('app-product-code');
+  if (codeEl) codeEl.textContent = product.code ? ` · ${product.code}` : '';
 
   const verdictEl = document.getElementById('verdict-box');
   verdictEl.className = `alert ${meta.className}`;
@@ -928,7 +947,9 @@ function renderResult(product) {
   renderScoreTile('bio-icon', 'bio-value', bioMeta(product.labels_tags, product.ingredients_text), 'Non certifié');
 
   const legalAccordion = document.getElementById('legal-accordion');
-  if (legalNote && verdict === 'misleading') {
+  // Vaut aussi pour "À vérifier" : c'est précisément là que l'explication
+  // ("chocolaté" n'est pas du chocolat) a le plus de valeur.
+  if (legalNote && (verdict === 'misleading' || verdict === 'warning')) {
     legalAccordion.classList.remove('hidden');
     document.getElementById('legal-note').textContent = legalNote;
   } else {

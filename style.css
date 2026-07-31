@@ -88,16 +88,20 @@ body{
 .back.hidden{
   visibility:hidden;
 }
+/* Nom sur une ligne, version dessous : le nom reste vraiment centré */
 .brand{
+  display:flex; flex-direction:column; align-items:center; gap:1px;
   font-family:'Space Grotesk', sans-serif; font-weight:700;
   font-size:13px; letter-spacing:0.02em; color:var(--ink-soft);
-  text-transform:uppercase;
+  text-transform:uppercase; line-height:1.2;
 }
+.brand-name{ white-space:nowrap; }
 .brand b{ color:var(--ink); }
 .version{
   font-family:'IBM Plex Mono', monospace; font-size:9px;
-  color:var(--ink-soft); opacity:0.6; margin-left:4px;
-  font-weight:400; letter-spacing:0;
+  color:var(--muted); /* couleur dédiée plutôt qu'une opacité : contraste maîtrisé */
+  font-weight:400; letter-spacing:0; text-transform:none;
+  user-select:text; /* le code-barres doit pouvoir être copié pour un signalement */
 }
 
 /* Écran d'accueil */
