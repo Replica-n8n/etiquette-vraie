@@ -61,7 +61,10 @@ const NON_LITERAL_EXPRESSIONS = [
   /\bmettre du beurre dans les epinards\b/,
 ];
 
-const FLAVOR_PATTERN = /(?:saveur|gout|parfum|essence|extrait|concentre)\s+(?:de\s+)?([a-z]+(?:\s+[a-z]+)?)/g;
+// Extrait l'aliment annoncé derrière une formule de saveur : "arôme de fraise",
+// "à saveur de chocolat", "aromatisé à la vanille", "goût citron"...
+// (Complète la détection directe par FOOD_WORDS, pour les aliments hors liste.)
+const FLAVOR_PATTERN = /(?:arome|aromatise|saveur|gout|parfum|essence|extrait|concentre)s?\s*(?:naturels?\s*|artificiels?\s*)?(?:de\s+|d'|a la\s+|au\s+|aux\s+)?([a-z]+(?:\s+[a-z]+)?)/g;
 
 // Mots d'ingrédients/fruits assez identifiables pour qu'on les vérifie quand ils
 // apparaissent tels quels dans le nom du produit (ex. "Blueberry Waffles"),
@@ -82,6 +85,17 @@ const FOOD_WORDS = [
   'raisin', 'grape', 'kiwi', 'mure', 'blackberry', 'figue', 'fig',
   'datte', 'date', 'avocat', 'avocado', 'cranberry', 'canneberge', 'miel', 'honey',
   'avoine', 'oat',
+  // Aliments souvent mis en avant dans un nom composé (et souvent imités).
+  // ATTENTION : n'ajouter ici que des INGRÉDIENTS, jamais des catégories de
+  // produit (fromage, beurre, crème, jambon, poulet...). La liste d'ingrédients
+  // d'un fromage ne dit pas "fromage" mais "lait, ferments" : les inclure
+  // ferait passer "Fromage blanc" pour un produit trompeur.
+  'crabe', 'crab', 'praline', 'erable', 'maple', 'truffe', 'truffle',
+  'crevette', 'shrimp', 'homard', 'lobster', 'safran', 'saffron',
+  // Ceux-ci sont aussi des CATÉGORIES de produit : protégés par CATEGORY_WORDS,
+  // qui empêche de conclure quand ils sont absents de leur propre liste.
+  'fromage', 'cheese', 'beurre', 'butter', 'creme', 'cream',
+  'jambon', 'ham', 'poulet', 'chicken', 'saumon', 'salmon', 'thon', 'tuna',
 ];
 // Pattern created dynamically in findFlavorMention() to support plurals
 
@@ -159,6 +173,37 @@ const INGREDIENT_VARIANTS = {
   // promesse (sinon on accuse à tort - cf. Nature Valley 0016000407619).
   'noix': NUT_FAMILY,
   'nut': NUT_FAMILY,
+  // "praliné" = préparation à base de noisettes/amandes caramélisées : on
+  // vérifie donc la présence d'un fruit à coque.
+  'praline': NUT_FAMILY,
+  // "surimi" est justement le SUBSTITUT de crabe : il ne doit pas compter
+  // comme du vrai crabe (sinon "imitation crabe" ressortirait clean).
+  'crabe': ['crabe', 'crabes', 'crab', 'crabs'],
+  'crab': ['crabe', 'crabes', 'crab', 'crabs'],
+  'erable': ['erable', 'erables', 'maple'],
+  'maple': ['erable', 'erables', 'maple'],
+  'truffe': ['truffe', 'truffes', 'truffle', 'truffles'],
+  'truffle': ['truffe', 'truffes', 'truffle', 'truffles'],
+  'fromage': ['fromage', 'fromages', 'cheese', 'cheeses'],
+  'cheese': ['fromage', 'fromages', 'cheese', 'cheeses'],
+  'beurre': ['beurre', 'beurres', 'butter'],
+  'butter': ['beurre', 'beurres', 'butter'],
+  'creme': ['creme', 'cremes', 'cream', 'creams'],
+  'cream': ['creme', 'cremes', 'cream', 'creams'],
+  'jambon': ['jambon', 'jambons', 'ham'],
+  'ham': ['jambon', 'jambons', 'ham'],
+  'poulet': ['poulet', 'poulets', 'chicken'],
+  'chicken': ['poulet', 'poulets', 'chicken'],
+  'saumon': ['saumon', 'saumons', 'salmon'],
+  'salmon': ['saumon', 'saumons', 'salmon'],
+  'thon': ['thon', 'thons', 'tuna'],
+  'tuna': ['thon', 'thons', 'tuna'],
+  'crevette': ['crevette', 'crevettes', 'shrimp', 'shrimps', 'prawn', 'prawns'],
+  'shrimp': ['crevette', 'crevettes', 'shrimp', 'shrimps', 'prawn', 'prawns'],
+  'homard': ['homard', 'homards', 'lobster', 'lobsters'],
+  'lobster': ['homard', 'homards', 'lobster', 'lobsters'],
+  'safran': ['safran', 'saffron'],
+  'saffron': ['safran', 'saffron'],
 };
 
 // Affichage en français des mots détectés : normalize() enlève les accents,
@@ -182,6 +227,23 @@ function displayFlavor(word) {
   return DISPLAY_FR[word] || word;
 }
 
+// Table des formes rencontrées dans un nom -> mot de base, construite une fois.
+// Le premier gagne : "chocolate" (forme de "chocolat") pointe donc sur
+// "chocolat", et les deux appartiennent de toute façon à la même famille.
+const NAME_FORM_TO_BASE = (() => {
+  const map = {};
+  for (const word of FOOD_WORDS) {
+    for (const form of nameFormPattern(word).split('|')) {
+      if (!(form in map)) map[form] = word;
+    }
+  }
+  return map;
+})();
+
+const FOOD_WORD_PATTERN = new RegExp(
+  `\\b(${FOOD_WORDS.map(w => nameFormPattern(w)).join('|')})\\b`, 'g'
+);
+
 function findFlavorMention(productName) {
   // Exclure les produits "Chocolate X%", "Dark Chocolate Y%", etc.
   if (/chocolate.+\d+\s*%/i.test(productName)) {
@@ -197,12 +259,13 @@ function findFlavorMention(productName) {
     flavors.add(match[1].trim());
   }
 
-  // Cherche tous les FOOD_WORDS directs (fruits, arômes) - incluant pluriels
-  const pluralWords = FOOD_WORDS.map(w => pluralPattern(w)).join('|');
-  const foodWordPattern = new RegExp(`\\b(${pluralWords})\\b`, 'g');
-  const directMatches = nameNorm.matchAll(foodWordPattern);
+  // Cherche tous les FOOD_WORDS dans le nom - pluriels ET formes adjectivales
+  const directMatches = nameNorm.matchAll(FOOD_WORD_PATTERN);
   for (const match of directMatches) {
-    flavors.add(match[1].trim());
+    // Toujours retenir le mot de BASE : "chocolatee" -> "chocolat", sinon la
+    // recherche dans les ingrédients (INGREDIENT_VARIANTS) ne trouverait rien.
+    const form = match[1].trim();
+    flavors.add(NAME_FORM_TO_BASE[form] || form);
   }
 
   return Array.from(flavors);
@@ -216,11 +279,68 @@ function pluralPattern(word) {
   return alternatives.join('|');
 }
 
-// Marqueurs signalant une SAVEUR et non l'ingrédient réel. "arôme" ne suffit
-// pas : les fabricants écrivent aussi "à saveur de chocolat", "goût vanille",
-// "dark chocolate flavoured chunks"... (cas réel : mélange BASSÉ, où
-// "morceaux à saveur de chocolat noir" était compté comme du vrai chocolat).
-const FLAVOUR_MARKER = /arom[ae]s?|saveur|gout|parfum|flavou?red?|chocolate?y/;
+// Formes rencontrées dans un NOM de produit : pluriels + adjectifs français.
+// "Barre CHOCOLATÉE" devient "chocolatee" après normalize() et ne correspondait
+// donc à aucun aliment : la saveur n'était même pas détectée, et le produit
+// ressortait "clean". Idem "crème vanillée" -> "vanillee", "biscuit citronné"
+// -> "citronne". On accepte donc le mot suivi des terminaisons d'adjectif.
+// Réservé au NOM : dans les ingrédients, on garde la correspondance stricte.
+function nameFormPattern(word) {
+  const forms = new Set([word, `${word}s`]);
+  if (word.endsWith('y')) forms.add(`${word.slice(0, -1)}ies`);
+  for (const suffix of ['e', 'ee', 'es', 'ees', 'ne', 'nee', 'nes', 'nees']) {
+    forms.add(word + suffix);
+  }
+  return [...forms].join('|');
+}
+
+// ===========================================================================
+// MARQUEURS DE SAVEUR — l'aveu que l'ingrédient noble n'est pas là
+// ---------------------------------------------------------------------------
+// Source : ACIA, "Lignes directrices sur la mise en évidence d'ingrédients et
+// de saveurs". Au Canada, un produit qui met un aliment en avant SANS le
+// contenir doit porter « à saveur de » ou un équivalent. Ces mots sont donc
+// l'aveu officiel du fabricant, en toutes lettres sur l'emballage.
+//
+// Piège évité : "arome" ne doit PAS attraper "aromatique" — des "herbes
+// aromatiques" sont un vrai ingrédient. Les deux radicaux sont distincts
+// (arome / aromatis vs aromatique), donc aucun chevauchement.
+const FLAVOUR_MARKER = new RegExp([
+  'arome',                       // arôme, arômes
+  'aromatis',                    // aromatisé, aromatisant, aromatisée
+  '\\baroma\\b',                 // aroma (EN) sans attraper "aromatic"
+  'saveur',                      // « à saveur de » : la formule exigée par l'ACIA
+  'gout',                        // goût de
+  'parfum',                      // parfum, parfumé
+  'essence',
+  'artificiel', 'artificial',    // « arôme artificiel »
+  'imitation',
+  'simul',                       // simulé / simulated
+  'simili',                      // ACIA : « pizza au simili-crabe »
+  'succedane',                   // succédané
+  'flavou?r',                    // flavour / flavor / flavoured / flavouring
+  // Adjectifs anglais en -y : décrivent un goût, pas une présence
+  'chocolate?y', 'fruity', 'buttery', 'cheesy', 'creamy', 'nutty', 'minty', 'lemony',
+].join('|'));
+
+// Mots qui désignent aussi une CATÉGORIE de produit. La liste d'ingrédients
+// d'un fromage ne répète pas "fromage" mais dit "lait, ferments" : leur absence
+// ne prouve donc rien (sinon "Fromage blanc" passerait pour trompeur).
+// Règle : absents de la liste -> on ne conclut rien ; mais s'ils y figurent
+// accolés à un marqueur de saveur ("cheese flavour powder"), c'est bien une
+// allégation de saveur, et là on signale.
+const CATEGORY_WORDS = new Set([
+  'fromage', 'cheese', 'beurre', 'butter', 'creme', 'cream',
+  'jambon', 'ham', 'poulet', 'chicken', 'saumon', 'salmon',
+  'thon', 'tuna', 'lait', 'milk', 'miel', 'honey',
+]);
+
+// Le mot figure-t-il quelque part dans les ingrédients (peu importe le contexte) ?
+function isMentionedInIngredients(word, ingredientsNorm) {
+  const allVariants = INGREDIENT_VARIANTS[word] || [word];
+  const variants = allVariants.map(v => pluralPattern(v)).join('|');
+  return new RegExp(`\\b(?:${variants})\\b`).test(ingredientsNorm);
+}
 
 // Vrai si le mot n'apparaît dans les ingrédients que comme saveur/arôme,
 // jamais comme ingrédient réel. On raisonne par ingrédient (séparés par des
@@ -235,18 +355,64 @@ function onlyAppearsAsArome(word, ingredientsNorm) {
   return mentions.every(item => FLAVOUR_MARKER.test(item));
 }
 
-// Le NOM contient-il une réserve ("chocolaté", "saveur X", "goût X",
-// "chocolatey", "flavoured") ? Si oui, le fabricant a prévenu : c'est légal et
-// déclaré -> "À vérifier", pas "Trompeur".
-// Attention : on teste le nom BRUT car normalize() transforme "chocolaté" en
-// "chocolate", qui deviendrait indiscernable de l'anglais "chocolate".
+// ===========================================================================
+// RÉSERVES DANS LE NOM — le fabricant a prévenu
+// ---------------------------------------------------------------------------
+// Trois familles, à tester séparément car elles se construisent différemment.
+
+// 1) Adjectifs français en -é : "chocolaté", "vanillé", "citronné"... Ils
+//    décrivent un GOÛT, pas une présence.
+//    IMPORTANT : on teste sur le nom BRUT (accentué). normalize() enlève les
+//    accents, ce qui rendrait "vanillé" identique à "vanille" (le vrai
+//    ingrédient) et "chocolaté" identique à l'anglais "chocolate".
+//    On n'accepte donc QUE le é accentué : "beurré" oui, "beurre" non.
+const HEDGE_ADJ_STEMS_FR = [
+  'chocolat', 'vanill', 'citronn', 'menthol', 'pralin', 'beurr', 'fruit',
+  'fromag', 'amand', 'noisett', 'miell', 'caramelis', 'caramélis', 'cacaot',
+  'muscad', 'safran', 'truff', 'poivr', 'epic', 'épic',
+];
+// Drapeau 'i' indispensable : les emballages sont souvent en MAJUSCULES
+// ("BARRE CHOCOLATÉE"). Le é reste obligatoire, donc "chocolate" (anglais,
+// sans accent) ne déclenche pas la réserve.
+const HEDGE_ADJ_FR = new RegExp(HEDGE_ADJ_STEMS_FR.map(s => s + '[éÉ]').join('|'), 'i');
+
+// 2) Adjectifs anglais en -y : "chocolatey", "fruity", "buttery"...
+const HEDGE_ADJ_EN = /\b(?:chocolate?y|fruity|buttery|cheesy|creamy|nutty|minty|lemony|berry)\b/i;
+
+// 3) Réserves structurelles (les deux langues), sur le nom normalisé.
+//    "façon", "type", "style", "imitation", "simili-" (formule ACIA)...
+const HEDGE_STRUCTURAL = /\bfacon\b|\bmaniere de\b|\btype\b|\bstyle\b|\bgenre\b|\bimitation\b|simili|\bsubstitut|\bsimilaire\b|\bsuccedane|\blike\b|\bvegan\b/;
+
+// 4) Mots de saveur explicites, sur le nom normalisé.
+const HEDGE_FLAVOUR_WORDS = /arome|aromatis|saveur|gout|parfum|essence|artificiel|artificial|flavou?r/;
+
 function hasHedgeWord(productName) {
   const raw = String(productName || '');
-  if (/chocolat[éÉ]/i.test(raw)) return true;           // chocolaté / CHOCOLATÉ
-  if (/\bchocolate?y\b/i.test(raw)) return true;         // chocolatey (anglais)
-  if (/\bflavou?red?\b/i.test(raw)) return true;         // flavoured / flavor
-  return /arom|saveur|gout|parfum/.test(normalize(raw)); // arôme / saveur / goût
+  if (HEDGE_ADJ_FR.test(raw)) return true;
+  if (HEDGE_ADJ_EN.test(raw)) return true;
+  const norm = normalize(raw);
+  return HEDGE_STRUCTURAL.test(norm) || HEDGE_FLAVOUR_WORDS.test(norm);
 }
+
+// Pourcentage déclaré pour un ingrédient, s'il figure dans la liste.
+// L'ACIA vise aussi le cas « présent en très faible concentration » : un
+// "Barre framboise" à 2% de framboise est techniquement vrai, mais le nom
+// promet beaucoup plus. On lit le % accolé au mot, avant OU après
+// ("framboise 2%" comme "2% de framboise"), virgule ou point décimal.
+function findIngredientPercent(word, ingredientsNorm) {
+  const allVariants = INGREDIENT_VARIANTS[word] || [word];
+  const variants = allVariants.map(v => pluralPattern(v)).join('|');
+  const after = new RegExp(`\\b(?:${variants})\\b[^,;()]{0,20}?(\\d+(?:[.,]\\d+)?)\\s*%`);
+  const before = new RegExp(`(\\d+(?:[.,]\\d+)?)\\s*%[^,;()]{0,20}?\\b(?:${variants})\\b`);
+  const match = after.exec(ingredientsNorm) || before.exec(ingredientsNorm);
+  if (!match) return null;
+  const value = parseFloat(match[1].replace(',', '.'));
+  return Number.isFinite(value) ? value : null;
+}
+
+// En dessous de ce seuil, l'ingrédient mis en avant dans le nom relève
+// davantage de l'aromatisation que de la recette.
+const LOW_PERCENT_THRESHOLD = 5;
 
 function findIngredientPosition(word, ingredientsNorm) {
   const items = ingredientsNorm.split(',').map((s) => s.trim()).filter(Boolean);
@@ -260,6 +426,9 @@ function findIngredientPosition(word, ingredientsNorm) {
 
 const LEGAL_NOTE_POSITION =
   'L\'ordre de la liste d\'ingrédients doit refléter leur quantité décroissante (règlement (UE) n°1169/2011, art. 18). La position d\'un ingrédient est donc un signal fiable de sa proportion réelle.';
+
+const LEGAL_NOTE_LOW_PERCENT =
+  'L\'ingrédient mis en avant par le nom est bien présent, mais en très faible quantité. Les lignes directrices de l\'ACIA visent précisément ce cas : mettre un aliment en évidence alors qu\'il est "présent en très faible concentration" donne une fausse impression de sa quantité réelle. Le pourcentage affiché ici est celui déclaré par le fabricant lui-même dans la liste d\'ingrédients.';
 
 const LEGAL_NOTE_HEDGE =
   'Une mention comme "chocolaté", "saveur X" ou "goût X" est légalement autorisée pour un produit qui ne contient PAS l\'ingrédient : elle décrit une saveur, pas une présence. Ainsi "chocolaté" ne peut pas être appelé "chocolat", faute de beurre de cacao en quantité suffisante. Le fabricant respecte donc l\'étiquetage - mais le nom reste trompeur à la lecture rapide, d\'où cette mise en garde plutôt qu\'une accusation.';
@@ -360,6 +529,11 @@ function detectVerdict(productName, ingredientsText) {
       const suspiciousFlavors = [];
 
       for (const flavor of flavors) {
+        // Catégorie de produit absente de sa propre liste d'ingrédients : normal
+        // ("Fromage blanc" = lait + ferments). On ne conclut rien.
+        if (CATEGORY_WORDS.has(flavor) && !isMentionedInIngredients(flavor, ingredientsNorm)) {
+          continue;
+        }
         // On teste l'arôme EN PREMIER : sinon un ingrédient "arôme noix" était
         // compté comme de la vraie noix (findIngredientPosition matche le mot
         // même collé à "arôme"), ce qui laissait passer de vraies tromperies.
@@ -411,9 +585,36 @@ function detectVerdict(productName, ingredientsText) {
         };
       }
 
-      // Toutes les saveurs sont présentes correctement
+      // Toutes les saveurs sont présentes... mais en quelle quantité ?
+      // L'ACIA vise aussi la « très faible concentration » : un nom qui met un
+      // aliment en avant alors qu'il y en a 2% reste trompeur à la lecture.
+      const traces = flavors
+        .map((f) => ({ flavor: f, percent: findIngredientPercent(f, ingredientsNorm) }))
+        .filter((x) => x.percent !== null && x.percent < LOW_PERCENT_THRESHOLD);
+
       const firstFlavorPos = findIngredientPosition(flavors[0], ingredientsNorm);
       const shown = flavors.map(displayFlavor).join(', ');
+
+      if (traces.length > 0) {
+        const listeTraces = traces.map((t) => `${displayFlavor(t.flavor)} ${t.percent}%`).join(', ');
+        return {
+          verdict: 'warning',
+          headline: traces.length === 1
+            ? `${displayFlavor(traces[0].flavor)} : seulement ${traces[0].percent}% du produit`
+            : `Quantités très faibles : ${listeTraces}`,
+          legalNote: LEGAL_NOTE_LOW_PERCENT,
+          detail: {
+            rule: 'quantite-faible',
+            matched: flavors.join(', '),
+            compareSuggest: shown,
+            compareReal: flavors.map((f) => {
+              const t = traces.find((x) => x.flavor === f);
+              return t ? `${displayFlavor(f)} : ${t.percent}% seulement` : `${displayFlavor(f)} : présent`;
+            }).join(', '),
+            ...(firstFlavorPos && { index: firstFlavorPos.index, total: firstFlavorPos.total, ratio: firstFlavorPos.ratio }),
+          },
+        };
+      }
 
       return {
         verdict: 'clean',
