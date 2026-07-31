@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.22';
+const APP_VERSION = 'v1.23';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1784220023';
+const BUILD = '1784220024';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1034,6 +1034,7 @@ function setContributeTarget(code) {
   document.getElementById('contribute-status').className = 'contribute-status';
   document.getElementById('contrib-photo-info').textContent = '';
   document.getElementById('contrib-name').value = '';
+  document.getElementById('contrib-brand').value = '';
   document.getElementById('contrib-photo').value = '';
 }
 
@@ -1056,11 +1057,12 @@ async function sendContribution() {
   const statusEl = document.getElementById('contribute-status');
   const sendBtn = document.getElementById('btn-contribute-send');
   const name = document.getElementById('contrib-name').value.trim();
+  const brand = document.getElementById('contrib-brand').value.trim();
 
   if (!contributeCode) return;
-  if (!name && !contributePhoto) {
+  if (!name && !brand && !contributePhoto) {
     statusEl.className = 'contribute-status err';
-    statusEl.textContent = 'Ajoute au moins le nom ou une photo.';
+    statusEl.textContent = 'Ajoute au moins le nom, la marque ou une photo.';
     return;
   }
 
@@ -1077,6 +1079,7 @@ async function sendContribution() {
       body: JSON.stringify({
         code: contributeCode,
         product_name: name || undefined,
+        brands: brand || undefined,
         image: contributePhoto || undefined,
         lang: 'fr',
         uuid: anonUuid(),

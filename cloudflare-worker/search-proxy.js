@@ -94,6 +94,9 @@ async function handleContribute(request, env) {
   if (!/^\d{8,14}$/.test(code)) return json({ error: 'bad-code' }, 400);
 
   const name = String(body.product_name || '').trim().slice(0, 200);
+  // La marque est un champ à part chez OFF : sans elle, la fiche reste
+  // incomplète et le produit est difficile à retrouver par la recherche.
+  const brands = String(body.brands || '').trim().slice(0, 120);
   const lang = /^[a-z]{2}$/.test(body.lang || '') ? body.lang : 'fr';
   // uuid anonyme fourni par l'app (aucune donnée perso)
   const uuid = String(body.uuid || 'anon').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 64);
@@ -103,11 +106,12 @@ async function handleContribute(request, env) {
   const identity = { app_name: APP_NAME, app_version: APP_VERSION, app_uuid: uuid };
   const result = { base, code };
 
-  // 1) Champs texte (nom du produit) - seulement si fourni
-  if (name) {
+  // 1) Champs texte (nom, marque) - seulement si au moins un est fourni
+  if (name || brands) {
     const form = new FormData();
     for (const [k, v] of Object.entries({ ...auth, ...identity, code, lang })) form.append(k, v);
-    form.append('product_name', name);
+    if (name) form.append('product_name', name);
+    if (brands) form.append('brands', brands);
     try {
       const res = await fetch(`${base}/cgi/product_jqm2.pl`, {
         method: 'POST', body: form,
@@ -144,7 +148,7 @@ async function handleContribute(request, env) {
     }
   }
 
-  if (!name && !body.image) return json({ error: 'nothing-to-send' }, 400);
+  if (!name && !brands && !body.image) return json({ error: 'nothing-to-send' }, 400);
   result.ok = !!((result.fields && result.fields.status === 1) || (result.image && !result.image.error));
   return json(result);
 }
