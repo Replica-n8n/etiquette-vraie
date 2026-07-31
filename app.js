@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.20';
+const APP_VERSION = 'v1.21';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1784220021';
+const BUILD = '1784220022';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1134,6 +1134,15 @@ searchForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const term = searchInput.value.trim();
   if (!term) return;
+
+  // Un code-barres tapé dans la recherche : on ouvre directement la fiche.
+  // (La recherche par TEXTE sur un code ne renvoie rien chez OFF.) Utile quand
+  // le scan échoue, ou pour retrouver un produit signalé par son numéro.
+  const asCode = term.replace(/[\s-]/g, '');
+  if (/^\d{8,14}$/.test(asCode)) {
+    selectProduct(asCode);
+    return;
+  }
 
   // Annuler la recherche précédente encore en cours (évite qu'une vieille
   // réponse lente écrase la nouvelle).
