@@ -9,6 +9,11 @@
 // Renvoie : { products: [ { code, product_name, brands, image_front_small_url,
 //                           lang, languages_tags, countries_tags }, ... ] }
 
+// Version du code déployé. Le Worker se colle à la main dans Cloudflare : sans
+// marqueur, impossible de savoir si la version en ligne est à jour. Un simple
+// GET sur la racine l'affiche. À bumper à chaque modification de ce fichier.
+const WORKER_VERSION = 'w2-brands';
+
 const OFF_SEARCH = 'https://search.openfoodfacts.org/search';
 const FIELDS = 'code,product_name,brands,image_front_small_url,lang,languages_tags,countries_tags';
 const CACHE_TTL = 21600; // 6 h — les recettes changent lentement
@@ -68,6 +73,7 @@ async function handleAuthCheck(env) {
       headers: { 'User-Agent': `${APP_NAME}/${APP_VERSION} (etiquette-vraie)` },
     });
     return json({
+      version: WORKER_VERSION,
       base,
       ok: res.status === 200,
       http: res.status,
@@ -161,7 +167,7 @@ export default {
     if (url.pathname === '/auth-check') return handleAuthCheck(env);
     if (url.pathname === '/contribute') return handleContribute(request, env);
     if (url.pathname !== '/search') {
-      return new Response('Etiquette Vraie proxy — /search?q=... · POST /contribute · /auth-check', { headers: CORS });
+      return new Response(`Etiquette Vraie proxy ${WORKER_VERSION} — /search?q=... · POST /contribute · /auth-check`, { headers: CORS });
     }
 
     const q = (url.searchParams.get('q') || '').trim();
