@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.24';
+const APP_VERSION = 'v1.25';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1784220025';
+const BUILD = '1785609100';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1027,6 +1027,15 @@ function showResultError(message, missingCode) {
 
 // ===== Contribution à Open Food Facts ======================================
 const CONTRIBUTE_URL = SEARCH_PROXY.replace(/\/search$/, '/contribute');
+
+// La contribution écrit dans la VRAIE base publique d'Open Food Facts, sous le
+// compte de l'app : une saisie approximative pollue les données de tout le monde
+// et c'est l'app qui en porte la responsabilité. Tant que le formulaire n'est pas
+// sûr (voir le champ dénomination officielle, encore manquant), on ne l'ouvre
+// qu'en test et en local. La prod ne l'affiche pas.
+const CONTRIBUTE_ENABLED = /(^|\/)etiquette-vraie-preview(\/|$)/.test(location.pathname)
+  || location.hostname === 'localhost'
+  || location.hostname === '127.0.0.1';
 let contributeCode = null;
 let contributePhoto = null; // data URL compressée
 
@@ -1046,11 +1055,11 @@ function anonUuid() {
 }
 
 function setContributeTarget(code) {
-  contributeCode = code;
+  contributeCode = CONTRIBUTE_ENABLED ? code : null;
   contributePhoto = null;
   const block = document.getElementById('contribute-block');
   if (!block) return;
-  block.classList.toggle('hidden', !code);
+  block.classList.toggle('hidden', !contributeCode);
   document.getElementById('contribute-form').classList.add('hidden');
   document.getElementById('contribute-status').textContent = '';
   document.getElementById('contribute-status').className = 'contribute-status';
@@ -1081,7 +1090,7 @@ async function sendContribution() {
   const name = document.getElementById('contrib-name').value.trim();
   const brand = document.getElementById('contrib-brand').value.trim();
 
-  if (!contributeCode) return;
+  if (!CONTRIBUTE_ENABLED || !contributeCode) return;
   if (!name && !brand && !contributePhoto) {
     statusEl.className = 'contribute-status err';
     statusEl.textContent = 'Ajoute au moins le nom, la marque ou une photo.';
