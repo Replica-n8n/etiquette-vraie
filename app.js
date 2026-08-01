@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.23';
+const APP_VERSION = 'v1.24';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1784220024';
+const BUILD = '1784220025';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -634,7 +634,7 @@ async function searchProducts(term, onRetry, signal) {
 }
 
 // Champs demandés à OFF - partagés par le scan ET la recherche pour une UX cohérente.
-const PRODUCT_FIELDS = 'product_name,ingredients_text,brands,last_modified_t,image_front_small_url,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags';
+const PRODUCT_FIELDS = 'product_name,generic_name,ingredients_text,brands,last_modified_t,image_front_small_url,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags';
 
 async function fetchProduct(code) {
   const url = `https://world.openfoodfacts.org/api/v0/product/${code}.json?fields=${PRODUCT_FIELDS}`;
@@ -860,8 +860,30 @@ function renderResult(product) {
 
   addToHistory(product);
 
-  document.getElementById('product-name').textContent = cleanText(product.product_name);
+  const productName = cleanText(product.product_name);
+  document.getElementById('product-name').textContent = productName;
   document.getElementById('product-sub').textContent = cleanText(product.brands);
+
+  // Dénomination légale : la loi oblige à dire ce que le produit EST, mais rien
+  // n'impose que ce soit lisible - "Vanille framboise" s'étale pendant que
+  // "crème glacée enrobée de chocolat" se cache en bas en minuscule. On la
+  // remonte, mais seulement si elle apprend quelque chose (souvent OFF la
+  // recopie à l'identique du nom commercial : inutile de l'afficher deux fois).
+  const genericEl = document.getElementById('product-generic');
+  const generic = cleanText(product.generic_name);
+  const saysSomethingNew = generic
+    && normalize(generic) !== normalize(productName)
+    && !normalize(productName).includes(normalize(generic));
+  if (saysSomethingNew) {
+    genericEl.innerHTML = '';
+    const label = document.createElement('b');
+    label.textContent = 'Dénomination officielle';
+    const text = document.createTextNode(generic);
+    genericEl.append(label, text);
+    genericEl.classList.remove('hidden');
+  } else {
+    genericEl.classList.add('hidden');
+  }
   // Code-barres affiché près de la version : permet à un utilisateur de nous
   // signaler un produit précis sans avoir l'emballage sous la main.
   const codeEl = document.getElementById('app-product-code');

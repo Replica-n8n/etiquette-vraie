@@ -176,6 +176,16 @@ body{
   font-weight:700; font-size:19px; line-height:1.15; margin-bottom:3px;
 }
 .product-sub{ font-size:12px; color:var(--ink-soft); }
+/* Dénomination légale : ce que le produit EST vraiment, souvent écrit en tout
+   petit sur l'emballage alors que le nom commercial s'étale. On la remonte. */
+.product-generic{
+  margin-top:6px; padding:7px 9px;
+  background:var(--paper); border-left:3px solid var(--green);
+  border-radius:0 8px 8px 0;
+  font-size:11.5px; line-height:1.45; color:var(--ink-2);
+}
+.product-generic.hidden{ display:none; }
+.product-generic b{ color:var(--ink-soft); font-weight:600; text-transform:uppercase; font-size:9px; letter-spacing:0.04em; display:block; margin-bottom:2px; }
 
 /* Bloc alerte : hauteur = contenu réel */
 .alert{

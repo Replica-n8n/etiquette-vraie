@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1784220024">
+<link rel="stylesheet" href="./style.css?v=1784220025">
 </head>
 <body>
 
@@ -88,8 +88,8 @@
             <div class="contribute-note">Le logo du fabricant, en haut de l'emballage.</div>
 
             <label class="contribute-label" for="contrib-name">Nom du produit</label>
-            <input id="contrib-name" class="contribute-input" type="text" placeholder="Ex. Vanille framboise" autocomplete="off">
-            <div class="contribute-note">Ce qui est écrit en gros sur le devant, <b>sans répéter la marque</b>.</div>
+            <input id="contrib-name" class="contribute-input" type="text" placeholder="Ex. Glace vanille framboise" autocomplete="off">
+            <div class="contribute-note">Dis d'abord <b>ce que c'est</b> (glace, biscuit, yaourt…), puis le parfum. Sans répéter la marque.</div>
 
             <label class="contribute-label" for="contrib-photo">Photo de la liste d'ingrédients</label>
             <input id="contrib-photo" class="contribute-file" type="file" accept="image/*" capture="environment">
@@ -110,6 +110,7 @@
         <div class="product-head">
           <div class="product-name" id="product-name"></div>
           <div class="product-sub" id="product-sub"></div>
+          <div class="product-generic hidden" id="product-generic"></div>
         </div>
 
       <div class="alert" id="verdict-box">
@@ -219,6 +220,6 @@
 </div>
 
 <script src="./rules.js?v=1784220023" defer></script>
-<script src="./app.js?v=1784220024" defer></script>
+<script src="./app.js?v=1784220025" defer></script>
 </body>
 </html>
