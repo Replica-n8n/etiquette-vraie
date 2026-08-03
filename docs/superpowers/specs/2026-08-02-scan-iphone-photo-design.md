@@ -14,6 +14,14 @@ sur Android, ou cherche par nom. » (`app.js:325`). Le conseil est impossible à
 suivre sur iOS — Chrome y est aussi soumis à WebKit. Le message revient à leur
 dire de changer de téléphone.
 
+Confirmé le 2026-08-02 sur un iPhone réel en v1.25 : même écran depuis le
+navigateur intégré de WhatsApp **et** depuis Safari. Cohérent avec l'absence de
+`BarcodeDetector` dans WebKit, quel que soit le point d'entrée.
+
+Corrigé en v1.26 en attendant le décodeur : message honnête (l'ancien conseillait
+« Chrome sur Android », impossible depuis un iPhone) et suppression du cadre
+caméra vide qui laissait croire à une panne.
+
 ## Décision
 
 Sur iPhone : aperçu caméra en direct, plus un bouton déclencheur. Le décodage se
@@ -175,6 +183,11 @@ chaque build et les anciens caches sont supprimés.
 - autorisation caméra et aperçu dans Safari ;
 - même parcours depuis la PWA installée sur l'écran d'accueil (cas
   historiquement le plus fragile) ;
+- **ouverture depuis un lien WhatsApp / Instagram** (navigateur intégré, pas
+  Safari) : ces WebViews restreignent souvent `getUserMedia`. Beaucoup
+  d'utilisateurs arrivent par ce chemin, et l'aperçu caméra pourrait y échouer
+  alors qu'il fonctionne dans Safari. Si c'est le cas, il faudra un message
+  dédié « ouvre dans Safari » — le message actuel ne couvre pas ce cas ;
 - temps réel de bout en bout : appui → résultat ;
 - vérification sur Android que le module et le WASM ne sont jamais chargés.
 

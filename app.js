@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.25';
+const APP_VERSION = 'v1.26';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1785609100';
+const BUILD = '1785774063';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -319,10 +319,18 @@ async function startScanner() {
 
     const qrReader = document.getElementById('qr-reader');
 
-    // BarcodeDetector est natif sur Chrome Android. Sinon on ne peut pas scanner.
+    // BarcodeDetector est natif sur Chrome Android. Absent sur iOS : Apple ne
+    // l'implémente pas dans WebKit, et Apple impose WebKit à TOUS les navigateurs
+    // iOS - installer Chrome ou Firefox n'y change donc rien. L'ancien message
+    // conseillait "Chrome sur Android", impossible à suivre depuis un iPhone.
     if (!('BarcodeDetector' in window)) {
       console.warn('[Scanner] BarcodeDetector non supporté sur ce navigateur');
-      scanStatus.textContent = 'Scanner non supporté ici. Utilise Chrome sur Android, ou cherche par nom.';
+      // Pas de cadre caméra vide : elle n'a jamais démarré, l'afficher donne
+      // l'impression d'une panne.
+      qrReader.classList.add('hidden');
+      const hintEl = document.getElementById('scan-hint');
+      if (hintEl) hintEl.textContent = 'Le scan direct n’est pas disponible sur iPhone ni iPad.';
+      scanStatus.textContent = 'Apple ne permet pas encore la lecture de codes-barres dans Safari, et tous les navigateurs iOS utilisent Safari : changer de navigateur ne changera rien. La lecture par photo est en préparation. En attendant, reviens en arrière et utilise « Chercher par nom ».';
       return;
     }
 
@@ -477,13 +485,11 @@ async function handleQrScan(code) {
   showResultLoading();
 
   let lastError = new Error('product-not-found');
+  let product = null;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const product = await fetchProduct(code);
-      if (product) {
-        renderResult(product);
-        return;
-      }
+      product = await fetchProduct(code);
+      if (product) break;
       lastError = new Error('product-not-found');
     } catch (err) {
       lastError = err; // erreur réseau/timeout, on réessaie
@@ -493,12 +499,20 @@ async function handleQrScan(code) {
     }
   }
 
+  // L'affichage se fait HORS du try réseau : sinon un bug de rendu déclenchait
+  // 3 tentatives, 10 s d'attente, et finissait par accuser la connexion.
+  if (product) {
+    showProduct(product);
+    return;
+  }
+
   const notFound = lastError.message === 'product-not-found';
   showResultError(
     notFound
       ? 'Introuvable dans Open Food Facts. Rappel : cette app ne couvre que les produits alimentaires emballés (pas les cosmétiques, livres, etc.).'
       : fetchErrorMessage(lastError),
-    notFound ? code : null
+    notFound ? code : null,
+    notFound ? 'Produit non trouvé' : 'Connexion impossible'
   );
 }
 
@@ -714,16 +728,35 @@ function renderResults(products) {
 async function selectProduct(code) {
   showScreen('result');
   showResultLoading();
+  let productToShow;
   try {
     const product = await fetchProduct(code);
     if (!product) {
-      showResultError(fetchErrorMessage(new Error('product-not-found')), code);
+      showResultError(fetchErrorMessage(new Error('product-not-found')), code, 'Produit non trouvé');
       return;
     }
-    renderResult(product);
+    productToShow = product;
   } catch (err) {
     dbg('[APP] selectProduct error:', err.message);
-    showResultError(fetchErrorMessage(err));
+    showResultError(fetchErrorMessage(err), null, 'Connexion impossible');
+    return;
+  }
+  showProduct(productToShow); // hors du try : voir showProduct
+}
+
+// Point de passage unique pour afficher une fiche. L'affichage est isolé du
+// réseau : un plantage de rendu est un bug de l'app, pas une panne de connexion.
+// Les confondre masquait le vrai défaut derrière un message faux.
+function showProduct(product) {
+  try {
+    renderResult(product);
+  } catch (err) {
+    console.error('[Result] Affichage impossible pour', product && product.code, err);
+    showResultError(
+      "L'app n'a pas réussi à afficher cette fiche. C'est un bug de notre côté, pas ta connexion.",
+      null,
+      'Affichage impossible'
+    );
   }
 }
 
@@ -857,8 +890,6 @@ function renderCompareValue(el, text) {
 function renderResult(product) {
   const { verdict, headline, legalNote, detail } = detectVerdict(product.product_name, product.ingredients_text);
   const meta = VERDICT_META[verdict];
-
-  addToHistory(product);
 
   const productName = cleanText(product.product_name);
   document.getElementById('product-name').textContent = productName;
@@ -997,10 +1028,19 @@ function renderResult(product) {
       document.getElementById('alternative-name').textContent = alternative.product_name;
       document.getElementById('alternative-brand').textContent = alternative.brands || '';
       alternativeAccordion.classList.remove('hidden');
+    }).catch((err) => {
+      // Suggestion secondaire : si le proxy de recherche tombe, la fiche reste
+      // parfaitement lisible. Sans ce catch, c'était un rejet non géré.
+      dbg('[Alternative] indisponible:', err && err.message);
     });
   }
 
   showResultContent();
+
+  // L'historique n'est écrit qu'une fois la fiche RÉELLEMENT affichée. Il était
+  // écrit en tête de fonction : un plantage d'affichage laissait alors dans les
+  // "derniers produits" une fiche que l'utilisateur n'avait jamais vue.
+  addToHistory(product);
 }
 
 function showResultLoading() {
@@ -1015,10 +1055,14 @@ function showResultContent() {
   document.getElementById('result-content').classList.remove('hidden');
 }
 
-function showResultError(message, missingCode) {
+// `title` : le titre était figé sur "Produit non trouvé", y compris quand la
+// vraie cause était le réseau — l'écran se contredisait tout seul.
+function showResultError(message, missingCode, title) {
   document.getElementById('result-loading').classList.add('hidden');
   document.getElementById('result-error').classList.remove('hidden');
   document.getElementById('result-content').classList.add('hidden');
+  const titleEl = document.getElementById('error-title');
+  if (titleEl) titleEl.textContent = title || 'Produit non trouvé';
   document.getElementById('error-message').textContent = message;
   // Proposer de contribuer UNIQUEMENT si le produit est absent d'OFF
   // (inutile de le proposer sur une panne réseau : le produit existe peut-être).

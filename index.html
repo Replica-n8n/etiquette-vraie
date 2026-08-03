@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1785609100">
+<link rel="stylesheet" href="./style.css?v=1785774063">
 </head>
 <body>
 
@@ -61,7 +61,7 @@
     <div id="scan-screen" class="scan-screen hidden">
       <div class="scan-header">
         <div class="scan-title">Scanner un code-barres</div>
-        <div class="scan-hint">Pointe la caméra vers le code-barres d'un produit <b>alimentaire</b> emballé.</div>
+        <div class="scan-hint" id="scan-hint">Pointe la caméra vers le code-barres d'un produit <b>alimentaire</b> emballé.</div>
       </div>
       <div id="qr-reader" class="qr-reader"></div>
       <div id="scan-status" class="scan-status"></div>
@@ -75,7 +75,7 @@
 
       <div id="result-error" class="result-error hidden">
         <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-        <div class="error-title">Produit non trouvé</div>
+        <div class="error-title" id="error-title">Produit non trouvé</div>
         <div class="error-text" id="error-message"></div>
         <button id="btn-error-back" class="error-button" type="button">Retour</button>
 
@@ -219,7 +219,7 @@
   </div>
 </div>
 
-<script src="./rules.js?v=1785609100" defer></script>
-<script src="./app.js?v=1785609100" defer></script>
+<script src="./rules.js?v=1785774063" defer></script>
+<script src="./app.js?v=1785774063" defer></script>
 </body>
 </html>
