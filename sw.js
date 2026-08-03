@@ -1,4 +1,4 @@
-const CACHE_NAME = 'etiquette-vraie-1785785195';
+const CACHE_NAME = 'etiquette-vraie-1785790768';
 // Chemins RELATIFS (résolus par rapport à l'emplacement de sw.js) pour que
 // l'app fonctionne à n'importe quelle URL (prod, sous-dossier, dépôt de test).
 const OFFLINE_URL = './index.html';
@@ -93,6 +93,26 @@ self.addEventListener('fetch', (event) => {
             });
           });
       })
+    );
+  }
+  // Le décodeur ZXing pèse ~1 Mo. Il tomberait dans la branche par défaut
+  // ci-dessous, qui va bien le chercher sur le réseau quand il n'est pas en
+  // cache mais ne RANGE JAMAIS le résultat : il serait retéléchargé à chaque
+  // ouverture de l'app, en données mobiles, et rien ne fonctionnerait hors
+  // ligne. On le met donc en cache dès la première demande.
+  // Volontairement absent de urlsToCache : un Android ne l'exécute jamais et
+  // n'a aucune raison de le télécharger à l'installation.
+  else if (url.pathname.endsWith('.wasm')) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then((cache) =>
+        cache.match(event.request).then((cached) => {
+          if (cached) return cached;
+          return fetch(event.request).then((response) => {
+            if (response.ok) cache.put(event.request, response.clone());
+            return response;
+          });
+        })
+      )
     );
   }
   // Default: cache-first for everything else

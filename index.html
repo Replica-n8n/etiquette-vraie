@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1785785195">
+<link rel="stylesheet" href="./style.css?v=1785790768">
 </head>
 <body>
 
@@ -65,6 +65,10 @@
       </div>
       <div id="qr-reader" class="qr-reader"></div>
       <div id="scan-status" class="scan-status"></div>
+      <!-- iPhone / iPad uniquement : WebKit n'a pas BarcodeDetector, on décode
+           à la demande. Ces boutons n'existent jamais sur le chemin Android. -->
+      <button id="shutter-button" class="home-button scan hidden" type="button">Lire le code-barres</button>
+      <button id="shutter-search" class="contribute-open hidden" type="button">Chercher par nom plutôt</button>
     </div>
 
     <div id="result-screen" class="hidden">
@@ -230,7 +234,7 @@
   </div>
 </div>
 
-<script src="./rules.js?v=1785785195" defer></script>
-<script src="./app.js?v=1785785195" defer></script>
+<script src="./rules.js?v=1785790768" defer></script>
+<script src="./app.js?v=1785790768" defer></script>
 </body>
 </html>

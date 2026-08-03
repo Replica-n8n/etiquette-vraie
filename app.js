@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.27';
+const APP_VERSION = 'v1.28';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1785785195';
+const BUILD = '1785790768';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -285,35 +285,73 @@ function showScreen(screen) {
   else stopScanner();
 }
 
+// Chiffre de contrôle GS1 (EAN-13, EAN-8, UPC-A) : depuis la droite, on pondère
+// les chiffres (hors clé) par 3,1,3,1... ; clé = (10 - somme%10)%10.
+function validateGS1Checksum(code) {
+  const digits = code.split('').map(Number);
+  const check = digits.pop();
+  let sum = 0;
+  let weight = 3;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    sum += digits[i] * weight;
+    weight = weight === 3 ? 1 : 3;
+  }
+  return (10 - (sum % 10)) % 10 === check;
+}
+
+// Validation STRICTE d'un code-barres : longueur standard (EAN-8/UPC-A/EAN-13)
+// ET chiffre de contrôle GS1 valide. Rejette le bruit qu'un décodeur peut
+// renvoyer sur une image sans vrai code-barres.
+// Au niveau du FICHIER, pas dans startScanner : les deux chemins de lecture
+// (BarcodeDetector sur Android, ZXing-WASM sur iPhone) doivent appliquer
+// exactement les mêmes règles, sinon "code-barres valide" finit par vouloir
+// dire deux choses différentes.
+function isValidBarcode(code) {
+  if (!/^\d+$/.test(code)) return false;
+  if (![8, 12, 13].includes(code.length)) return false;
+  return validateGS1Checksum(code);
+}
+
+// Ouvre la caméra arrière et branche le flux dans le cadre de l'écran scan.
+// Partagée par les deux chemins : il n'y a qu'un seul propriétaire de la caméra.
+// Renvoie l'élément <video> prêt, ou null si l'accès a échoué (le message
+// d'erreur est alors déjà affiché).
+async function openCameraInto(qrReader, scanStatus) {
+  // Créer l'élément vidéo ET L'AJOUTER AU DOM pour afficher le flux caméra.
+  const videoElement = document.createElement('video');
+  videoElement.setAttribute('playsinline', 'true'); // lecture inline mobile
+  videoElement.muted = true;
+  videoElement.style.width = '100%';
+  videoElement.style.height = '100%';
+  videoElement.style.objectFit = 'cover';
+  qrReader.innerHTML = '';
+  qrReader.appendChild(videoElement);
+  currentVideo = videoElement;
+
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+  } catch (err) {
+    console.error('[Scanner] Erreur caméra:', { name: err.name, message: err.message });
+    scanStatus.textContent = cameraErrorMessage(err);
+    return null;
+  }
+
+  currentStream = stream;
+  videoElement.srcObject = stream;
+  await videoElement.play();
+  dbg('[Scanner] ✅ Caméra démarrée');
+  return videoElement;
+}
+
 async function startScanner() {
   if (scannerInitialized) return;
   const scanStatus = document.getElementById('scan-status');
   try {
     let lastDetectionTime = 0;
     const DEBOUNCE_DELAY = 1200; // 1.2 secondes - équilibre vitesse vs faux positifs
-
-    // Validation STRICTE d'un code-barres : longueur standard (EAN-8/UPC-A/EAN-13)
-    // ET chiffre de contrôle GS1 valide. Rejette le bruit que BarcodeDetector
-    // peut renvoyer sur une image sans vrai code-barres.
-    function isValidBarcode(code) {
-      if (!/^\d+$/.test(code)) return false;
-      if (![8, 12, 13].includes(code.length)) return false;
-      return validateGS1Checksum(code);
-    }
-
-    // Chiffre de contrôle GS1 (EAN-13, EAN-8, UPC-A) : depuis la droite,
-    // on pondère les chiffres (hors clé) par 3,1,3,1... ; clé = (10 - somme%10)%10.
-    function validateGS1Checksum(code) {
-      const digits = code.split('').map(Number);
-      const check = digits.pop();
-      let sum = 0;
-      let weight = 3;
-      for (let i = digits.length - 1; i >= 0; i--) {
-        sum += digits[i] * weight;
-        weight = weight === 3 ? 1 : 3;
-      }
-      return (10 - (sum % 10)) % 10 === check;
-    }
 
     dbg('[Scanner] Initializing Barcode Detection API...');
 
@@ -324,13 +362,8 @@ async function startScanner() {
     // iOS - installer Chrome ou Firefox n'y change donc rien. L'ancien message
     // conseillait "Chrome sur Android", impossible à suivre depuis un iPhone.
     if (!('BarcodeDetector' in window)) {
-      console.warn('[Scanner] BarcodeDetector non supporté sur ce navigateur');
-      // Pas de cadre caméra vide : elle n'a jamais démarré, l'afficher donne
-      // l'impression d'une panne.
-      qrReader.classList.add('hidden');
-      const hintEl = document.getElementById('scan-hint');
-      if (hintEl) hintEl.textContent = 'Le scan direct n’est pas disponible sur iPhone ni iPad.';
-      scanStatus.textContent = 'Apple ne permet pas encore la lecture de codes-barres dans Safari, et tous les navigateurs iOS utilisent Safari : changer de navigateur ne changera rien. La lecture par photo est en préparation. En attendant, reviens en arrière et utilise « Chercher par nom ».';
+      console.warn('[Scanner] BarcodeDetector absent - bascule sur le décodeur WASM');
+      await startShutterScanner(qrReader, scanStatus);
       return;
     }
 
@@ -354,32 +387,8 @@ async function startScanner() {
       ? new window.BarcodeDetector({ formats })
       : new window.BarcodeDetector();
 
-    // Créer l'élément vidéo ET L'AJOUTER AU DOM pour afficher le flux caméra.
-    const videoElement = document.createElement('video');
-    videoElement.setAttribute('playsinline', 'true'); // lecture inline mobile
-    videoElement.muted = true;
-    videoElement.style.width = '100%';
-    videoElement.style.height = '100%';
-    videoElement.style.objectFit = 'cover';
-    qrReader.innerHTML = '';
-    qrReader.appendChild(videoElement);
-    currentVideo = videoElement;
-
-    let stream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
-    } catch (err) {
-      console.error('[Scanner] Erreur caméra:', { name: err.name, message: err.message });
-      scanStatus.textContent = cameraErrorMessage(err);
-      return;
-    }
-
-    currentStream = stream;
-    videoElement.srcObject = stream;
-    await videoElement.play();
-    dbg('[Scanner] ✅ Caméra démarrée');
+    const videoElement = await openCameraInto(qrReader, scanStatus);
+    if (!videoElement) return;
     scanStatus.textContent = '✓ Prêt — pointe vers un code-barres';
     scannerInitialized = true;
 
@@ -437,6 +446,66 @@ async function startScanner() {
   }
 }
 
+// Chemin iPhone / iPad : pas de BarcodeDetector, donc pas de lecture continue.
+// L'aperçu caméra, lui, fonctionne parfaitement sous WebKit - c'est le DÉCODAGE
+// qui coûte cher. On ne le déclenche donc qu'à l'appui, sur trois vues
+// successives. Voir la spec 2026-08-02-scan-iphone-photo-design.md
+async function startShutterScanner(qrReader, scanStatus) {
+  const hintEl = document.getElementById('scan-hint');
+  if (hintEl) hintEl.textContent = 'Vise le code-barres, puis appuie sur le bouton.';
+
+  const videoElement = await openCameraInto(qrReader, scanStatus);
+  if (!videoElement) {
+    // Sans aperçu, le cadre vide donne l'impression d'une panne : on le masque.
+    // Et on cite les messageries, car la plupart des utilisateurs arrivent par
+    // un lien WhatsApp, Messenger ou Signal, dont les navigateurs intégrés
+    // refusent parfois la caméra là où Safari l'accorde.
+    qrReader.classList.add('hidden');
+    scanStatus.textContent += " Si tu as ouvert l'app depuis un lien WhatsApp, Messenger ou Signal, essaie plutôt de l'ouvrir dans Safari.";
+    document.getElementById('shutter-search').classList.remove('hidden');
+    return;
+  }
+
+  scannerInitialized = true;
+  scanStatus.textContent = '✓ Vise le code-barres';
+
+  const btn = document.getElementById('shutter-button');
+  btn.classList.remove('hidden');
+  btn.disabled = false;
+
+  let failures = 0;
+  let decoder = null;
+
+  btn.onclick = async () => {
+    btn.disabled = true;
+    // Le tout premier appui télécharge le WASM (~438 Ko compressés). Sans cet
+    // état, l'appui paraît sans effet et l'utilisateur appuie plusieurs fois.
+    scanStatus.textContent = decoder ? 'Lecture...' : 'Préparation du lecteur...';
+    try {
+      if (!decoder) decoder = await import(`./barcode-decode.js?v=${BUILD}`);
+      scanStatus.textContent = 'Lecture...';
+      const raw = await decoder.decodeFromVideo(videoElement);
+      // Mêmes règles que le chemin Android : isValidBarcode est partagée.
+      if (raw && isValidBarcode(raw)) {
+        dbg('[Scanner] ✅ ACCEPTED (photo):', raw);
+        handleQrScan(raw);
+        return;
+      }
+      failures += 1;
+      scanStatus.textContent = failures === 1
+        ? 'Code-barres illisible. Rapproche-toi et évite les reflets.'
+        : 'Toujours illisible. Pose le produit à plat et cadre le code-barres en entier.';
+      document.getElementById('shutter-search').classList.remove('hidden');
+    } catch (err) {
+      console.error('[Scanner] Décodeur indisponible:', err);
+      scanStatus.textContent = "Le lecteur n'a pas pu se charger. Vérifie ta connexion et réessaie.";
+      document.getElementById('shutter-search').classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+    }
+  };
+}
+
 // Message d'erreur caméra clair selon le type d'échec getUserMedia.
 function cameraErrorMessage(err) {
   switch (err.name) {
@@ -471,6 +540,15 @@ function stopScanner() {
       currentVideo.remove();
       currentVideo = null;
     }
+    // Chemin iPhone : le déclencheur et le repli n'ont plus lieu d'être une
+    // fois la caméra coupée, et le cadre doit redevenir visible pour un
+    // prochain passage sur l'écran scan.
+    const shutter = document.getElementById('shutter-button');
+    if (shutter) { shutter.classList.add('hidden'); shutter.onclick = null; }
+    const shutterSearch = document.getElementById('shutter-search');
+    if (shutterSearch) shutterSearch.classList.add('hidden');
+    const reader = document.getElementById('qr-reader');
+    if (reader) reader.classList.remove('hidden');
     scannerInitialized = false;
     dbg('[Scanner] ✅ Stopped');
   } catch (err) {
@@ -1318,6 +1396,9 @@ searchForm.addEventListener('submit', async (event) => {
 backButton.addEventListener('click', () => showScreen('home'));
 
 document.getElementById('btn-search').addEventListener('click', () => showScreen('search'));
+// Repli du chemin iPhone : proposé après un échec de lecture, jamais de saisie
+// de chiffres - personne ne tape un code-barres à 13 chiffres.
+document.getElementById('shutter-search').addEventListener('click', () => showScreen('search'));
 document.getElementById('btn-scan').addEventListener('click', () => showScreen('scan'));
 document.getElementById('btn-error-back').addEventListener('click', () => showScreen('home'));
 

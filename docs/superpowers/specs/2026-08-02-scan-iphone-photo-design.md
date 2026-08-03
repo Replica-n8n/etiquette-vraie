@@ -138,7 +138,20 @@ sa glu JavaScript. Pas de CDN — hors-ligne préservé, aucune dépendance tier
 rien d'externe exécuté chez les utilisateurs.
 
 Version **lecture seule** de ZXing : l'app ne génère jamais de codes-barres.
-Taille à mesurer à l'intégration, ordre de grandeur quelques centaines de Ko.
+
+**Taille réelle mesurée (livraison v1.28) : 1,02 Mo brut, ~438 Ko compressé.**
+Mon estimation initiale (« quelques centaines de Ko ») était basse d'un facteur
+deux. Reste acceptable puisque seul un iPhone le télécharge, une seule fois, et
+qu'il est ensuite mis en cache — mais c'est un vrai coût en données mobiles au
+premier usage, pas une broutille.
+
+Fichiers versionnés, arborescence amont conservée pour rester auditable et
+remplaçable (`zxing-wasm@3.1.2`) :
+```
+vendor/zxing/share.js              12 Ko
+vendor/zxing/reader/index.js       44 Ko
+vendor/zxing/reader/zxing_reader.wasm  1,02 Mo
+```
 
 ### Correction nécessaire dans `sw.js`
 
@@ -177,6 +190,21 @@ chaque build et les anciens caches sont supprimés.
   connus — nette, floue, de travers — et vérification du résultat. Vrai test
   d'intégration du décodeur.
 - `node test-rules.js` reste vert : le moteur de détection n'est pas touché.
+
+### Fait à la livraison v1.28
+
+`node test-barcode.js` — 15/15. La validation est extraite du **vrai** `app.js`
+(pas recopiée, sinon elle divergerait en silence), et le décodeur lit un
+code-barres sur une photo de rayon réelle (`test-fixtures/barcode.jpg`).
+
+Vérifié aussi dans le navigateur, sur le module réel : chargement du module,
+résolution du `.wasm` par `locateFile`, décodage de la photo en **179 ms** pour
+une vue à 1280 px, code accepté par `isValidBarcode`, et `.wasm` bien rangé dans
+le cache du service worker. Trois vues par appui ⇒ ~0,8 s sur ce poste ; compter
+plus sur un téléphone.
+
+Chemin Android vérifié non régressé en simulant `BarcodeDetector` : la branche
+native est prise, le bouton déclencheur reste masqué.
 
 ### Non automatisables — iPhone réel requis
 
