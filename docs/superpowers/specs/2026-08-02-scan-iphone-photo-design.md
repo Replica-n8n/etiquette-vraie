@@ -183,11 +183,14 @@ chaque build et les anciens caches sont supprimés.
 - autorisation caméra et aperçu dans Safari ;
 - même parcours depuis la PWA installée sur l'écran d'accueil (cas
   historiquement le plus fragile) ;
-- **ouverture depuis un lien WhatsApp / Instagram** (navigateur intégré, pas
-  Safari) : ces WebViews restreignent souvent `getUserMedia`. Beaucoup
-  d'utilisateurs arrivent par ce chemin, et l'aperçu caméra pourrait y échouer
-  alors qu'il fonctionne dans Safari. Si c'est le cas, il faudra un message
-  dédié « ouvre dans Safari » — le message actuel ne couvre pas ce cas ;
+- **ouverture depuis un lien de messagerie — cas PRINCIPAL, pas marginal.** Le
+  lien de test a été diffusé par WhatsApp, Messenger **et** Signal : c'est ainsi
+  que la majorité des utilisateurs arrivent. Chacune a sa propre WebView et ses
+  propres réglages (certaines ouvrent dans Safari, d'autres gardent
+  l'utilisateur dans l'app), et ces WebView restreignent parfois
+  `getUserMedia`. L'aperçu caméra peut donc échouer là où il fonctionne dans
+  Safari. **Tester les trois séparément**, et prévoir un message dédié « ouvre
+  dans Safari » si l'une échoue — le message actuel ne couvre pas ce cas ;
 - temps réel de bout en bout : appui → résultat ;
 - vérification sur Android que le module et le WASM ne sont jamais chargés.
 
