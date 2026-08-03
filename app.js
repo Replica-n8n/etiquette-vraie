@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.26';
+const APP_VERSION = 'v1.27';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1785774063';
+const BUILD = '1785785195';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -648,7 +648,11 @@ async function searchProducts(term, onRetry, signal) {
 }
 
 // Champs demandés à OFF - partagés par le scan ET la recherche pour une UX cohérente.
-const PRODUCT_FIELDS = 'product_name,generic_name,ingredients_text,brands,last_modified_t,image_front_small_url,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags';
+// image_ingredients_url : permet de distinguer "personne n'a envoyé de photo"
+// de "photo envoyée, OFF ne l'a pas encore validée". Sans ce champ, plusieurs
+// utilisateurs photographieraient le même produit en série - chaque envoi
+// REMPLACE l'image de référence, donc une photo floue peut en dégrader une nette.
+const PRODUCT_FIELDS = 'product_name,generic_name,ingredients_text,brands,last_modified_t,image_front_small_url,image_ingredients_url,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags';
 
 async function fetchProduct(code) {
   const url = `https://world.openfoodfacts.org/api/v0/product/${code}.json?fields=${PRODUCT_FIELDS}`;
@@ -925,6 +929,10 @@ function renderResult(product) {
   document.getElementById('stamp').textContent = meta.label;
   document.getElementById('verdict-text').textContent = headline;
 
+  // Verdict "unknown" = OFF n'a pas les ingrédients. C'est le seul cas où on
+  // propose une photo : l'utilisateur peut débloquer la vérification.
+  setFillGapTarget(product, verdict);
+
   const flaggedAdditives = findFlaggedAdditives(product.additives_tags);
   currentRiskyAdditives = flaggedAdditives.risky;
 
@@ -1080,6 +1088,14 @@ const CONTRIBUTE_URL = SEARCH_PROXY.replace(/\/search$/, '/contribute');
 const CONTRIBUTE_ENABLED = /(^|\/)etiquette-vraie-preview(\/|$)/.test(location.pathname)
   || location.hostname === 'localhost'
   || location.hostname === '127.0.0.1';
+
+// Deuxième porte, ouverte celle-là. Le drapeau ci-dessus existe à cause du
+// risque de saisie approximative dans une base publique. Le chemin photo n'a
+// aucun champ texte : il ne peut rien écraser, il ne fait qu'ajouter une image.
+// Pipeline validé en production réelle le 2026-08-02 (rev 1 -> 3, insights
+// ingredient_detection et nutrient_extraction créés). Voir la spec
+// docs/superpowers/specs/2026-08-02-contribution-fiches-incompletes-design.md
+const PHOTO_CONTRIBUTE_ENABLED = true;
 let contributeCode = null;
 let contributePhoto = null; // data URL compressée
 
@@ -1113,6 +1129,52 @@ function setContributeTarget(code) {
   document.getElementById('contrib-photo').value = '';
 }
 
+// ===== Fiche incomplète : contribution photo seule =========================
+let fillGapCode = null;
+let fillGapPhoto = null;
+
+// Trois états, lus dans les données d'OFF et non dans une mémoire locale : la
+// question est ce que voit un utilisateur DIFFÉRENT de celui qui a envoyé.
+function setFillGapTarget(product, verdict) {
+  const block = document.getElementById('fillgap-block');
+  if (!block) return;
+  fillGapCode = null;
+  fillGapPhoto = null;
+
+  const openBtn = document.getElementById('fillgap-open');
+  const sendBtn = document.getElementById('fillgap-send');
+  const info = document.getElementById('fillgap-info');
+  const status = document.getElementById('fillgap-status');
+  document.getElementById('fillgap-photo').value = '';
+  info.textContent = '';
+  status.textContent = '';
+  status.className = 'contribute-status';
+  sendBtn.classList.add('hidden');
+  openBtn.classList.add('hidden');
+
+  if (!PHOTO_CONTRIBUTE_ENABLED || verdict !== 'unknown' || !product.code) {
+    block.classList.add('hidden');
+    return;
+  }
+  block.classList.remove('hidden');
+
+  if (product.image_ingredients_url) {
+    // Photo déjà présente : ne pas en redemander. Chaque envoi REMPLACE l'image
+    // de référence - une photo floue dégraderait une photo nette - et crée une
+    // suggestion Robotoff de plus à traiter. On laisse tout de même une porte
+    // pour le cas où la photo existante serait illisible.
+    document.getElementById('fillgap-text').textContent =
+      "Une photo des ingrédients a déjà été envoyée pour ce produit. Open Food Facts doit encore la vérifier.";
+    openBtn.textContent = "La photo existante est illisible ? En envoyer une meilleure";
+  } else {
+    document.getElementById('fillgap-text').textContent =
+      "Open Food Facts n'a pas la liste d'ingrédients de ce produit, donc rien à vérifier. Tu as l'emballage sous la main ? Photographie la liste d'ingrédients : ça débloquera la vérification, pour toi et pour les autres.";
+    openBtn.textContent = "Photographier la liste d'ingrédients";
+  }
+  openBtn.classList.remove('hidden');
+  fillGapCode = product.code;
+}
+
 // Une photo de téléphone fait 3-8 Mo : on la réduit avant l'envoi (OFF exige
 // au moins 640x160, 1600px de côté est largement suffisant pour l'OCR).
 async function compressImage(file, maxSide = 1600, quality = 0.82) {
@@ -1126,6 +1188,25 @@ async function compressImage(file, maxSide = 1600, quality = 0.82) {
   canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
   bitmap.close && bitmap.close();
   return { dataUrl: canvas.toDataURL('image/jpeg', quality), w, h };
+}
+
+// Envoi partagé par les deux chemins de contribution : le formulaire "produit
+// absent" (texte + photo) et le chemin photo seule sur fiche incomplète.
+async function postContribution(payload) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  try {
+    const res = await fetch(CONTRIBUTE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lang: 'fr', uuid: anonUuid(), ...payload }),
+      signal: controller.signal,
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok && data.ok, data };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function sendContribution() {
@@ -1146,24 +1227,13 @@ async function sendContribution() {
   statusEl.textContent = 'Envoi en cours...';
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
-    const res = await fetch(CONTRIBUTE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        code: contributeCode,
-        product_name: name || undefined,
-        brands: brand || undefined,
-        image: contributePhoto || undefined,
-        lang: 'fr',
-        uuid: anonUuid(),
-      }),
-      signal: controller.signal,
+    const { ok } = await postContribution({
+      code: contributeCode,
+      product_name: name || undefined,
+      brands: brand || undefined,
+      image: contributePhoto || undefined,
     });
-    clearTimeout(timeout);
-    const data = await res.json().catch(() => ({}));
-    if (res.ok && data.ok) {
+    if (ok) {
       statusEl.className = 'contribute-status ok';
       statusEl.textContent = 'Merci ! Ta contribution est envoyée à Open Food Facts.';
       document.getElementById('contribute-form').classList.add('hidden');
@@ -1278,6 +1348,65 @@ document.getElementById('contrib-photo').addEventListener('change', async (event
 });
 
 document.getElementById('btn-contribute-send').addEventListener('click', sendContribution);
+
+// --- Fiche incomplète : photo seule ---------------------------------------
+document.getElementById('fillgap-open').addEventListener('click', () => {
+  document.getElementById('fillgap-photo').click();
+});
+
+document.getElementById('fillgap-photo').addEventListener('change', async (event) => {
+  const file = event.target.files && event.target.files[0];
+  const info = document.getElementById('fillgap-info');
+  const sendBtn = document.getElementById('fillgap-send');
+  fillGapPhoto = null;
+  sendBtn.classList.add('hidden');
+  if (!file) { info.textContent = ''; return; }
+  info.textContent = 'Préparation de la photo...';
+  try {
+    const { dataUrl, w, h } = await compressImage(file);
+    if (w < 640 || h < 160) {
+      info.textContent = 'Photo trop petite pour être lisible. Reprends-la de plus près.';
+      return;
+    }
+    fillGapPhoto = dataUrl;
+    info.textContent = `Photo prête (${w}×${h}, ~${Math.round((dataUrl.length * 0.75) / 1024)} Ko).`;
+    sendBtn.classList.remove('hidden');
+  } catch (err) {
+    info.textContent = 'Impossible de lire cette image.';
+  }
+});
+
+document.getElementById('fillgap-send').addEventListener('click', async () => {
+  const status = document.getElementById('fillgap-status');
+  const sendBtn = document.getElementById('fillgap-send');
+  if (!PHOTO_CONTRIBUTE_ENABLED || !fillGapCode || !fillGapPhoto) return;
+  sendBtn.disabled = true;
+  status.className = 'contribute-status';
+  status.textContent = 'Envoi en cours...';
+  try {
+    const { ok } = await postContribution({ code: fillGapCode, image: fillGapPhoto });
+    if (ok) {
+      status.className = 'contribute-status ok';
+      // Dire la vérité sur le délai : un annotateur d'OFF doit valider la
+      // lecture. Sans ça l'utilisateur rescanne, revoit "impossible de vérifier"
+      // et conclut que son envoi a échoué.
+      status.textContent = 'Merci ! Ta photo est partie chez Open Food Facts. Les ingrédients apparaîtront une fois la lecture vérifiée par leur équipe — compte quelques jours.';
+      document.getElementById('fillgap-open').classList.add('hidden');
+      document.getElementById('fillgap-info').textContent = '';
+      sendBtn.classList.add('hidden');
+    } else {
+      status.className = 'contribute-status err';
+      status.textContent = 'Envoi impossible pour le moment. Réessaie plus tard.';
+    }
+  } catch (err) {
+    status.className = 'contribute-status err';
+    status.textContent = (err.name === 'AbortError')
+      ? 'Envoi trop long. Réessaie.'
+      : 'Problème de connexion. Réessaie.';
+  } finally {
+    sendBtn.disabled = false;
+  }
+});
 
 // Initialize with home screen
 (async () => {
