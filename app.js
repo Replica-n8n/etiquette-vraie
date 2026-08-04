@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.28';
+const APP_VERSION = 'v1.29';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1785790768';
+const BUILD = '1785803952';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -454,6 +454,12 @@ async function startShutterScanner(qrReader, scanStatus) {
   const hintEl = document.getElementById('scan-hint');
   if (hintEl) hintEl.textContent = 'Vise le code-barres, puis appuie sur le bouton.';
 
+  // Ces éléments ont été AJOUTÉS au HTML : sur un appareil qui a encore
+  // l'ancien index.html en cache, ils n'existent pas. Sans repli, la lecture
+  // échouerait sur un TypeError au lieu d'un message compréhensible.
+  const searchFallback = document.getElementById('shutter-search');
+  const showSearchFallback = () => { if (searchFallback) searchFallback.classList.remove('hidden'); };
+
   const videoElement = await openCameraInto(qrReader, scanStatus);
   if (!videoElement) {
     // Sans aperçu, le cadre vide donne l'impression d'une panne : on le masque.
@@ -462,7 +468,7 @@ async function startShutterScanner(qrReader, scanStatus) {
     // refusent parfois la caméra là où Safari l'accorde.
     qrReader.classList.add('hidden');
     scanStatus.textContent += " Si tu as ouvert l'app depuis un lien WhatsApp, Messenger ou Signal, essaie plutôt de l'ouvrir dans Safari.";
-    document.getElementById('shutter-search').classList.remove('hidden');
+    showSearchFallback();
     return;
   }
 
@@ -470,6 +476,12 @@ async function startShutterScanner(qrReader, scanStatus) {
   scanStatus.textContent = '✓ Vise le code-barres';
 
   const btn = document.getElementById('shutter-button');
+  if (!btn) {
+    // Ancien index.html encore en cache : on le dit, plutot que de planter.
+    scanStatus.textContent = "Recharge l'app pour activer la lecture par photo (mise a jour en cours).";
+    showSearchFallback();
+    return;
+  }
   btn.classList.remove('hidden');
   btn.disabled = false;
 
@@ -495,11 +507,11 @@ async function startShutterScanner(qrReader, scanStatus) {
       scanStatus.textContent = failures === 1
         ? 'Code-barres illisible. Rapproche-toi et évite les reflets.'
         : 'Toujours illisible. Pose le produit à plat et cadre le code-barres en entier.';
-      document.getElementById('shutter-search').classList.remove('hidden');
+      showSearchFallback();
     } catch (err) {
       console.error('[Scanner] Décodeur indisponible:', err);
       scanStatus.textContent = "Le lecteur n'a pas pu se charger. Vérifie ta connexion et réessaie.";
-      document.getElementById('shutter-search').classList.remove('hidden');
+      showSearchFallback();
     } finally {
       btn.disabled = false;
     }
@@ -1396,10 +1408,18 @@ searchForm.addEventListener('submit', async (event) => {
 backButton.addEventListener('click', () => showScreen('home'));
 
 document.getElementById('btn-search').addEventListener('click', () => showScreen('search'));
+document.getElementById('btn-scan').addEventListener('click', () => showScreen('scan'));
+
 // Repli du chemin iPhone : proposé après un échec de lecture, jamais de saisie
 // de chiffres - personne ne tape un code-barres à 13 chiffres.
-document.getElementById('shutter-search').addEventListener('click', () => showScreen('search'));
-document.getElementById('btn-scan').addEventListener('click', () => showScreen('scan'));
+// GARDE OBLIGATOIRE : au déploiement, un appareil peut recevoir le nouveau
+// app.js (servi network-first) AVEC l'ancien index.html (racine servie
+// cache-first). Tout élément AJOUTÉ au HTML est donc absent pendant un cycle.
+// Sans cette garde, l'exception ici tuait l'enregistrement des écouteurs
+// suivants - c'est ce qui a cassé le bouton Scanner sur Android en v1.28.
+// Enregistrer les écouteurs des NOUVEAUX éléments APRÈS ceux du coeur de l'app.
+const shutterSearchBtn = document.getElementById('shutter-search');
+if (shutterSearchBtn) shutterSearchBtn.addEventListener('click', () => showScreen('search'));
 document.getElementById('btn-error-back').addEventListener('click', () => showScreen('home'));
 
 // --- Contribution : ouverture du formulaire, photo, envoi ---
