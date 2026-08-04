@@ -823,6 +823,82 @@ function detectVerdict(productName, ingredientsText) {
   };
 }
 
+// ===========================================================================
+// PROPORTION RÉELLE de l'aliment promis
+//
+// Open Food Facts expose, à côté du texte, une liste d'ingrédients STRUCTURÉE :
+// identifiant taxonomique, pourcentage déclaré par le fabricant (QUID),
+// estimation calculée par OFF, et sous-ingrédients pour les composés.
+//
+// Voir docs/superpowers/specs/2026-08-04-proportion-reelle-design.md
+// ===========================================================================
+
+// Aplatit l'arbre en gardant la profondeur : un aliment promis est souvent un
+// SOUS-ingrédient ("noisettes" dans "pâte à tartiner aux noisettes").
+function flattenIngredients(list, depth = 0, out = []) {
+  for (const item of list || []) {
+    out.push({ item, depth });
+    if (item && item.ingredients) flattenIngredients(item.ingredients, depth + 1, out);
+  }
+  return out;
+}
+
+function taxonomyId(item) {
+  return String((item && item.id) || '')
+    .replace(/^[a-z]{2}:/, '')
+    .replace(/-/g, ' ')
+    .toLowerCase();
+}
+
+/**
+ * Proportion de `word` dans le produit, d'après la liste structurée d'OFF.
+ *
+ * ON NE CHERCHE JAMAIS DANS LE TEXTE LIBRE. "Pâte à tartiner aux NOISETTES"
+ * contient le mot "noisette" et pèse 54 %, alors que la noisette elle-même n'y
+ * est qu'à 1,5 % : chercher dans le texte attribuait au fruit le poids du
+ * composé, un facteur 36 sur un chiffre montré à l'utilisateur.
+ *
+ * L'identifiant taxonomique est en anglais : on traduit d'abord le mot promis,
+ * sinon "homard" ne trouve jamais "en:lobster".
+ *
+ * @returns {{valeur:number, source:'declare'|'estime'}|null}
+ */
+function ingredientShare(word, ingredients) {
+  if (!word || !Array.isArray(ingredients) || ingredients.length === 0) return null;
+  // Un mot de catégorie ne figure jamais dans sa propre liste : le chiffrer
+  // n'aurait pas de sens ("beurre" dans un beurre d'amandes).
+  if (CATEGORY_WORDS.has(word)) return null;
+
+  const targets = new Set((INGREDIENT_VARIANTS[word] || [word]).map((v) => normalize(v)));
+  const flat = flattenIngredients(ingredients);
+
+  // 1. Identifiant exactement égal à une variante : en:lobster pour "homard".
+  let hit = flat.find(({ item }) => targets.has(taxonomyId(item)));
+  // 2. Sinon une espèce plus précise : en:american-lobster finit par "lobster".
+  if (!hit) {
+    hit = flat.find(({ item }) => {
+      const id = taxonomyId(item);
+      return [...targets].some((t) => id.endsWith(' ' + t) || id.startsWith(t + ' '));
+    });
+  }
+  if (!hit) return null;
+
+  // Le QUID déclaré n'est absolu qu'au PREMIER NIVEAU. Imbriqué, il est relatif
+  // à son parent : le "cacao 40 %" d'un biscuit est 40 % de la pâte à tartiner,
+  // pas du biscuit. percent_estimate est toujours absolu, mais c'est un calcul.
+  const cap = (n) => Math.min(100, n); // vu : 103,86 % sur des amandes nature
+  if (hit.depth === 0 && typeof hit.item.percent === 'number' && hit.item.percent > 0) {
+    return { valeur: cap(hit.item.percent), source: 'declare' };
+  }
+  if (typeof hit.item.percent_estimate === 'number' && hit.item.percent_estimate > 0) {
+    return { valeur: cap(hit.item.percent_estimate), source: 'estime' };
+  }
+  return null;
+}
+
 if (typeof module !== 'undefined') {
-  module.exports = { detectVerdict, normalize, findFlavorMention, onlyAppearsAsArome, findIngredientPosition };
+  module.exports = {
+    detectVerdict, normalize, findFlavorMention, onlyAppearsAsArome,
+    findIngredientPosition, ingredientShare,
+  };
 }

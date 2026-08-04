@@ -502,3 +502,9 @@ button, .back, .result-item, .history-item{ -webkit-tap-highlight-color:transpar
   font-weight:600; font-size:12px; padding:11px 14px;
 }
 .fillgap-action.subtle:hover{ background-color:var(--paper); border-color:var(--ink-soft); }
+
+/* Proportion réelle de l'aliment promis dans "Il y a vraiment". Le chiffre en
+   monospace se lit d'un coup d'oeil ; "estimé" distingue le calcul d'Open Food
+   Facts d'une déclaration du fabricant. */
+.compare-pct{ font-family:'IBM Plex Mono', monospace; font-weight:600; }
+.compare-est{ font-size:9px; color:var(--ink-soft); margin-left:2px; font-weight:400; }

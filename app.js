@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.32';
+const APP_VERSION = 'v1.33';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1785868253';
+const BUILD = '1785870475';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -742,7 +742,7 @@ async function searchProducts(term, onRetry, signal) {
 // de "photo envoyée, OFF ne l'a pas encore validée". Sans ce champ, plusieurs
 // utilisateurs photographieraient le même produit en série - chaque envoi
 // REMPLACE l'image de référence, donc une photo floue peut en dégrader une nette.
-const PRODUCT_FIELDS = 'product_name,generic_name,ingredients_text,brands,last_modified_t,image_front_small_url,image_ingredients_url,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags';
+const PRODUCT_FIELDS = 'product_name,generic_name,ingredients_text,brands,last_modified_t,image_front_small_url,image_ingredients_url,ingredients,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags';
 
 async function fetchProduct(code) {
   const url = `https://world.openfoodfacts.org/api/v0/product/${code}.json?fields=${PRODUCT_FIELDS}`;
@@ -964,21 +964,59 @@ function cleanText(value) {
 
 // "Le nom suggère" / "Il y a vraiment" : vraie <ul> quand il y a plusieurs
 // valeurs (avant : des <li> posés dans un <div>, HTML invalide).
-function renderCompareValue(el, text) {
+// Proportions : "3,8 %" contient une virgule, donc impossible de les glisser
+// dans la chaîne découpée ci-dessous. Elles arrivent en structure, alignées sur
+// les parts, ce qui permet en plus de styler le chiffre et la mention "estimé".
+function shareSuffix(part) {
+  const frag = document.createDocumentFragment();
+  const pct = document.createElement('b');
+  pct.className = 'compare-pct';
+  const v = part.valeur;
+  pct.textContent = ' ' + (v >= 10 ? Math.round(v) : Math.round(v * 10) / 10)
+    .toString().replace('.', ',') + ' %';
+  frag.appendChild(pct);
+  if (part.source === 'estime') {
+    // Une estimation d'Open Food Facts n'est PAS une déclaration du fabricant.
+    // Le dire est le minimum pour une app dont le sujet est l'honnêteté.
+    const est = document.createElement('span');
+    est.className = 'compare-est';
+    est.textContent = ' estimé'; // espace réelle : un lecteur d'écran lirait sinon "3,8 %estimé"
+    frag.appendChild(est);
+  }
+  return frag;
+}
+
+function renderCompareValue(el, text, shares) {
   el.innerHTML = '';
   const parts = String(text || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const shareAt = (i) => (Array.isArray(shares) && shares[i]) || null;
   if (parts.length <= 1) {
     el.textContent = parts[0] || '';
+    if (parts.length === 1 && shareAt(0)) el.appendChild(shareSuffix(shareAt(0)));
     return;
   }
   const ul = document.createElement('ul');
   ul.className = 'compare-list';
-  for (const part of parts) {
+  parts.forEach((part, i) => {
     const li = document.createElement('li');
     li.textContent = part;
+    if (shareAt(i)) li.appendChild(shareSuffix(shareAt(i)));
     ul.appendChild(li);
-  }
+  });
   el.appendChild(ul);
+}
+
+// Proportion réelle de chaque aliment promis, alignée sur les libellés affichés.
+// Renvoie null dès que l'alignement n'est pas garanti (règles de non-conformité
+// dont le libellé est une phrase, pas une liste d'aliments) : mieux vaut aucun
+// chiffre qu'un chiffre en face du mauvais mot.
+function realShares(detail, product) {
+  if (!detail || !detail.matched || !Array.isArray(product.ingredients)) return null;
+  const mots = String(detail.matched).split(',').map((s) => s.trim()).filter(Boolean);
+  const affiches = String(detail.compareReal || '').split(',').map((s) => s.trim()).filter(Boolean);
+  if (mots.length !== affiches.length) return null;
+  const parts = mots.map((mot) => ingredientShare(mot, product.ingredients));
+  return parts.some(Boolean) ? parts : null;
 }
 
 function renderResult(product) {
@@ -1068,7 +1106,9 @@ function renderResult(product) {
     const realEl = document.getElementById('compare-real');
 
     renderCompareValue(suggestEl, detail.compareSuggest);
-    renderCompareValue(realEl, detail.compareReal);
+    // "homard" devient "homard 3,8 %" : présence et proportion ne sont pas la
+    // même promesse. Voir 2026-08-04-proportion-reelle-design.md
+    renderCompareValue(realEl, detail.compareReal, realShares(detail, product));
   } else {
     compareEl.classList.add('hidden');
   }

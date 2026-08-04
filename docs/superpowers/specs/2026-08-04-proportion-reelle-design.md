@@ -34,9 +34,24 @@ fonction, comparer la promesse du nom à la réalité de la liste.**
   déjà affiché.
 - **La ligne « 1ᵉʳ ingrédient : eau 46 % ».** Testée en prototype (variante B),
   écartée : elle sort de la promesse du nom.
-- **Un nouveau verdict.** Un pourcentage faible ne change pas le verdict dans ce
-  lot. Le chiffre parle de lui-même. `findIngredientPercent` continue de
-  produire « À vérifier » comme aujourd'hui.
+- **Un nouveau verdict.** Un pourcentage faible ne change pas le verdict. Le
+  chiffre parle de lui-même. `findIngredientPercent` continue de produire
+  « À vérifier » comme aujourd'hui.
+
+  **Pourquoi aucun seuil n'est codé** — c'est la raison de fond, pas une remise à
+  plus tard. Il n'existe pas de seuil universel : *une soupe est liquide par
+  définition*, l'eau y domine normalement et ce n'est pas une tromperie. La même
+  proportion dans une terrine le serait. Et une truffe à l'état de trace dans un
+  produit qui la met en avant est une arnaque — sauf si l'étiquette annonce
+  « saveur truffe », cas déjà couvert par les mots de réserve (« À vérifier »).
+  Un seuil unique se tromperait donc dans les deux sens, en accusant des produits
+  honnêtes et en blanchissant des produits douteux. Le chiffre affiché laisse
+  l'acheteur juger avec le contexte que le code n'a pas : la catégorie du
+  produit, le prix sur l'étiquette, ce qu'il attend du pot qu'il tient.
+
+  Si un jour ce sujet est repris, la piste n'est pas un seuil global mais une
+  courte liste d'ingrédients de luxe (truffe, safran, vanille, homard, caviar)
+  pour lesquels une trace, en l'absence de mot de réserve, est significative.
 
 ## Source des données
 
