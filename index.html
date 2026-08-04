@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1785803952">
+<link rel="stylesheet" href="./style.css?v=1785858962">
 </head>
 <body>
 
@@ -122,17 +122,6 @@
         <div class="alert-text" id="verdict-text"></div>
       </div>
 
-      <!-- Fiche incomplète : OFF n'a pas les ingrédients, donc rien à vérifier.
-           Photo seule - aucun champ texte, pour ne jamais écraser de donnée. -->
-      <div id="fillgap-block" class="contribute-block hidden">
-        <div id="fillgap-text" class="contribute-note"></div>
-        <button id="fillgap-open" class="contribute-open hidden" type="button">Photographier la liste d'ingrédients</button>
-        <input id="fillgap-photo" class="contribute-file hidden" type="file" accept="image/*" capture="environment">
-        <div id="fillgap-info" class="contribute-note"></div>
-        <button id="fillgap-send" class="error-button hidden" type="button">Envoyer à Open Food Facts</button>
-        <div id="fillgap-status" class="contribute-status" role="status" aria-live="polite"></div>
-      </div>
-
       <div class="alert compact v-misleading hidden" id="additive-alert">
         <span class="stamp"><span class="dot"></span>Additif à risque</span>
         <div class="alert-text" id="additive-alert-text"></div>
@@ -179,6 +168,20 @@
             <div class="score-value" id="bio-value"></div>
           </div>
         </div>
+      </div>
+
+      <!-- Fiche incomplète : OFF n'a pas les ingrédients, donc rien à vérifier.
+           Photo seule - aucun champ texte, pour ne jamais écraser de donnée.
+           Placé APRÈS les tuiles : l'utilisateur voit d'abord ce que l'app sait,
+           puis ce qu'il peut y changer. -->
+      <div id="fillgap-block" class="fillgap hidden">
+        <div class="fillgap-title" id="fillgap-title">Fiche incomplète</div>
+        <div class="fillgap-text" id="fillgap-text"></div>
+        <button id="fillgap-open" class="fillgap-action hidden" type="button">Photographier la liste d'ingrédients</button>
+        <input id="fillgap-photo" class="hidden" type="file" accept="image/*" capture="environment">
+        <div id="fillgap-info" class="fillgap-note"></div>
+        <button id="fillgap-send" class="fillgap-action hidden" type="button">Envoyer à Open Food Facts</button>
+        <div id="fillgap-status" class="fillgap-status" role="status" aria-live="polite"></div>
       </div>
 
       <div class="detail-label">Détail à la demande</div>
@@ -234,7 +237,7 @@
   </div>
 </div>
 
-<script src="./rules.js?v=1785803952" defer></script>
-<script src="./app.js?v=1785803952" defer></script>
+<script src="./rules.js?v=1785858962" defer></script>
+<script src="./app.js?v=1785858962" defer></script>
 </body>
 </html>

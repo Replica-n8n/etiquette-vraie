@@ -460,3 +460,45 @@ button, .back, .result-item, .history-item{ -webkit-tap-highlight-color:transpar
     min-height: 100vh;
   }
 }
+
+/* ===== Fiche incomplète : contribution photo =====
+   Le bloc réutilisait .contribute-block, conçu pour l'écran d'erreur : sans
+   carte ni marge latérale, il débordait de 16px de chaque côté par rapport aux
+   autres cartes (bord à 16 contre 32) et cassait l'alignement de la fiche.
+   Il est maintenant une carte du système, placée après les tuiles de score. */
+.fillgap{
+  margin:14px 16px 0; padding:14px 15px;
+  background:var(--card); border:1px solid var(--line); border-radius:14px;
+  text-align:left;
+}
+.fillgap-title{
+  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13px;
+  color:var(--ink); margin-bottom:5px;
+}
+.fillgap-text{ font-size:12px; color:var(--ink-soft); line-height:1.55; }
+.fillgap-note{ font-size:11px; color:var(--ink-soft); line-height:1.5; margin-top:9px; }
+.fillgap-status{ font-size:12px; line-height:1.5; margin-top:9px; }
+.fillgap-status.ok{ color:var(--green); font-weight:600; }
+.fillgap-status.err{ color:var(--red); }
+
+/* Action principale : bouton PLEIN, comme "Scanner" sur l'accueil. L'ancien
+   traitement (fond sombre, texte et bordure verts) se lisait comme désactivé. */
+.fillgap-action{
+  display:block; width:100%; margin-top:12px; padding:13px 16px;
+  border:1.5px solid var(--brand); border-radius:12px;
+  background-color:var(--brand); color:#fff;
+  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13px;
+  cursor:pointer;
+  transition:transform 160ms var(--ease-out), background-color 160ms ease;
+}
+.fillgap-action:hover{ background-color:var(--brand-hover); border-color:var(--brand-hover); }
+.fillgap-action:active{ transform:scale(0.98); }
+.fillgap-action:disabled{ opacity:0.5; cursor:default; transform:none; }
+
+/* Une photo est déjà en attente : proposer d'en envoyer une meilleure reste
+   possible, mais ce n'est plus l'action attendue - donc discrète. */
+.fillgap-action.subtle{
+  background-color:transparent; border-color:var(--line); color:var(--ink-soft);
+  font-weight:600; font-size:12px; padding:11px 14px;
+}
+.fillgap-action.subtle:hover{ background-color:var(--paper); border-color:var(--ink-soft); }

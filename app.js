@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.29';
+const APP_VERSION = 'v1.30';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1785803952';
+const BUILD = '1785858962';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1238,9 +1238,10 @@ function setFillGapTarget(product, verdict) {
   document.getElementById('fillgap-photo').value = '';
   info.textContent = '';
   status.textContent = '';
-  status.className = 'contribute-status';
+  status.className = 'fillgap-status';
   sendBtn.classList.add('hidden');
   openBtn.classList.add('hidden');
+  openBtn.classList.remove('subtle');
 
   if (!PHOTO_CONTRIBUTE_ENABLED || verdict !== 'unknown' || !product.code) {
     block.classList.add('hidden');
@@ -1252,13 +1253,17 @@ function setFillGapTarget(product, verdict) {
     // Photo déjà présente : ne pas en redemander. Chaque envoi REMPLACE l'image
     // de référence - une photo floue dégraderait une photo nette - et crée une
     // suggestion Robotoff de plus à traiter. On laisse tout de même une porte
-    // pour le cas où la photo existante serait illisible.
+    // pour le cas où la photo existante serait illisible, mais discrète : ce
+    // n'est plus l'action attendue.
+    document.getElementById('fillgap-title').textContent = 'Photo en attente';
     document.getElementById('fillgap-text').textContent =
-      "Une photo des ingrédients a déjà été envoyée pour ce produit. Open Food Facts doit encore la vérifier.";
-    openBtn.textContent = "La photo existante est illisible ? En envoyer une meilleure";
+      "Une photo des ingrédients a déjà été envoyée. Open Food Facts doit encore la vérifier.";
+    openBtn.textContent = 'Elle est illisible ? En envoyer une meilleure';
+    openBtn.classList.add('subtle');
   } else {
+    document.getElementById('fillgap-title').textContent = 'Fiche incomplète';
     document.getElementById('fillgap-text').textContent =
-      "Open Food Facts n'a pas la liste d'ingrédients de ce produit, donc rien à vérifier. Tu as l'emballage sous la main ? Photographie la liste d'ingrédients : ça débloquera la vérification, pour toi et pour les autres.";
+      "Open Food Facts n'a pas la liste d'ingrédients de ce produit. Photographie-la : ça débloquera la vérification, pour toi et pour les autres.";
     openBtn.textContent = "Photographier la liste d'ingrédients";
   }
   openBtn.classList.remove('hidden');
@@ -1482,12 +1487,12 @@ document.getElementById('fillgap-send').addEventListener('click', async () => {
   const sendBtn = document.getElementById('fillgap-send');
   if (!PHOTO_CONTRIBUTE_ENABLED || !fillGapCode || !fillGapPhoto) return;
   sendBtn.disabled = true;
-  status.className = 'contribute-status';
+  status.className = 'fillgap-status';
   status.textContent = 'Envoi en cours...';
   try {
     const { ok } = await postContribution({ code: fillGapCode, image: fillGapPhoto });
     if (ok) {
-      status.className = 'contribute-status ok';
+      status.className = 'fillgap-status ok';
       // Dire la vérité sur le délai : un annotateur d'OFF doit valider la
       // lecture. Sans ça l'utilisateur rescanne, revoit "impossible de vérifier"
       // et conclut que son envoi a échoué.
@@ -1496,11 +1501,11 @@ document.getElementById('fillgap-send').addEventListener('click', async () => {
       document.getElementById('fillgap-info').textContent = '';
       sendBtn.classList.add('hidden');
     } else {
-      status.className = 'contribute-status err';
+      status.className = 'fillgap-status err';
       status.textContent = 'Envoi impossible pour le moment. Réessaie plus tard.';
     }
   } catch (err) {
-    status.className = 'contribute-status err';
+    status.className = 'fillgap-status err';
     status.textContent = (err.name === 'AbortError')
       ? 'Envoi trop long. Réessaie.'
       : 'Problème de connexion. Réessaie.';
