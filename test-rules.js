@@ -105,6 +105,21 @@ const T = [
  // Piège : "pomme de terre" n'est pas une pomme
  ['pomme de terre EN','Chips de pommes de terre','potatoes, sunflower oil, salt','clean'],
  ['pomme de terre FR','Puree de pommes de terre','pommes de terre, lait, beurre','clean'],
+ // ---- FAMILLE 8 : substitution d'un aliment cher par un moins cher ----
+ // Le coeur du sujet : payer le prix du noble, manger le bon marché.
+ ['cabillaud -> pangasius','Filet de cabillaud','pangasius, eau, sel','misleading'],
+ ['cepe -> champignon','Terrine de cepes','champignons de paris, arome de cepe','misleading'],
+ ['homard absent','Soupe de homard','eau, amidon, arome de homard','misleading'],
+ ['truffe absente','Tapenade aux truffes','olives, arome de truffe','misleading'],
+ ['boeuf -> cheval','Lasagnes au boeuf','viande de cheval, pates, tomates','misleading'],
+ // ---- FAMILLE 9 : pièges de CATÉGORIE (ne doivent PAS être flaggés) ----
+ // Un aliment dont la liste d'ingrédients ne le nomme jamais lui-même.
+ ['bar = barre EN','Granola Bar','oats, chocolate, sugar','clean'],
+ ['bar chocolate','Chocolate Bar','cocoa, sugar, cocoa butter','clean'],
+ ['fromage nomme','Fromage cheddar fort','lait, sel, ferments, colorant','clean'],
+ ['pesto = preparation','Pates au pesto','pates, basilic, huile olive, pignons','clean'],
+ ['couscous = plat','Couscous royal','semoule, agneau, poulet, legumes','clean'],
+ ['risotto cepes reel','Risotto aux cepes','riz, cepes, bouillon, parmesan','clean'],
 ];
 const o=console.log; console.log=()=>{};
 const res=T.map(([lbl,n,i,exp])=>{const r=detectVerdict(n,i);return{lbl,n,v:r.verdict,exp,h:r.headline,ok:r.verdict===exp};});

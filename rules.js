@@ -275,6 +275,72 @@ const FOOD_PAIRS = [
 
   // -- Divers
   ['tournesol', 'sunflower'], ['tofu'], ['sirop', 'syrup'],
+
+  // =========================================================================
+  // Deuxième passe, vérifiée contre la taxonomie d'ingrédients d'Open Food
+  // Facts (6 477 entrées, 4 053 avec nom FR et EN) - c'est-à-dire le
+  // vocabulaire exact des données que l'app lit.
+  // Critère de sélection : un aliment qu'un NOM DE PRODUIT peut promettre et
+  // qu'un fabricant a intérêt à remplacer par moins cher.
+  // Volontairement EXCLUS : les catégories de produit (pain, biscuit, sauce,
+  // jus, purée) et les charges bon marché (eau, sucre, farine, amidon,
+  // sirop de glucose) - un nom ne promet jamais de l'eau. Ces dernières
+  // relèvent d'une détection à part.
+  // =========================================================================
+
+  // -- Poissons et fruits de mer nobles (souvent remplacés par du pangasius,
+  //    du colin ou du surimi)
+  ['eglefin', 'haddock'], ['fletan', 'halibut'], ['merlu', 'hake'],
+  ['espadon', 'swordfish'], ['dorade', 'seabream'], ['merlan', 'whiting'],
+  ['merou', 'grouper'], ['turbot'], ['sole'], ['lotte', 'monkfish'],
+  ['seiche', 'cuttlefish'], ['poulpe', 'octopus'], ['palourde', 'clam'],
+  ['ecrevisse', 'crayfish'], ['ormeau', 'abalone'],
+  ['cabillaud'], ['colin'], ['tilapia'], ['pangasius'], ['surimi'],
+
+  // -- Viandes (le scandale de la viande de cheval reste le cas d'école)
+  ['lapin', 'rabbit'], ['caille', 'quail'], ['oie', 'goose'],
+  ['mouton', 'sheep'], ['chevre', 'goat'], ['cheval', 'horse'],
+  ['biche', 'venison'], ['sanglier', 'boar'], ['lardon', 'lardons'],
+
+  // -- Fromages nommés : très substitués par des "préparations fromagères"
+  ['parmesan'], ['mozzarella'], ['feta'], ['ricotta'], ['mascarpone'],
+  ['emmental'], ['comte'], ['brie'], ['gorgonzola'], ['roquefort'],
+  ['halloumi'], ['provolone'], ['pecorino'], ['cheddar'], ['gruyere'],
+
+  // -- Légumes
+  ['navet', 'turnip'], ['artichaut', 'artichoke'], ['asperge', 'asparagus'],
+  ['choufleur', 'cauliflower'], ['echalote', 'shallot'], ['fenouil', 'fennel'],
+  ['radis', 'radish'], ['laitue', 'lettuce'], ['panais', 'parsnip'],
+  ['blette', 'chard'], ['igname', 'yam'], ['manioc', 'cassava'],
+  ['gombo', 'okra'], ['rutabaga'], ['cresson', 'cress'], ['roquette', 'rocket'],
+  ['choucroute', 'sauerkraut'], ['salsifis', 'salsify'], ['edamame'],
+
+  // -- Champignons (le cèpe et la morille valent dix fois le champignon de Paris)
+  ['cepe', 'cep'], ['morille', 'morel'], ['shiitake'], ['portobello'],
+  ['girolle', 'chanterelle'], ['truffe', 'truffle'],
+
+  // -- Fruits
+  ['goyave', 'guava'], ['kaki', 'persimmon'], ['coing', 'quince'],
+  ['acerola'], ['tamarin', 'tamarind'], ['carambole', 'carambola'],
+  ['airelle', 'lingonberry'], ['sureau', 'elder'], ['pomelo'],
+  ['bergamote', 'bergamot'], ['grenadille', 'passionfruit'], ['physalis'],
+
+  // -- Aromates et épices
+  ['estragon', 'tarragon'], ['sauge', 'sage'], ['ciboulette', 'chives'],
+  ['marjolaine', 'marjoram'], ['fenugrec', 'fenugreek'],
+  ['citronnelle', 'lemongrass'], ['raifort', 'horseradish'], ['wasabi'],
+  ['sumac'], ['genievre', 'juniper'], ['macis', 'mace'], ['pavot', 'poppy'],
+  ['carvi', 'caraway'], ['cerfeuil', 'chervil'], ['galanga', 'galangal'],
+
+  // -- Céréales, graines, féculents
+  ['semoule', 'semolina'], ['sorgho', 'sorghum'], ['chanvre', 'hemp'],
+  ['tapioca'], ['boulghour', 'bulgur'], ['malt'],
+  ['sesame'], ['chia'],
+
+  // -- Produits chers, cibles classiques de la contrefaçon
+  ['miso'], ['massepain', 'marzipan'], ['nougat'], ['melasse', 'molasses'],
+  ['ghi', 'ghee'], ['babeurre', 'buttermilk'], ['propolis'],
+  ['matcha'], ['guarana'], ['spiruline', 'spirulina'],
 ];
 
 // Mots trop ambigus pour être CHERCHÉS DANS UN NOM, mais qu'il faut savoir
@@ -445,6 +511,12 @@ const CATEGORY_WORDS = new Set([
   'fromage', 'cheese', 'beurre', 'butter', 'creme', 'cream',
   'jambon', 'ham', 'poulet', 'chicken', 'saumon', 'salmon',
   'thon', 'tuna', 'lait', 'milk', 'miel', 'honey',
+  // Fromages NOMMÉS : même piège que "fromage". Une meule de cheddar a pour
+  // ingrédients "lait, sel, ferments" - jamais "cheddar". Sans cette
+  // protection, "Fromage cheddar fort" était déclaré trompeur.
+  'parmesan', 'mozzarella', 'feta', 'ricotta', 'mascarpone', 'emmental',
+  'comte', 'brie', 'gorgonzola', 'roquefort', 'halloumi', 'provolone',
+  'pecorino', 'cheddar', 'gruyere',
 ]);
 
 // Le mot figure-t-il quelque part dans les ingrédients (peu importe le contexte) ?
