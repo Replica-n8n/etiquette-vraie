@@ -66,6 +66,45 @@ const T = [
  // ---- FAMILLE 5 : pièges à FAUX POSITIFS (ne doivent PAS être flaggés) ----
  ['herbes aromatiques','Sauce tomate basilic','tomates, basilic, herbes aromatiques, sel','clean'],
  ['dénomination','Preparation fromagere','lait, ferments','misleading'],
+ // ---- FAMILLE 6 : nom et ingrédients dans des LANGUES DIFFÉRENTES ----
+ // Très fréquent au Canada : OFF ne stocke souvent qu'UNE seule langue. Sans
+ // correspondance FR<->EN, le moteur cherchait "pomme" dans "apples" et
+ // accusait des produits parfaitement honnêtes.
+ ['pomme/apple','Compote de pommes','apples, water, sugar','clean'],
+ ['pomme/apple jus','Jus de pomme','apple juice concentrate, water','clean'],
+ ['framboise/raspberry','Yaourt a la framboise','milk, raspberries, sugar','clean'],
+ ['citron/lemon','Tarte au citron','wheat flour, lemon juice, eggs, sugar','clean'],
+ ['cerise/cherry','Confiture de cerises','cherries, sugar, pectin','clean'],
+ ['mangue/mango','Sorbet mangue','mango puree, water, sugar','clean'],
+ ['banane/banana','Pain a la banane','flour, bananas, eggs, sugar','clean'],
+ ['peche/peach','Yaourt peche','milk, peaches, sugar','clean'],
+ ['myrtille/blueberry','Muffins aux myrtilles','flour, blueberries, sugar','clean'],
+ ['cannelle/cinnamon','Biscuits a la cannelle','flour, cinnamon, butter','clean'],
+ ['apple/pomme inverse','Apple Sauce','pommes, eau, sucre','clean'],
+ ['lemon/citron inverse','Lemon Tart','farine de ble, jus de citron, oeufs','clean'],
+ // La tromperie doit rester détectée MALGRÉ le changement de langue
+ ['arome EN, nom FR','Yaourt a la fraise','milk, sugar, strawberry flavour','misleading'],
+ ['arome FR, nom EN','Strawberry Yogurt','lait, sucre, arome de fraise','misleading'],
+ // ---- FAMILLE 7 : aliments hors du périmètre initial ----
+ // Le dictionnaire ne couvrait que fruits et arômes : légumes, légumineuses,
+ // poissons, viandes, céréales et épices passaient tous en "clean" par défaut.
+ ['pois chiche FR','Pois chiches biologiques','pois chiches biologiques, eau, sel','clean'],
+ ['chickpea EN','Organic Chickpeas','organic chickpeas, water, sea salt','clean'],
+ ['pois chiche croise','Houmous de pois chiches','chickpeas, tahini, lemon juice','clean'],
+ ['sardine','Sardines a la sauce tomate','sardines, sauce tomate, sel','clean'],
+ ['tomate/tomato','Sauce tomate','tomatoes, salt, basil','clean'],
+ ['tomate absente','Sauce tomate','eau, amidon modifie, arome de tomate','misleading'],
+ ['carotte/carrot','Soupe de carottes','carrots, water, cream','clean'],
+ ['epinard/spinach','Pates aux epinards','wheat flour, spinach powder, eggs','clean'],
+ ['gingembre/ginger','Biscuits au gingembre','flour, ginger, sugar','clean'],
+ ['ble/wheat','Pain de ble entier','whole wheat flour, water, yeast','clean'],
+ ['lentille/lentil','Soupe aux lentilles','lentils, water, carrots, salt','clean'],
+ ['porc/pork','Saucisses de porc','pork, salt, spices','clean'],
+ ['riz/rice','Galettes de riz','rice, salt','clean'],
+ ['olive','Tapenade aux olives','olives, huile, capres','clean'],
+ // Piège : "pomme de terre" n'est pas une pomme
+ ['pomme de terre EN','Chips de pommes de terre','potatoes, sunflower oil, salt','clean'],
+ ['pomme de terre FR','Puree de pommes de terre','pommes de terre, lait, beurre','clean'],
 ];
 const o=console.log; console.log=()=>{};
 const res=T.map(([lbl,n,i,exp])=>{const r=detectVerdict(n,i);return{lbl,n,v:r.verdict,exp,h:r.headline,ok:r.verdict===exp};});

@@ -206,6 +206,108 @@ const INGREDIENT_VARIANTS = {
   'saffron': ['safran', 'saffron'],
 };
 
+// ===========================================================================
+// PAIRES FR <-> EN
+//
+// POURQUOI CETTE STRUCTURE. Un mot ajouté à FOOD_WORDS sans son équivalent
+// dans INGREDIENT_VARIANTS produit une ACCUSATION FAUSSE : isMentionedInIngredients
+// retombe alors sur [mot] et cherche "pomme" dans "apples, water, sugar".
+// C'est arrivé sur 30 mots, dont pomme, citron, banane, cerise et framboise -
+// "Compote de pommes" avec des ingrédients en anglais était déclaré trompeur.
+// Le cas est courant : Open Food Facts ne stocke souvent qu'une seule langue.
+//
+// Ici, déclarer une paire alimente À LA FOIS FOOD_WORDS et INGREDIENT_VARIANTS.
+// On ne PEUT plus ajouter un aliment sans sa traduction.
+//
+// N'ajouter que des INGRÉDIENTS, jamais des catégories de produit (yaourt,
+// pain, biscuit) : leur liste d'ingrédients ne les nomme pas.
+// Les pluriels sont gérés par pluralPattern() - inutile de les écrire.
+// ===========================================================================
+const FOOD_PAIRS = [
+  // -- Correspondances MANQUANTES sur des mots déjà présents (le bug ci-dessus)
+  ['pomme', 'apple'], ['citron', 'lemon'], ['banane', 'banana'],
+  ['cerise', 'cherry'], ['framboise', 'raspberry'], ['myrtille', 'blueberry'],
+  ['mangue', 'mango'], ['peche', 'peach'], ['poire', 'pear'],
+  ['abricot', 'apricot'], ['grenade', 'pomegranate'], ['cannelle', 'cinnamon'],
+  ['cafe', 'coffee'], ['coco', 'coconut'], ['orange'], ['caramel'],
+
+  // -- Légumes
+  ['tomate', 'tomato'], ['carotte', 'carrot'], ['oignon', 'onion'],
+  ['ail', 'garlic'], ['epinard', 'spinach'], ['courgette', 'zucchini'],
+  ['brocoli', 'broccoli'], ['champignon', 'mushroom'], ['mais', 'corn'],
+  ['betterave', 'beet'], ['concombre', 'cucumber'], ['chou', 'cabbage'],
+  ['celeri', 'celery'], ['poireau', 'leek'], ['olive'],
+  ['citrouille', 'pumpkin'], ['patate', 'potato'], ['poivron'],
+
+  // -- Légumineuses
+  ['pois chiche', 'chickpea'], ['lentille', 'lentil'], ['haricot', 'bean'],
+  ['pois', 'pea'], ['feve', 'fava'],
+
+  // -- Poissons et fruits de mer
+  ['sardine'], ['anchois', 'anchovy'], ['maquereau', 'mackerel'],
+  ['morue', 'cod'], ['truite', 'trout'], ['hareng', 'herring'],
+  ['moule', 'mussel'], ['huitre', 'oyster'], ['calmar', 'squid'],
+
+  // -- Viandes
+  ['porc', 'pork'], ['dinde', 'turkey'], ['canard', 'duck'],
+  ['agneau', 'lamb'], ['veau', 'veal'], ['bacon'],
+
+  // -- Céréales
+  ['ble', 'wheat'], ['riz', 'rice'], ['seigle', 'rye'], ['orge', 'barley'],
+  ['epeautre', 'spelt'], ['quinoa'], ['sarrasin', 'buckwheat'], ['millet'],
+
+  // -- Fruits
+  ['pasteque', 'watermelon'], ['melon'], ['pamplemousse', 'grapefruit'],
+  ['mandarine', 'tangerine'], ['clementine'], ['prune', 'plum'],
+  ['papaye', 'papaya'], ['litchi', 'lychee'], ['cassis', 'blackcurrant'],
+  ['groseille', 'redcurrant'], ['rhubarbe', 'rhubarb'], ['nectarine'],
+
+  // -- Fruits à coque
+  ['pecan'], ['chataigne', 'chestnut'], ['marron'],
+
+  // -- Épices et aromates
+  ['gingembre', 'ginger'], ['curcuma', 'turmeric'], ['basilic', 'basil'],
+  ['romarin', 'rosemary'], ['thym', 'thyme'], ['origan', 'oregano'],
+  ['persil', 'parsley'], ['coriandre', 'coriander'], ['aneth', 'dill'],
+  ['piment', 'chili'], ['paprika'], ['cumin'], ['muscade', 'nutmeg'],
+  ['girofle', 'clove'], ['cardamome', 'cardamom'], ['lavande', 'lavender'],
+  ['anis', 'anise'], ['reglisse', 'licorice'], ['poivre', 'pepper'],
+
+  // -- Divers
+  ['tournesol', 'sunflower'], ['tofu'], ['sirop', 'syrup'],
+];
+
+// Mots trop ambigus pour être CHERCHÉS DANS UN NOM, mais qu'il faut savoir
+// traduire quand on les cherche dans des ingrédients.
+//   'ail'  : nameFormPattern en dérive "ailes" -> "Ailes de poulet" aurait été
+//            accusé de ne pas contenir d'ail.
+//   'mais' : normalize() transforme "maïs" en "mais", indiscernable de la
+//            conjonction française.
+// Ils restent dans INGREDIENT_VARIANTS : "Garlic Sauce" avec des ingrédients
+// français trouve bien "ail".
+const NAME_DETECTION_BLOCKLIST = new Set(['ail', 'mais']);
+
+// Fusion : chaque forme rejoint FOOD_WORDS et pointe vers toutes ses soeurs.
+for (const formes of FOOD_PAIRS) {
+  for (const forme of formes) {
+    if (!FOOD_WORDS.includes(forme) && !NAME_DETECTION_BLOCKLIST.has(forme)) {
+      FOOD_WORDS.push(forme);
+    }
+    INGREDIENT_VARIANTS[forme] = [...new Set([
+      ...(INGREDIENT_VARIANTS[forme] || []), ...formes,
+    ])];
+  }
+}
+
+// Mots composés dont un morceau est un autre aliment. "Pomme de terre" n'est
+// pas une pomme : sans cette exclusion, des chips dont les ingrédients disent
+// "potatoes" seraient accusées de ne pas contenir de pomme.
+const COMPOUND_TRAPS = [
+  { pattern: /\bpommes? de terre\b/, drop: 'pomme' },
+  { pattern: /\bpommes? d'amour\b/, drop: 'pomme' },
+  { pattern: /\bbeurre de pomme\b/, drop: 'beurre' },
+];
+
 // Affichage en français des mots détectés : normalize() enlève les accents,
 // donc "chocolaté" devient "chocolate", qui a l'air anglais à l'écran. On
 // réaffiche le mot français attendu par l'utilisateur.
@@ -268,13 +370,23 @@ function findFlavorMention(productName) {
     flavors.add(NAME_FORM_TO_BASE[form] || form);
   }
 
+  // "Pomme de terre" contient "pomme" sans en être une.
+  for (const trap of COMPOUND_TRAPS) {
+    if (trap.pattern.test(nameNorm)) flavors.delete(trap.drop);
+  }
+
   return Array.from(flavors);
 }
 
 // Variante(s) plurielles d'un mot, pour matcher "fraise"/"fraises" mais aussi
 // "blueberry"/"blueberries" (pluriel anglais en -y -> -ies).
 function pluralPattern(word) {
-  const alternatives = [word, `${word}s`];
+  // Le "s" simple ne suffit pas en anglais : peach -> peachES, tomato ->
+  // tomatoES, potato -> potatoES. Sans cette forme, "Yaourt pêche" cherchait
+  // "peach|peachs" dans "milk, peaches, sugar" et n'y trouvait rien.
+  // Les formes inventées (sardinees) ne gênent pas : ce sont des alternatives
+  // d'une expression régulière, elles ne matchent simplement jamais.
+  const alternatives = [word, `${word}s`, `${word}es`];
   if (word.endsWith('y')) alternatives.push(`${word.slice(0, -1)}ies`);
   return alternatives.join('|');
 }
