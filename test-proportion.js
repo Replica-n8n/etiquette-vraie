@@ -126,6 +126,12 @@ check('produit sans ingrédients structurés',
 
 // Les règles de non-conformité ont un libellé en PHRASE : aucun alignement
 // possible avec les mots, donc aucun chiffre - jamais en face du mauvais mot.
+// Le verdict "À vérifier" met déjà la proportion dans son libellé : ne pas
+// en ajouter une seconde, dans un autre format qui plus est.
+check('libellé contenant déjà un % : pas de doublon',
+  rendu({ matched: 'homard', compareReal: 'homard : 3.8% seulement' }, { ingredients: F.bisqueEstimee.ingredients }),
+  'homard : 3.8% seulement');
+
 check('libellé en phrase : aucun chiffre',
   rendu({ matched: 'miel', compareReal: 'Très faible taux de miel réel' }, { ingredients: F.bisqueDeclaree.ingredients }),
   'Très faible taux de miel réel');

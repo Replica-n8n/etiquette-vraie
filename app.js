@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.34';
+const APP_VERSION = 'v1.35';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1785936180';
+const BUILD = '1785936344';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1022,7 +1022,12 @@ function realShares(detail, product) {
   const mots = String(detail.matched).split(',').map((s) => s.trim()).filter(Boolean);
   const affiches = String(detail.compareReal || '').split(',').map((s) => s.trim()).filter(Boolean);
   if (mots.length !== affiches.length) return null;
-  const parts = mots.map((mot) => ingredientShare(mot, product.ingredients));
+  const parts = mots.map((mot, i) => (
+    // Le verdict "À vérifier" écrit déjà la proportion dans son libellé
+    // ("homard : 3.8% seulement"), lue dans le texte. En rajouter une seconde
+    // donnait "homard : 3.8% seulement 3,8 % estimé".
+    affiches[i].includes('%') ? null : ingredientShare(mot, product.ingredients)
+  ));
   return parts.some(Boolean) ? parts : null;
 }
 
