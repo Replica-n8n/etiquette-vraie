@@ -320,15 +320,9 @@ body{
 .bottom-space{ height:20px; }
 
 .additives-tile{ position:relative; }
-.info-btn{
-  position:absolute; bottom:12px; right:12px;
-  background:none; border:none;
-  font-size:16px; font-weight:600; color:var(--ink-soft);
-  cursor:pointer; opacity:0.7; transition:opacity 0.2s;
-  width:20px; height:20px; display:flex; align-items:center; justify-content:center;
-  font-family:'Space Grotesk', sans-serif;
-}
-.info-btn:hover, .info-btn:active{ opacity:1; }
+/* Aspect commun aux deux "i" : voir la pastille définie en bas de fichier.
+   Ici, uniquement la POSITION dans la tuile des additifs. */
+.info-btn{ position:absolute; bottom:6px; right:6px; }
 
 .modal{
   position:fixed; inset:0; z-index:1000;
@@ -416,7 +410,6 @@ body{
 
 /* Cibles tactiles >= 44px */
 .back{ width:40px; height:40px; }
-.info-btn{ width:44px; height:44px; bottom:6px; right:6px; }
 
 /* Transition d'écran : léger fondu montant à chaque apparition */
 @keyframes screenIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
@@ -509,15 +502,33 @@ button, .back, .result-item, .history-item{ -webkit-tap-highlight-color:transpar
 .compare-pct{ font-family:'IBM Plex Mono', monospace; font-weight:600; }
 .compare-est{ display:block; font-size:8.5px; color:var(--ink-soft); font-weight:400; line-height:1.3; margin-top:-1px; }
 
-/* Dénomination officielle : un "i" discret collé au nom du produit, plutôt
-   qu'un bloc pleine largeur en haut de fiche pour une info de second plan. */
-.info-inline{
+/* Pastille "i" : UN SEUL repère visuel dans toute la fiche - dénomination
+   officielle et liste des additifs. Deux "i" d'aspect différent, c'est deux
+   choses à apprendre au lieu d'une.
+   La ZONE TACTILE fait 44px (minimum utilisable au doigt) alors que le cercle
+   visible n'en fait que 17 : dessiner le cercle sur le bouton lui-même
+   obligerait à sacrifier l'un des deux. Il est donc tracé en ::before. */
+.info-inline, .info-btn{
   display:inline-flex; align-items:center; justify-content:center;
-  width:17px; height:17px; margin-top:5px;
-  border:1px solid var(--line); border-radius:50%;
-  background:none; color:var(--ink-soft); cursor:pointer;
-  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:10px;
-  line-height:1; padding:0;
+  width:44px; height:44px; padding:0;
+  background:none; border:none; cursor:pointer;
+  font-size:0; /* le "i" du HTML est masqué puis redessiné ci-dessous */
 }
-.info-inline:hover{ border-color:var(--ink-soft); color:var(--ink); }
+.info-inline::before, .info-btn::before{
+  content:"i";
+  display:flex; align-items:center; justify-content:center;
+  width:17px; height:17px;
+  border:1px solid var(--line); border-radius:50%;
+  color:var(--ink-soft);
+  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:10px;
+  line-height:1;
+  transition:border-color 140ms ease, color 140ms ease;
+}
+.info-inline:hover::before, .info-btn:hover::before,
+.info-inline:active::before, .info-btn:active::before{
+  border-color:var(--ink-soft); color:var(--ink);
+}
+/* Marges négatives : la zone de 44px ne doit pas creuser la mise en page ni
+   décaler le cercle par rapport au nom du produit, aligné à gauche. */
+.info-inline{ margin:-7px 0 -11px -13px; }
 .info-inline.hidden{ display:none; }
