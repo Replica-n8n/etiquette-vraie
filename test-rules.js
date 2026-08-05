@@ -120,6 +120,22 @@ const T = [
  ['pesto = preparation','Pates au pesto','pates, basilic, huile olive, pignons','clean'],
  ['couscous = plat','Couscous royal','semoule, agneau, poulet, legumes','clean'],
  ['risotto cepes reel','Risotto aux cepes','riz, cepes, bouillon, parmesan','clean'],
+ // ---- FAMILLE 10 : ALLERGÈNES SOULIGNÉS PAR OPEN FOOD FACTS ----
+ // OFF encadre les allergènes de tirets bas : "_cacahuètes_". En expression
+ // régulière, "_" est un caractère de MOT : \bcacahuetes\b ne correspond donc
+ // pas à "cacahuetes_". Résultat : tout produit dont l'aliment promis est un
+ // allergène était accusé de ne pas le contenir - or ce sont exactement les
+ // aliments les plus mis en avant dans les noms.
+ ['arachide soulignée','Smooth Peanut Butter','_Select roasted peanuts_, Soybean oil, Sugar, Salt','clean'],
+ ['cacahuète soulignée','Beurre de cacahuete','_cacahuetes_ grillees, huile, sel','clean'],
+ ['amande soulignée EN','Almond Milk','water, _almonds_, sea salt','clean'],
+ ['amande soulignée FR','Lait d amande','eau, _amandes_, sel','clean'],
+ ['blé souligné','Pain de ble complet','farine de _ble_ complet, eau, levure','clean'],
+ ['soja souligné','Yaourt au soja','_soja_, ferments','clean'],
+ ['oeuf souligné','Gateau aux oeufs','farine, _oeufs_, sucre','clean'],
+ ['sésame souligné','Sauce au sesame','huile, _sesame_, sel','clean'],
+ // La tromperie doit rester détectée même avec des tirets bas autour
+ ['arôme malgré soulignement','Biscuit fraise','farine, _lait_, arome fraise','misleading'],
 ];
 const o=console.log; console.log=()=>{};
 const res=T.map(([lbl,n,i,exp])=>{const r=detectVerdict(n,i);return{lbl,n,v:r.verdict,exp,h:r.headline,ok:r.verdict===exp};});

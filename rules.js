@@ -11,7 +11,18 @@ function stripAccents(str) {
 }
 
 function normalize(str) {
-  return stripAccents(str || '').toLowerCase().trim();
+  return stripAccents(str || '')
+    .toLowerCase()
+    // Open Food Facts encadre les ALLERGÈNES de tirets bas : "_cacahuètes_".
+    // En expression régulière, "_" est un caractère de MOT : \bcacahuetes\b ne
+    // correspond donc pas à "cacahuetes_", et le moteur concluait à l'absence.
+    // Tout produit dont l'aliment promis est un allergène - beurre de
+    // cacahuète, lait d'amande, pain de blé, yaourt au soja - était accusé de
+    // ne pas le contenir. On remplace par une espace, pas par du vide, sinon
+    // "_ble_complet" deviendrait "blecomplet".
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 const NON_CONFORME_PATTERNS = [
@@ -887,12 +898,24 @@ function ingredientShare(word, ingredients) {
   // à son parent : le "cacao 40 %" d'un biscuit est 40 % de la pâte à tartiner,
   // pas du biscuit. percent_estimate est toujours absolu, mais c'est un calcul.
   const cap = (n) => Math.min(100, n); // vu : 103,86 % sur des amandes nature
-  if (hit.depth === 0 && typeof hit.item.percent === 'number' && hit.item.percent > 0) {
-    return { valeur: cap(hit.item.percent), source: 'declare' };
+  const declare = hit.depth === 0 && typeof hit.item.percent === 'number' && hit.item.percent > 0
+    ? cap(hit.item.percent) : null;
+  const estime = typeof hit.item.percent_estimate === 'number' && hit.item.percent_estimate > 0
+    ? cap(hit.item.percent_estimate) : null;
+
+  // Le pourcentage déclaré n'est retenu que si l'estimation d'OFF le corrobore.
+  // L'analyseur d'OFF rattache parfois un pourcentage au mauvais ingrédient :
+  // sur "Pâte à tartiner aux NOISETTES et au cacao 40% (...)", les 40 % sont
+  // ceux de la pâte à tartiner, mais ils se retrouvent portés par "cacao".
+  // Quand les deux sources du même fait se contredisent, on ne présente pas
+  // l'une comme une déclaration du fabricant : on retombe sur l'estimation,
+  // annoncée comme telle.
+  if (declare !== null) {
+    const coherent = estime === null
+      || (declare <= estime * 2 && estime <= declare * 2);
+    if (coherent) return { valeur: declare, source: 'declare' };
   }
-  if (typeof hit.item.percent_estimate === 'number' && hit.item.percent_estimate > 0) {
-    return { valeur: cap(hit.item.percent_estimate), source: 'estime' };
-  }
+  if (estime !== null) return { valeur: estime, source: 'estime' };
   return null;
 }
 

@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.33';
+const APP_VERSION = 'v1.34';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1785870475';
+const BUILD = '1785936180';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -745,7 +745,14 @@ async function searchProducts(term, onRetry, signal) {
 const PRODUCT_FIELDS = 'product_name,generic_name,ingredients_text,brands,last_modified_t,image_front_small_url,image_ingredients_url,ingredients,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags';
 
 async function fetchProduct(code) {
-  const url = `https://world.openfoodfacts.org/api/v0/product/${code}.json?fields=${PRODUCT_FIELDS}`;
+  // API v2 et NON v0 : la v0 APLATIT l'arbre des ingrédients. Un sous-ingrédient
+  // y remonte au premier niveau avec son pourcentage RELATIF À SON PARENT, qu'on
+  // ne peut plus distinguer d'un pourcentage absolu. Sur les biscuits Nutella,
+  // la v0 fait afficher "noisette 13 %" alors que le biscuit en contient 1,5 % :
+  // les 13 % sont ceux de la pâte à tartiner. La v2 conserve l'imbrication.
+  // Réponse identique par ailleurs : mêmes champs, même { status, product },
+  // même status:0 sur un code inconnu.
+  const url = `https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=${PRODUCT_FIELDS}`;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 5000);
   try {

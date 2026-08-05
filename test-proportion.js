@@ -41,6 +41,15 @@ const noisette = ingredientShare('noisette', F.biscuitsNutella.ingredients);
 check('noisette ≠ 54 % (poids de la pâte à tartiner)', noisette && noisette.valeur > 50, false);
 part('noisette = sa part réelle', 'noisette', 'biscuitsNutella', { v: 1.5, s: 'estime' });
 
+console.log('\n--- Déclaré non corroboré : on ne le présente pas comme une déclaration ---');
+// Étiquette réelle : "Pâte à tartiner aux NOISETTES et au cacao 40% (...)".
+// Les 40 % sont ceux de la PÂTE À TARTINER, mais l'analyseur d'OFF les rattache
+// à "cacao", dont il estime par ailleurs la part à 16 %. Les deux sources se
+// contredisent : on retombe sur l'estimation plutôt que d'annoncer 40 % déclarés.
+const cacao = ingredientShare('cacao', F.biscuitsNutella.ingredients);
+check('cacao : pas 40 % déclarés', cacao && cacao.source, 'estime');
+check('cacao : la valeur estimée', cacao && Math.round(cacao.valeur), 16);
+
 console.log('\n--- Absence de chiffre : ne rien inventer ---');
 // L'ingrédient "_Select roasted peanuts_" n'est pas rattaché à la taxonomie.
 part('hors taxonomie -> null', 'arachide', 'peanutButter', null);
