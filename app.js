@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.35';
+const APP_VERSION = 'v1.36';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1785936344';
+const BUILD = '1785939994';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -33,6 +33,7 @@ let currentRiskyAdditives = [];
 let currentAllAdditives = [];
 let currentAdditivesCount = 0;
 let productHistory = [];
+let currentGenericName = ''; // dénomination légale, affichée dans son popup
 const MAX_HISTORY = 4;
 
 let RISKY_ADDITIVES = {};
@@ -913,34 +914,17 @@ function buildIngredientExcerpt(ingredientsText, detail) {
     ? detail.matched.split(',').map(s => s.trim().toLowerCase())
     : [];
 
-  // Si on a plusieurs ingrédients à mettre en évidence, afficher TOUS les ingrédients
-  // Sinon, afficher une fenêtre autour de l'ingrédient
-  const hasMultipleMatches = matchedIngredients.length > 1;
-
-  let windowStart, windowEnd;
-  if (hasMultipleMatches) {
-    // Afficher tous les ingrédients
-    windowStart = 0;
-    windowEnd = items.length;
-  } else {
-    // Fenêtre autour de l'ingrédient unique
-    windowStart = Math.max(0, detail.index - 2);
-    windowEnd = Math.min(items.length, detail.index + 3);
-  }
-
-  const rows = [];
-  for (let i = windowStart; i < windowEnd; i += 1) {
-    // Marquer comme flagged si l'ingrédient est dans la liste à mettre en évidence
-    const isFlagged = matchedIngredients.some(matched => items[i].toLowerCase().includes(matched));
-    rows.push({ num: i + 1, text: items[i], flagged: isFlagged || i === detail.index });
-  }
-  const hiddenBefore = windowStart;
-  const hiddenAfter = items.length - windowEnd;
-  const parts = [];
-  if (hiddenBefore > 0) parts.push(`${hiddenBefore} avant`);
-  if (hiddenAfter > 0) parts.push(`${hiddenAfter} après`);
-  const caption = parts.length ? `${parts.join(', ')} - sur ${items.length} ingrédients au total.` : '';
-  return { rows, caption };
+  // TOUTE la liste, toujours. Avant, un ingrédient unique n'affichait qu'une
+  // fenêtre de 5 lignes autour de lui : sur une bisque de 23 ingrédients on en
+  // voyait 5, sans rien à faire défiler. La liste est déjà déroulante en CSS
+  // (max-height + overflow-y) ; renderIngredientExcerpt l'amène tout seul sur
+  // l'ingrédient repéré à l'ouverture de l'accordéon.
+  const rows = items.map((text, i) => ({
+    num: i + 1,
+    text,
+    flagged: matchedIngredients.some((m) => text.toLowerCase().includes(m)) || i === detail.index,
+  }));
+  return { rows, caption: `${items.length} ingrédient(s) au total.` };
 }
 
 function renderIngredientExcerpt(ingredientsText, detail, verdictClassName) {
@@ -956,7 +940,7 @@ function renderIngredientExcerpt(ingredientsText, detail, verdictClassName) {
     .map((row) => {
       const num = String(row.num).padStart(2, '0');
       const text = row.flagged ? `<span class="flagged ${verdictClassName}">${row.text}</span>` : row.text;
-      return `<div><span class="idx">${num}</span>${text}</div>`;
+      return `<div${row.flagged ? ' data-flagged="1"' : ''}><span class="idx">${num}</span>${text}</div>`;
     })
     .join('');
   captionEl.textContent = caption;
@@ -1044,21 +1028,16 @@ function renderResult(product) {
   // "crème glacée enrobée de chocolat" se cache en bas en minuscule. On la
   // remonte, mais seulement si elle apprend quelque chose (souvent OFF la
   // recopie à l'identique du nom commercial : inutile de l'afficher deux fois).
-  const genericEl = document.getElementById('product-generic');
+  // Elle est utile mais secondaire : elle occupait un bloc pleine largeur en
+  // haut de fiche, devant le verdict. Elle passe derrière un "i", comme les
+  // additifs, et n'apparaît toujours que si elle apprend quelque chose.
+  const genericEl = document.getElementById('generic-info-btn');
   const generic = cleanText(product.generic_name);
   const saysSomethingNew = generic
     && normalize(generic) !== normalize(productName)
     && !normalize(productName).includes(normalize(generic));
-  if (saysSomethingNew) {
-    genericEl.innerHTML = '';
-    const label = document.createElement('b');
-    label.textContent = 'Dénomination officielle';
-    const text = document.createTextNode(generic);
-    genericEl.append(label, text);
-    genericEl.classList.remove('hidden');
-  } else {
-    genericEl.classList.add('hidden');
-  }
+  currentGenericName = saysSomethingNew ? generic : '';
+  if (genericEl) genericEl.classList.toggle('hidden', !saysSomethingNew);
   // Code-barres affiché près de la version : permet à un utilisateur de nous
   // signaler un produit précis sans avoir l'emballage sous la main.
   const codeEl = document.getElementById('app-product-code');
@@ -1588,6 +1567,34 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// L'accordéon est fermé au rendu : la liste n'a donc pas encore de dimensions
+// et scrollTop n'y ferait rien. On l'amène sur l'ingrédient repéré au moment
+// où l'utilisateur l'ouvre. On défile le CONTENEUR, pas la page.
+document.getElementById('ingredients-accordion').addEventListener('toggle', (event) => {
+  if (!event.target.open) return;
+  const listEl = document.getElementById('ingredients-list');
+  const cible = listEl.querySelector('[data-flagged]');
+  if (!cible) { listEl.scrollTop = 0; return; }
+  listEl.scrollTop = Math.max(0, cible.offsetTop - listEl.clientHeight / 2 + cible.offsetHeight / 2);
+});
+
+// GARDES OBLIGATOIRES : ces éléments sont NOUVEAUX. Au déploiement, un appareil
+// reçoit le nouveau app.js (network-first) avec l'ancien index.html (racine
+// servie cache-first) : ils n'existent alors pas encore. Sans garde, l'exception
+// tuait l'enregistrement de tous les écouteurs suivants - c'est ce qui a cassé
+// le bouton Scanner sur Android en v1.28.
+const genericBtn = document.getElementById('generic-info-btn');
+const genericModal = document.getElementById('generic-modal');
+if (genericBtn && genericModal) {
+  const fermer = () => genericModal.classList.add('hidden');
+  genericBtn.addEventListener('click', () => {
+    document.getElementById('generic-modal-body').textContent = currentGenericName;
+    genericModal.classList.remove('hidden');
+  });
+  document.getElementById('generic-modal-close').addEventListener('click', fermer);
+  genericModal.querySelector('.modal-backdrop').addEventListener('click', fermer);
+}
+
 // Additives modal
 document.getElementById('additives-info-btn').addEventListener('click', () => {
   const modal = document.getElementById('additives-modal');
@@ -1622,6 +1629,6 @@ document.getElementById('additives-modal-close').addEventListener('click', () =>
   document.getElementById('additives-modal').classList.add('hidden');
 });
 
-document.querySelector('.modal-backdrop').addEventListener('click', () => {
+document.querySelector('#additives-modal .modal-backdrop').addEventListener('click', () => {
   document.getElementById('additives-modal').classList.add('hidden');
 });

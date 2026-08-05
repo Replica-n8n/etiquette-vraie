@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1785936344">
+<link rel="stylesheet" href="./style.css?v=1785939994">
 </head>
 <body>
 
@@ -114,7 +114,11 @@
         <div class="product-head">
           <div class="product-name" id="product-name"></div>
           <div class="product-sub" id="product-sub"></div>
-          <div class="product-generic hidden" id="product-generic"></div>
+          <!-- La dénomination légale prenait un bloc entier en haut de fiche
+               pour une information de second plan. Elle passe derrière un "i",
+               comme la liste des additifs. -->
+          <button id="generic-info-btn" class="info-inline hidden" type="button"
+                  aria-label="Voir la dénomination officielle">i</button>
         </div>
 
       <div class="alert" id="verdict-box">
@@ -220,6 +224,17 @@
         </div>
       </div>
 
+      <div id="generic-modal" class="modal hidden">
+        <div class="modal-backdrop" data-closes="generic-modal"></div>
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Dénomination officielle</h2>
+            <button class="modal-close" id="generic-modal-close">✕</button>
+          </div>
+          <div class="modal-body"><p id="generic-modal-body"></p></div>
+        </div>
+      </div>
+
       <div id="additives-modal" class="modal hidden">
         <div class="modal-backdrop"></div>
         <div class="modal-content">
@@ -237,7 +252,7 @@
   </div>
 </div>
 
-<script src="./rules.js?v=1785936344" defer></script>
-<script src="./app.js?v=1785936344" defer></script>
+<script src="./rules.js?v=1785939994" defer></script>
+<script src="./app.js?v=1785939994" defer></script>
 </body>
 </html>

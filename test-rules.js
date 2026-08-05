@@ -50,11 +50,21 @@ const T = [
  ['type','Fromage type feta','lait, sel, ferments','clean'],
  ['REGRESSION Fromage Blanc','Fromage Blanc','lait ecreme pasteurise, creme pasteurises, ferments lactiques','clean'],
  ['imitation (nom)','Imitation crabe','surimi, amidon, arome de crabe','warning'],
- // ---- FAMILLE 3 : quantité en trace -> "À vérifier" ----
- ['2% framboise','Barre framboise','avoine, sucre, framboise 2%, huile','warning'],
- ['1,5% citron','Tarte citron','farine, oeufs, citron 1,5%','warning'],
- ['% avant le mot','Yaourt fraise','lait, 3% de fraise, sucre','warning'],
+ // ---- FAMILLE 3 : quantité en trace -> CONFORME (décision du 2026-08-04) ----
+ // Un seuil de pourcentage ne dit rien de la loyauté d'un nom : 2 % d'amande,
+ // c'est de l'amande, et une bisque à 3,8 % de homard contient du homard.
+ // Aucun seuil n'est juste dans toutes les catégories - une soupe est liquide
+ // par définition. Le pourcentage réel est AFFICHÉ dans "Il y a vraiment" et
+ // l'acheteur juge avec son contexte.
+ ['2% framboise','Barre framboise','avoine, sucre, framboise 2%, huile','clean'],
+ ['1,5% citron','Tarte citron','farine, oeufs, citron 1,5%','clean'],
+ ['% avant le mot','Yaourt fraise','lait, 3% de fraise, sucre','clean'],
  ['12% = correct','Biscuit noisette','farine, noisettes 12%, sucre','clean'],
+ ['bisque 3,8% homard','Bisque de homard','eau, homard 3.8%, poisson, tomate','clean'],
+ ['lait amande 2%','Lait d amande','eau, amandes 2%, sel marin','clean'],
+ // Réserve dans le nom MAIS chocolat réellement présent : conforme. Le mot de
+ // réserve ne déclenche "À vérifier" que si l'aliment n'est pas là.
+ ['reserve + chocolat reel','Barre chocolatee','avoine, sucre, chocolat 2%','clean'],
  // ---- FAMILLE 4 : non-régression (vrais produits honnêtes) ----
  ['fruit réel',"Jus d'orange","jus d'orange, eau",'clean'],
  ['Nutella','Biscuits NUTELLA Noisettes','pate aux NOISETTES et cacao (sucre, NOISETTES 13%), farine','clean'],

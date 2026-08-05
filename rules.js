@@ -780,36 +780,17 @@ function detectVerdict(productName, ingredientsText) {
         };
       }
 
-      // Toutes les saveurs sont présentes... mais en quelle quantité ?
-      // L'ACIA vise aussi la « très faible concentration » : un nom qui met un
-      // aliment en avant alors qu'il y en a 2% reste trompeur à la lecture.
-      const traces = flavors
-        .map((f) => ({ flavor: f, percent: findIngredientPercent(f, ingredientsNorm) }))
-        .filter((x) => x.percent !== null && x.percent < LOW_PERCENT_THRESHOLD);
-
+      // PAS DE SEUIL DE POURCENTAGE. Une règle "moins de 5 % => À vérifier" a
+      // existé ici jusqu'au 2026-08-04. Elle a été retirée : un seuil ne dit
+      // rien de la loyauté d'un nom. 2 % d'amande, c'est de l'amande ; une
+      // bisque à 3,8 % de homard contient du homard ; et une soupe est liquide
+      // par définition, donc l'eau y domine normalement. Aucune valeur unique
+      // n'est juste dans toutes les catégories : elle accuserait des produits
+      // honnêtes et blanchirait des produits douteux.
+      // La proportion réelle est désormais AFFICHÉE dans "Il y a vraiment"
+      // (voir ingredientShare) et l'acheteur juge avec son contexte.
       const firstFlavorPos = findIngredientPosition(flavors[0], ingredientsNorm);
       const shown = flavors.map(displayFlavor).join(', ');
-
-      if (traces.length > 0) {
-        const listeTraces = traces.map((t) => `${displayFlavor(t.flavor)} ${t.percent}%`).join(', ');
-        return {
-          verdict: 'warning',
-          headline: traces.length === 1
-            ? `${displayFlavor(traces[0].flavor)} : seulement ${traces[0].percent}% du produit`
-            : `Quantités très faibles : ${listeTraces}`,
-          legalNote: LEGAL_NOTE_LOW_PERCENT,
-          detail: {
-            rule: 'quantite-faible',
-            matched: flavors.join(', '),
-            compareSuggest: shown,
-            compareReal: flavors.map((f) => {
-              const t = traces.find((x) => x.flavor === f);
-              return t ? `${displayFlavor(f)} : ${t.percent}% seulement` : `${displayFlavor(f)} : présent`;
-            }).join(', '),
-            ...(firstFlavorPos && { index: firstFlavorPos.index, total: firstFlavorPos.total, ratio: firstFlavorPos.ratio }),
-          },
-        };
-      }
 
       return {
         verdict: 'clean',
