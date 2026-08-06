@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.38';
+const APP_VERSION = 'v1.39';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786023857';
+const BUILD = '1786024755';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1125,6 +1125,9 @@ function renderResult(product) {
     ? currentAllAdditives.length
     : (product.additives_n || 0);
   currentAdditivesCount = additivesCount;
+  // Le "i" ouvre la liste des additifs : sans additif, il n'ouvrirait rien.
+  const additivesInfoBtn = document.getElementById('additives-info-btn');
+  if (additivesInfoBtn) additivesInfoBtn.classList.toggle('hidden', additivesCount === 0);
   renderScoreTile('additives-icon', 'additives-value', additivesMeta(additivesCount, worstAdditiveCat), 'Non renseigné');
   renderScoreTile('bio-icon', 'bio-value', bioMeta(product.labels_tags, product.ingredients_text), 'Non certifié');
 
