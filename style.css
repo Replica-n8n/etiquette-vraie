@@ -510,9 +510,22 @@ button, .back, .result-item, .history-item{ -webkit-tap-highlight-color:transpar
    obligerait à sacrifier l'un des deux. Il est donc tracé en ::before. */
 .info-inline, .info-btn{
   display:inline-flex; align-items:center; justify-content:center;
-  width:44px; height:44px; padding:0;
-  background:none; border:none; cursor:pointer;
+  padding:0; background:none; border:none; cursor:pointer;
   font-size:0; /* le "i" du HTML est masqué puis redessiné ci-dessous */
+}
+/* Additifs : le bouton est en position absolue dans sa tuile, ses 44px de zone
+   tactile ne perturbent donc aucune mise en page. */
+.info-btn{ width:44px; height:44px; }
+/* Titre : le bouton est DANS le flux du texte. Un bloc de 44px y gonflerait la
+   hauteur de ligne. Il ne mesure donc que le cercle, et sa zone tactile est
+   étendue par un ::after invisible, hors flux. */
+.info-inline{
+  position:relative; width:17px; height:17px;
+  vertical-align:middle; margin-left:7px; top:-1px;
+}
+.info-inline::after{
+  content:""; position:absolute; top:50%; left:50%;
+  width:44px; height:44px; transform:translate(-50%, -50%);
 }
 .info-inline::before, .info-btn::before{
   content:"i";
@@ -528,7 +541,4 @@ button, .back, .result-item, .history-item{ -webkit-tap-highlight-color:transpar
 .info-inline:active::before, .info-btn:active::before{
   border-color:var(--ink-soft); color:var(--ink);
 }
-/* Marges négatives : la zone de 44px ne doit pas creuser la mise en page ni
-   décaler le cercle par rapport au nom du produit, aligné à gauche. */
-.info-inline{ margin:-7px 0 -11px -13px; }
 .info-inline.hidden{ display:none; }

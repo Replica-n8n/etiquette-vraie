@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1786024755">
+<link rel="stylesheet" href="./style.css?v=1786034909">
 </head>
 <body>
 
@@ -112,13 +112,15 @@
 
       <div id="result-content" class="result-content hidden">
         <div class="product-head">
-          <div class="product-name" id="product-name"></div>
+          <!-- Le "i" est DANS la ligne du titre : il porte sur le nom du
+               produit. En élément frère, il formait une 3e ligne sous la
+               marque et ne se rattachait visuellement à rien.
+               #product-name reste l'élément dont app.js écrit le textContent :
+               le bouton, placé à côté, survit donc à la réécriture. -->
+          <div class="product-name">
+            <span id="product-name"></span><button id="generic-info-btn" class="info-inline hidden" type="button" aria-label="Voir la dénomination officielle">i</button>
+          </div>
           <div class="product-sub" id="product-sub"></div>
-          <!-- La dénomination légale prenait un bloc entier en haut de fiche
-               pour une information de second plan. Elle passe derrière un "i",
-               comme la liste des additifs. -->
-          <button id="generic-info-btn" class="info-inline hidden" type="button"
-                  aria-label="Voir la dénomination officielle">i</button>
         </div>
 
       <div class="alert" id="verdict-box">
@@ -252,7 +254,7 @@
   </div>
 </div>
 
-<script src="./rules.js?v=1786024755" defer></script>
-<script src="./app.js?v=1786024755" defer></script>
+<script src="./rules.js?v=1786034909" defer></script>
+<script src="./app.js?v=1786034909" defer></script>
 </body>
 </html>
