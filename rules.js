@@ -651,8 +651,23 @@ function isNutritionFactsInsteadOfIngredients(ingredientsText) {
     /of\s+which\s+(saturates|sugars)/,
     /\benergie\b/, /\benergy\b/,
   ];
+  // Marqueurs DÉCISIFS : un seul suffit. Ce sont des titres de tableau ou des
+  // unités d'énergie qui ne figurent JAMAIS dans une liste d'ingrédients.
+  // Exiger deux marqueurs faisait passer à travers le cas réel de Cocoa Camino
+  // (0752612000113), dont le champ ingrédients contient un morceau de tableau
+  // OCRisé ne portant que "Nutrition Facts" : une poudre de cacao équitable
+  // était alors accusée de ne pas contenir de cacao.
+  const decisiveMarkers = [
+    /nutrition(al)?\s+(facts|information|value)/, // "Nutrition Facts"
+    /valeurs?\s+nutriti/,                         // "valeur nutritive", "valeurs nutritionnelles"
+    /\bkj\b/, /\bkcal\b/,                         // unités d'énergie
+    /dont\s+acides\s+gras/,
+    /of\s+which\s+(saturates|sugars)/,
+  ];
+  if (decisiveMarkers.some((re) => re.test(n))) return true;
+
   const hits = strongMarkers.filter((re) => re.test(n)).length;
-  return hits >= 2; // 2+ marqueurs forts = vrai tableau nutritionnel
+  return hits >= 2; // 2+ marqueurs faibles = vrai tableau nutritionnel
 }
 
 /**

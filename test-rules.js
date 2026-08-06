@@ -76,6 +76,20 @@ const T = [
  // ---- FAMILLE 5 : pièges à FAUX POSITIFS (ne doivent PAS être flaggés) ----
  ['herbes aromatiques','Sauce tomate basilic','tomates, basilic, herbes aromatiques, sel','clean'],
  ['dénomination','Preparation fromagere','lait, ferments','misleading'],
+ // ---- FAMILLE 11 : TABLEAU NUTRITIONNEL pris pour une liste d'ingrédients ----
+ // Cas réel (Cocoa Camino, 0752612000113) : l'OCR d'OFF a rangé un morceau du
+ // tableau nutritionnel dans le champ ingrédients. Le garde-fou exigeait DEUX
+ // marqueurs forts ; ce texte n'en portait qu'un, "Nutrition Facts". Une poudre
+ // de cacao équitable était donc accusée de ne pas contenir de cacao.
+ ['tableau US reel','Cocoa Camino Fairtrade Cocoa','able 10 Carbohydrate / Glucides 2 g Fibre / Fibres 2g Sugars / Sucres 0 g Protein / Proteines 1 g Cholesterol/Cholesterol 0 mg CANADIAN Nutrition Facts','unknown'],
+ ['Nutrition Facts seul','Chocolate bar','Nutrition Facts per serving 12 g','unknown'],
+ ['valeur nutritive (CA)','Barre chocolat','Valeur nutritive par portion 30 g','unknown'],
+ ['valeurs nutritionnelles','Barre chocolat','Valeurs nutritionnelles moyennes pour 30 g','unknown'],
+ ['kcal seul','Barre chocolat','245 kcal par portion, lipides 12 g','unknown'],
+ // Une VRAIE liste d'ingrédients ne doit jamais être prise pour un tableau
+ ['vraie liste + sucres','Chocolat noir','cacao, sucre, beurre de cacao, emulsifiant','clean'],
+ ['vraie liste + proteines','Barre proteinee','proteines de lait, cacao, sucre, amandes','clean'],
+ ['vraie liste + fibres','Biscuit','farine, fibres de ble, sucre, cacao','clean'],
  // ---- FAMILLE 6 : nom et ingrédients dans des LANGUES DIFFÉRENTES ----
  // Très fréquent au Canada : OFF ne stocke souvent qu'UNE seule langue. Sans
  // correspondance FR<->EN, le moteur cherchait "pomme" dans "apples" et
