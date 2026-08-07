@@ -44,9 +44,9 @@ const T = [
  ['saveur X','Yaourt saveur fraise','lait, sucre, arome','warning'],
  ['goût X','Chips goût bacon','pomme de terre, arome bacon','warning'],
  ['chocolatey (EN)','Chocolatey Cranberry Mix','peanuts, cranberries, chocolate flavoured chunks','warning'],
- ['fruity (vague, hors périmètre)','Fruity Loops','corn, sugar, natural flavour','clean'],
+ ['fruity (vague, hors périmètre)','Fruity Loops','corn, sugar, natural flavour','noclaim'],
  ['flavoured (EN)','Strawberry Flavoured Milk','milk, sugar, strawberry flavour','warning'],
- ['façon','Terrine façon grand-mere','porc, sel','clean'],
+ ['façon','Terrine façon grand-mere','porc, sel','noclaim'],
  ['type','Fromage type feta','lait, sel, ferments','clean'],
  ['REGRESSION Fromage Blanc','Fromage Blanc','lait ecreme pasteurise, creme pasteurises, ferments lactiques','clean'],
  ['imitation (nom)','Imitation crabe','surimi, amidon, arome de crabe','warning'],
@@ -88,8 +88,8 @@ const T = [
  ['kcal seul','Barre chocolat','245 kcal par portion, lipides 12 g','unknown'],
  // Une VRAIE liste d'ingrédients ne doit jamais être prise pour un tableau
  ['vraie liste + sucres','Chocolat noir','cacao, sucre, beurre de cacao, emulsifiant','clean'],
- ['vraie liste + proteines','Barre proteinee','proteines de lait, cacao, sucre, amandes','clean'],
- ['vraie liste + fibres','Biscuit','farine, fibres de ble, sucre, cacao','clean'],
+ ['vraie liste + proteines','Barre proteinee','proteines de lait, cacao, sucre, amandes','noclaim'],
+ ['vraie liste + fibres','Biscuit','farine, fibres de ble, sucre, cacao','noclaim'],
  // ---- FAMILLE 6 : nom et ingrédients dans des LANGUES DIFFÉRENTES ----
  // Très fréquent au Canada : OFF ne stocke souvent qu'UNE seule langue. Sans
  // correspondance FR<->EN, le moteur cherchait "pomme" dans "apples" et
@@ -127,8 +127,11 @@ const T = [
  ['riz/rice','Galettes de riz','rice, salt','clean'],
  ['olive','Tapenade aux olives','olives, huile, capres','clean'],
  // Piège : "pomme de terre" n'est pas une pomme
- ['pomme de terre EN','Chips de pommes de terre','potatoes, sunflower oil, salt','clean'],
- ['pomme de terre FR','Puree de pommes de terre','pommes de terre, lait, beurre','clean'],
+ // COMPOUND_TRAPS retire "pomme" du nom : il reste donc zéro mot d'aliment
+ // reconnu, d'où "noclaim". La garantie tenue par ces deux cas est intacte -
+ // ils ne doivent JAMAIS être accusés de ne pas contenir de pomme.
+ ['pomme de terre EN','Chips de pommes de terre','potatoes, sunflower oil, salt','noclaim'],
+ ['pomme de terre FR','Puree de pommes de terre','pommes de terre, lait, beurre','noclaim'],
  // ---- FAMILLE 8 : substitution d'un aliment cher par un moins cher ----
  // Le coeur du sujet : payer le prix du noble, manger le bon marché.
  ['cabillaud -> pangasius','Filet de cabillaud','pangasius, eau, sel','misleading'],
@@ -138,11 +141,11 @@ const T = [
  ['boeuf -> cheval','Lasagnes au boeuf','viande de cheval, pates, tomates','misleading'],
  // ---- FAMILLE 9 : pièges de CATÉGORIE (ne doivent PAS être flaggés) ----
  // Un aliment dont la liste d'ingrédients ne le nomme jamais lui-même.
- ['bar = barre EN','Granola Bar','oats, chocolate, sugar','clean'],
+ ['bar = barre EN','Granola Bar','oats, chocolate, sugar','noclaim'],
  ['bar chocolate','Chocolate Bar','cocoa, sugar, cocoa butter','clean'],
  ['fromage nomme','Fromage cheddar fort','lait, sel, ferments, colorant','clean'],
- ['pesto = preparation','Pates au pesto','pates, basilic, huile olive, pignons','clean'],
- ['couscous = plat','Couscous royal','semoule, agneau, poulet, legumes','clean'],
+ ['pesto = preparation','Pates au pesto','pates, basilic, huile olive, pignons','noclaim'],
+ ['couscous = plat','Couscous royal','semoule, agneau, poulet, legumes','noclaim'],
  ['risotto cepes reel','Risotto aux cepes','riz, cepes, bouillon, parmesan','clean'],
  // ---- FAMILLE 10 : ALLERGÈNES SOULIGNÉS PAR OPEN FOOD FACTS ----
  // OFF encadre les allergènes de tirets bas : "_cacahuètes_". En expression
@@ -160,6 +163,21 @@ const T = [
  ['sésame souligné','Sauce au sesame','huile, _sesame_, sel','clean'],
  // La tromperie doit rester détectée même avec des tirets bas autour
  ['arôme malgré soulignement','Biscuit fraise','farine, _lait_, arome fraise','misleading'],
+ // ---- FAMILLE 11 : AUCUNE PROMESSE DANS LE NOM -> "Rien à vérifier" ----
+ // Mesuré le 2026-08-07 sur les 400 produits les plus scannés d'OFF (242
+ // fiches jugeables) : 57,4 % des noms ne contiennent AUCUN mot d'aliment.
+ // L'app renvoyait alors "clean" + "Le nom du produit correspond à sa
+ // composition réelle" - une correspondance qu'elle n'avait jamais vérifiée.
+ // C'était son écran le plus fréquent, et sa seule affirmation fausse.
+ // Ces quatre cas sont de VRAIES fiches OFF (nom et ingrédients d'origine).
+ ['marque seule','Nutella','sucre, huile de palme, _noisettes_ 13%, cacao maigre','noclaim'],
+ ['nom de marque','Coca-Cola','eau gazeifiee, sucre, colorant: e150d, acidifiant: acide phosphorique, aromes naturels','noclaim'],
+ ['eau de source','CRISTALINE Eau De Source 0.5L','eau de source','noclaim'],
+ ['skyr nature','Skyr nature 0%','lait ecreme - lait concentre ecreme - ferments lactiques','noclaim'],
+ // Garde-fou : un nom qui promet VRAIMENT un aliment doit rester "clean",
+ // pas basculer dans le nouvel état. C'est la frontière entre les deux verts
+ // d'avant : "j'ai vérifié et ça colle" vs "il n'y avait rien à vérifier".
+ ['promesse tenue reste clean','Sardines huile d olive vierge extra','_sardines_, huile d\'olive vierge extra, sel','clean'],
 ];
 const o=console.log; console.log=()=>{};
 const res=T.map(([lbl,n,i,exp])=>{const r=detectVerdict(n,i);return{lbl,n,v:r.verdict,exp,h:r.headline,ok:r.verdict===exp};});

@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.40';
+const APP_VERSION = 'v1.41';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786034909';
+const BUILD = '1786133837';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -44,6 +44,10 @@ const VERDICT_META = {
   clean: { label: 'Clean', className: 'v-clean' },
   warning: { label: 'À vérifier', className: 'v-warning' },
   misleading: { label: 'Trompeur', className: 'v-misleading' },
+  // "Rien à vérifier" = le nom ne promet aucun aliment (57 % des scans).
+  // À NE PAS confondre avec "Impossible de vérifier", qui est un échec : là,
+  // OFF n'a pas la composition. Ici tout va bien, il n'y avait rien à comparer.
+  noclaim: { label: 'Rien à vérifier', className: 'v-noclaim' },
   unknown: { label: 'Impossible de vérifier', className: 'v-unknown' },
 };
 
@@ -788,7 +792,10 @@ async function findAlternative(product) {
       if (!candidate.code || candidate.code === product.code) continue;
       if (!candidate.ingredients_text || !candidate.product_name) continue;
       const candidateVerdict = detectVerdict(candidate.product_name, candidate.ingredients_text);
-      if (candidateVerdict.verdict !== 'clean') continue;
+      // "noclaim" est aussi une alternative valable : son nom ne promet aucun
+      // aliment, donc il ne peut pas tromper. L'exclure amputait le vivier de
+      // 57 % des fiches (mesure du 2026-08-07) - la plupart des produits.
+      if (candidateVerdict.verdict !== 'clean' && candidateVerdict.verdict !== 'noclaim') continue;
       const flagged = findFlaggedAdditives(candidate.additives_tags);
       if (flagged.risky.length > 0) continue;
       return candidate;

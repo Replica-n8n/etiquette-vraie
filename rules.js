@@ -824,9 +824,18 @@ function detectVerdict(productName, ingredientsText) {
     }
   }
 
+  // AUCUN mot d'aliment reconnu dans le nom : il n'y avait rien à comparer.
+  // Ce n'est PAS "clean". Jusqu'au 2026-08-07 on renvoyait ici "clean" +
+  // "Le nom du produit correspond à sa composition réelle" - une correspondance
+  // que l'app n'avait jamais vérifiée, faute de promesse à vérifier.
+  // Mesure sur les 400 produits les plus scannés d'OFF (242 fiches jugeables) :
+  // 57,4 % finissaient ici, contre 36,8 % de "clean" réellement confirmés.
+  // C'était donc l'écran le plus fréquent de l'app, et sa seule affirmation
+  // fausse. "Eau de source", "Coca-Cola" ou "Skyr nature" ne promettent aucun
+  // aliment : rien à démasquer, mais rien de vérifié non plus.
   return {
-    verdict: 'clean',
-    headline: 'Le nom du produit correspond à sa composition réelle',
+    verdict: 'noclaim',
+    headline: 'Ce nom ne met en avant aucun aliment',
   };
 }
 

@@ -22,6 +22,10 @@
   --frame:#171B22;
   --tile-empty:#E8E9EB;
   --tile-empty-ink:#999999;
+  /* Neutre PLEIN de l'état "Rien à vérifier". Ne peut être ni --paper (c'est
+     le fond de .phone : le bloc disparaîtrait) ni --card (déjà pris par
+     "Impossible de vérifier", qui est un échec). D'où ce ton dédié. */
+  --neutral-soft:#DFE4E8;
   /* Marque (fixe dans les 2 modes : le CTA doit garder du texte blanc lisible) */
   --brand:#2F6F4F;
   --brand-hover:#276044;
@@ -45,6 +49,7 @@
     --frame:#05070A;
     --tile-empty:#2A323B;
     --tile-empty-ink:#8A939D;
+    --neutral-soft:#2E3843;
     --btn-text:#12161B; /* texte foncé sur bouton "encre" désormais clair */
     /* Accents éclaircis pour rester lisibles sur surfaces sombres */
     --red:#E0736A;    --red-soft:#382019;   --red-ink:#F2B5AD;
@@ -204,6 +209,10 @@ body{
 .alert.v-warning::before{ background:rgba(181,121,42,0.08); }
 .alert.v-clean{ background:var(--green-soft); border:1.5px solid var(--green); }
 .alert.v-clean::before{ background:rgba(47,111,79,0.08); }
+/* "Rien à vérifier" : neutre PLEIN, à distinguer de "Impossible de vérifier"
+   (fond carte, donc sans remplissage) qui signale un échec de l'app. */
+.alert.v-noclaim{ background:var(--neutral-soft); border:1.5px solid var(--ink-soft); }
+.alert.v-noclaim::before{ background:rgba(91,101,114,0.05); }
 .alert.v-unknown{ background:var(--card); border:1.5px solid var(--line); }
 
 .alert.compact{ padding:11px 14px; margin-top:8px; }
@@ -220,6 +229,7 @@ body{
 .v-misleading .stamp{ color:var(--red); border:1.5px solid var(--red); }
 .v-warning .stamp{ color:var(--amber); border:1.5px solid var(--amber); }
 .v-clean .stamp{ color:var(--green); border:1.5px solid var(--green); }
+.v-noclaim .stamp{ color:var(--ink-2); border:1.5px solid var(--ink-soft); }
 .v-unknown .stamp{ color:var(--ink-soft); border:1.5px solid var(--line); }
 .stamp .dot{ width:6px; height:6px; border-radius:50%; background:currentColor; }
 
@@ -227,6 +237,7 @@ body{
 .v-misleading .alert-text{ color:var(--red-ink); }
 .v-warning .alert-text{ color:var(--amber-ink); }
 .v-clean .alert-text{ color:var(--green-ink); }
+.v-noclaim .alert-text{ color:var(--ink-2); }
 .v-unknown .alert-text{ color:var(--ink-soft); }
 
 /* Comparaison : hauteur naturelle */
