@@ -248,7 +248,14 @@ const FOOD_PAIRS = [
   ['brocoli', 'broccoli'], ['champignon', 'mushroom'], ['mais', 'corn'],
   ['betterave', 'beet'], ['concombre', 'cucumber'], ['chou', 'cabbage'],
   ['celeri', 'celery'], ['poireau', 'leek'], ['olive'],
-  ['citrouille', 'pumpkin'], ['patate', 'potato'], ['poivron'],
+  ['citrouille', 'pumpkin'], ['poivron'],
+  // "Patate" et "pomme de terre" sont le même aliment, et c'est la SECONDE
+  // forme qu'emploient les listes d'ingrédients françaises. Sans elle, "Chips
+  // de patates" composées de "pommes de terre" était déclaré TROMPEUR.
+  // Les deux formes composées sont écartées de la détection dans les NOMS
+  // (NAME_DETECTION_BLOCKLIST) : c'est COMPOUND_TRAPS qui s'en charge, parce
+  // que nameFormPattern ne sait pas former le pluriel "pommeS de terre".
+  ['patate', 'potato', 'pomme de terre', 'pommes de terre'],
 
   // -- Légumineuses
   ['pois chiche', 'chickpea'], ['lentille', 'lentil'], ['haricot', 'bean'],
@@ -362,7 +369,13 @@ const FOOD_PAIRS = [
 //            conjonction française.
 // Ils restent dans INGREDIENT_VARIANTS : "Garlic Sauce" avec des ingrédients
 // français trouve bien "ail".
-const NAME_DETECTION_BLOCKLIST = new Set(['ail', 'mais']);
+//   'pomme(s) de terre' : formes composées présentes pour les INGRÉDIENTS.
+//            Dans un nom, c'est COMPOUND_TRAPS qui les reconnaît, en une seule
+//            expression régulière capable du pluriel français ("pommeS de
+//            terre"), que nameFormPattern ne sait pas produire.
+const NAME_DETECTION_BLOCKLIST = new Set([
+  'ail', 'mais', 'pomme de terre', 'pommes de terre',
+]);
 
 // Fusion : chaque forme rejoint FOOD_WORDS et pointe vers toutes ses soeurs.
 for (const formes of FOOD_PAIRS) {
@@ -379,8 +392,12 @@ for (const formes of FOOD_PAIRS) {
 // Mots composés dont un morceau est un autre aliment. "Pomme de terre" n'est
 // pas une pomme : sans cette exclusion, des chips dont les ingrédients disent
 // "potatoes" seraient accusées de ne pas contenir de pomme.
+// `add` remplace l'aliment retiré par celui que le composé désigne VRAIMENT.
+// Sans lui, retirer "pomme" ne laissait aucun mot à vérifier et "Purée de
+// pommes de terre" ressortait "Rien à vérifier" - alors que le nom promet bien
+// un aliment, présent et vérifiable.
 const COMPOUND_TRAPS = [
-  { pattern: /\bpommes? de terre\b/, drop: 'pomme' },
+  { pattern: /\bpommes? de terre\b/, drop: 'pomme', add: 'patate' },
   { pattern: /\bpommes? d'amour\b/, drop: 'pomme' },
   { pattern: /\bbeurre de pomme\b/, drop: 'beurre' },
 ];
@@ -400,6 +417,9 @@ const DISPLAY_FR = {
   coffee: 'café', milk: 'lait', egg: 'oeuf', beef: 'boeuf', eggplant: 'aubergine',
   oat: 'avoine', oats: 'avoine', nut: 'fruit à coque', soy: 'soja', fig: 'figue',
   date: 'datte', avocado: 'avocat', pomegranate: 'grenade',
+  // Le moteur raisonne sur "patate", mais c'est "pomme de terre" qui est écrit
+  // sur l'emballage : on affiche le mot que l'acheteuse a sous les yeux.
+  patate: 'pomme de terre', potato: 'pomme de terre',
 };
 
 function displayFlavor(word) {
@@ -447,9 +467,11 @@ function findFlavorMention(productName) {
     flavors.add(NAME_FORM_TO_BASE[form] || form);
   }
 
-  // "Pomme de terre" contient "pomme" sans en être une.
+  // "Pomme de terre" contient "pomme" sans en être une - mais c'est une patate.
   for (const trap of COMPOUND_TRAPS) {
-    if (trap.pattern.test(nameNorm)) flavors.delete(trap.drop);
+    if (!trap.pattern.test(nameNorm)) continue;
+    flavors.delete(trap.drop);
+    if (trap.add) flavors.add(trap.add);
   }
 
   return Array.from(flavors);
@@ -463,7 +485,12 @@ function pluralPattern(word) {
   // "peach|peachs" dans "milk, peaches, sugar" et n'y trouvait rien.
   // Les formes inventées (sardinees) ne gênent pas : ce sont des alternatives
   // d'une expression régulière, elles ne matchent simplement jamais.
-  const alternatives = [word, `${word}s`, `${word}es`];
+  // Le pluriel français en -X manquait aussi : poireau -> poireauX, chou ->
+  // chouX. "Velouté poireau et pomme de terre" (3760325480433) était accusé de
+  // ne pas contenir de poireau alors que "Poireaux" ouvre sa liste.
+  // Les formes inventées (selx, laitx) ne gênent pas : ce sont des alternatives
+  // d'une expression régulière, elles ne correspondent simplement jamais.
+  const alternatives = [word, `${word}s`, `${word}es`, `${word}x`];
   if (word.endsWith('y')) alternatives.push(`${word.slice(0, -1)}ies`);
   return alternatives.join('|');
 }
@@ -475,7 +502,7 @@ function pluralPattern(word) {
 // -> "citronne". On accepte donc le mot suivi des terminaisons d'adjectif.
 // Réservé au NOM : dans les ingrédients, on garde la correspondance stricte.
 function nameFormPattern(word) {
-  const forms = new Set([word, `${word}s`]);
+  const forms = new Set([word, `${word}s`, `${word}x`]);
   if (word.endsWith('y')) forms.add(`${word.slice(0, -1)}ies`);
   for (const suffix of ['e', 'ee', 'es', 'ees', 'ne', 'nee', 'nes', 'nees']) {
     forms.add(word + suffix);
@@ -528,6 +555,13 @@ const CATEGORY_WORDS = new Set([
   'parmesan', 'mozzarella', 'feta', 'ricotta', 'mascarpone', 'emmental',
   'comte', 'brie', 'gorgonzola', 'roquefort', 'halloumi', 'provolone',
   'pecorino', 'cheddar', 'gruyere',
+  // La PATATE, pour une autre raison que les fromages : personne ne la truque.
+  // C'est un féculent bon marché, jamais un ingrédient noble qu'on imite. En
+  // face, le risque d'accuser à tort est réel : un sac de pommes de terre belge
+  // dont la liste est en néerlandais ("Aardappelen", vu sur 5400141464344)
+  // serait déclaré trompeur. Muette quand elle est absente, l'app signale
+  // quand même "arôme de pomme de terre" - le seul cas qui vaut un avertissement.
+  'patate', 'potato',
 ]);
 
 // Le mot figure-t-il quelque part dans les ingrédients (peu importe le contexte) ?
@@ -737,11 +771,18 @@ function detectVerdict(productName, ingredientsText) {
     if (!isChocolatePercent) {
       const missingFlavors = [];
       const suspiciousFlavors = [];
+      // Mots ÉCARTÉS faute de pouvoir conclure. À ne pas confondre avec les mots
+      // vérifiés : sans cette liste, l'app affichait « "fromage" confirmé dans
+      // la composition réelle » pour un Fromage blanc dont les ingrédients
+      // disent "lait écrémé, ferments lactiques" - une confirmation qu'elle
+      // n'avait pas faite, puisqu'elle avait justement renoncé à chercher.
+      const skippedWords = [];
 
       for (const flavor of flavors) {
         // Catégorie de produit absente de sa propre liste d'ingrédients : normal
         // ("Fromage blanc" = lait + ferments). On ne conclut rien.
         if (CATEGORY_WORDS.has(flavor) && !isMentionedInIngredients(flavor, ingredientsNorm)) {
+          skippedWords.push(flavor);
           continue;
         }
         // On teste l'arôme EN PREMIER : sinon un ingrédient "arôme noix" était
@@ -804,18 +845,29 @@ function detectVerdict(productName, ingredientsText) {
       // honnêtes et blanchirait des produits douteux.
       // La proportion réelle est désormais AFFICHÉE dans "Il y a vraiment"
       // (voir ingredientShare) et l'acheteur juge avec son contexte.
-      const firstFlavorPos = findIngredientPosition(flavors[0], ingredientsNorm);
-      const shown = flavors.map(displayFlavor).join(', ');
+      // On n'annonce QUE les mots réellement vérifiés. Si tous ont été écartés
+      // (nom entièrement fait de catégories : "Fromage blanc", "Beurre doux"),
+      // il n'y a rien à confirmer : on tombe dans "Rien à vérifier" plus bas.
+      const checkedFlavors = flavors.filter((f) => !skippedWords.includes(f));
+      if (checkedFlavors.length === 0) {
+        return {
+          verdict: 'noclaim',
+          headline: 'Ce nom ne met en avant aucun aliment vérifiable',
+        };
+      }
+
+      const firstFlavorPos = findIngredientPosition(checkedFlavors[0], ingredientsNorm);
+      const shown = checkedFlavors.map(displayFlavor).join(', ');
 
       return {
         verdict: 'clean',
-        headline: flavors.length === 1
-          ? `"${displayFlavor(flavors[0])}" confirmé dans la composition réelle`
+        headline: checkedFlavors.length === 1
+          ? `"${displayFlavor(checkedFlavors[0])}" confirmé dans la composition réelle`
           : `Toutes les saveurs confirmées dans la composition réelle`,
         legalNote: LEGAL_NOTE_POSITION,
         detail: {
           rule: 'ingredient-confirme',
-          matched: flavors.join(', '), // mot brut pour le surlignage
+          matched: checkedFlavors.join(', '), // mot brut pour le surlignage
           compareSuggest: shown,
           compareReal: shown,
           ...(firstFlavorPos && { index: firstFlavorPos.index, total: firstFlavorPos.total, ratio: firstFlavorPos.ratio }),

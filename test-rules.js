@@ -30,7 +30,9 @@ const T = [
  ['simili (ACIA)','Pizza crabe','pate, simili-crabe, fromage','misleading'],
  ['flavoured (EN)','Chocolate bar','oats, chocolate flavoured chunks','misleading'],
  ['flavour (EN)','Cheese chips','potato, cheese flavour powder','misleading'],
- ['beurre réel','Beurre doux','creme pasteurisee, sel','clean'],
+ // "Beurre" est une CATÉGORIE : la liste dit "crème pasteurisée, sel", jamais
+ // "beurre". L'app ne peut donc rien confirmer - et ne doit rien affirmer.
+ ['beurre réel','Beurre doux','creme pasteurisee, sel','noclaim'],
  ['jambon réel','Jambon de Paris','jambon de porc, sel, eau','clean'],
  ['chips fromage réel','Chips au fromage','pomme de terre, fromage en poudre, sel','clean'],
  ['poulet catégorie','Poulet roti','poulet, sel, epices','clean'],
@@ -47,8 +49,8 @@ const T = [
  ['fruity (vague, hors périmètre)','Fruity Loops','corn, sugar, natural flavour','noclaim'],
  ['flavoured (EN)','Strawberry Flavoured Milk','milk, sugar, strawberry flavour','warning'],
  ['façon','Terrine façon grand-mere','porc, sel','noclaim'],
- ['type','Fromage type feta','lait, sel, ferments','clean'],
- ['REGRESSION Fromage Blanc','Fromage Blanc','lait ecreme pasteurise, creme pasteurises, ferments lactiques','clean'],
+ ['type','Fromage type feta','lait, sel, ferments','noclaim'],
+ ['REGRESSION Fromage Blanc','Fromage Blanc','lait ecreme pasteurise, creme pasteurises, ferments lactiques','noclaim'],
  ['imitation (nom)','Imitation crabe','surimi, amidon, arome de crabe','warning'],
  // ---- FAMILLE 3 : quantité en trace -> CONFORME (décision du 2026-08-04) ----
  // Un seuil de pourcentage ne dit rien de la loyauté d'un nom : 2 % d'amande,
@@ -127,11 +129,42 @@ const T = [
  ['riz/rice','Galettes de riz','rice, salt','clean'],
  ['olive','Tapenade aux olives','olives, huile, capres','clean'],
  // Piège : "pomme de terre" n'est pas une pomme
- // COMPOUND_TRAPS retire "pomme" du nom : il reste donc zéro mot d'aliment
- // reconnu, d'où "noclaim". La garantie tenue par ces deux cas est intacte -
- // ils ne doivent JAMAIS être accusés de ne pas contenir de pomme.
- ['pomme de terre EN','Chips de pommes de terre','potatoes, sunflower oil, salt','noclaim'],
- ['pomme de terre FR','Puree de pommes de terre','pommes de terre, lait, beurre','noclaim'],
+ // "Pomme de terre" n'est pas une pomme, mais c'est bien une PATATE : le piège
+ // retire "pomme" ET pose "patate" à la place, donc la vérification a lieu.
+ ['pomme de terre EN','Chips de pommes de terre','potatoes, sunflower oil, salt','clean'],
+ ['pomme de terre FR','Puree de pommes de terre','pommes de terre, lait, beurre','clean'],
+ // Et surtout : ces produits ne doivent JAMAIS être accusés au titre de la POMME.
+ ['pomme de terre sans pomme','Galette de pommes de terre','pommes de terre, oignon, sel','clean'],
+ // Une vraie pomme reste une vraie pomme (non-régression du piège).
+ ['vraie pomme malgre le piege','Compote de pommes','apples, water, sugar','clean'],
+ // ---- FAMILLE 12 : "patate" et "pomme de terre" sont le MÊME aliment ----
+ // Bug de production trouvé le 2026-08-07 : "patate" était dans le dictionnaire
+ // mais ses variantes ne connaissaient que "patate" et "potato". Or une liste
+ // d'ingrédients française écrit "pommes de terre" - jamais "patates". Tout
+ // produit nommé avec "patate" était donc déclaré TROMPEUR alors qu'il contient
+ // exactement ce qu'il annonce. C'est la faute type que la règle des paires
+ // FR/EN existe pour empêcher : un mot cherché dans un nom sans la forme sous
+ // laquelle il s'écrit vraiment dans les ingrédients.
+ ['patate -> pommes de terre','Chips de patates','pommes de terre, huile de tournesol, sel','clean'],
+ ['patate -> puree','Puree de patates','pommes de terre, lait, beurre','clean'],
+ ['patate -> potatoes EN','Chips de patates','potatoes, sunflower oil, salt','clean'],
+ // La patate rejoint CATEGORY_WORDS : absente de la liste, on ne conclut RIEN.
+ // Arbitrage assumé - une liste d'ingrédients en néerlandais ("Aardappelen")
+ // ferait sinon accuser un vrai sac de pommes de terre belge (cas réel,
+ // 5400141464344). Personne ne truque la patate : c'est un féculent bon marché,
+ // pas un ingrédient noble qu'on imite. On préfère rater la galette sans patate
+ // plutôt qu'accuser un produit honnête.
+ ['patate absente = muet','Galette de pommes de terre','farine de ble, eau, sel, arome','noclaim'],
+ ['patate en arome = signale','Chips de patates','farine de mais, arome de pomme de terre, sel','misleading'],
+ ['liste en neerlandais','Pomme de terre','aardappelen, water, zout','noclaim'],
+ // ---- FAMILLE 13 : PLURIELS FRANÇAIS EN -X ----
+ // Bug de production trouvé le 2026-08-07 sur "Velouté poireau et pomme de
+ // terre" [3760325480433] : ses ingrédients disent "Poireaux", et pluralPattern
+ // ne savait former que "poireaus"/"poireaues". Le produit était donc accusé de
+ // ne pas contenir de poireau alors que c'est son premier ingrédient.
+ ['poireaux dans les ingrédients','Veloute poireau et pomme de terre','poireaux, eau, pomme de terre, lait, sel','clean'],
+ ['poireaux dans le nom','Soupe aux poireaux','poireaux, eau, creme, sel','clean'],
+ ['choux dans les ingrédients','Salade de chou','choux blancs, carottes, vinaigre','clean'],
  // ---- FAMILLE 8 : substitution d'un aliment cher par un moins cher ----
  // Le coeur du sujet : payer le prix du noble, manger le bon marché.
  ['cabillaud -> pangasius','Filet de cabillaud','pangasius, eau, sel','misleading'],
@@ -143,7 +176,7 @@ const T = [
  // Un aliment dont la liste d'ingrédients ne le nomme jamais lui-même.
  ['bar = barre EN','Granola Bar','oats, chocolate, sugar','noclaim'],
  ['bar chocolate','Chocolate Bar','cocoa, sugar, cocoa butter','clean'],
- ['fromage nomme','Fromage cheddar fort','lait, sel, ferments, colorant','clean'],
+ ['fromage nomme','Fromage cheddar fort','lait, sel, ferments, colorant','noclaim'],
  ['pesto = preparation','Pates au pesto','pates, basilic, huile olive, pignons','noclaim'],
  ['couscous = plat','Couscous royal','semoule, agneau, poulet, legumes','noclaim'],
  ['risotto cepes reel','Risotto aux cepes','riz, cepes, bouillon, parmesan','clean'],
