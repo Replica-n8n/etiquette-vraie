@@ -511,14 +511,14 @@ function nameFormPattern(word) {
 }
 
 // ===========================================================================
-// MARQUEURS DE SAVEUR — l'aveu que l'ingrédient noble n'est pas là
+// MARQUEURS DE SAVEUR - l'aveu que l'ingrédient noble n'est pas là
 // ---------------------------------------------------------------------------
 // Source : ACIA, "Lignes directrices sur la mise en évidence d'ingrédients et
 // de saveurs". Au Canada, un produit qui met un aliment en avant SANS le
 // contenir doit porter « à saveur de » ou un équivalent. Ces mots sont donc
 // l'aveu officiel du fabricant, en toutes lettres sur l'emballage.
 //
-// Piège évité : "arome" ne doit PAS attraper "aromatique" — des "herbes
+// Piège évité : "arome" ne doit PAS attraper "aromatique" - des "herbes
 // aromatiques" sont un vrai ingrédient. Les deux radicaux sont distincts
 // (arome / aromatis vs aromatique), donc aucun chevauchement.
 const FLAVOUR_MARKER = new RegExp([
@@ -564,6 +564,17 @@ const CATEGORY_WORDS = new Set([
   'patate', 'potato',
 ]);
 
+// CATEGORY_WORDS répond à « faut-il conclure quand le mot est absent ? ».
+// Une SECONDE question, différente : « peut-on afficher son pourcentage ? ».
+// Pour les fromages et les matières grasses, non - "beurre" attrape le beurre
+// de CACAO d'un chocolat, et le chiffre porterait sur autre chose que ce que
+// le nom promet. Pour la patate, si : "pomme de terre 51 %" dans une purée
+// veut exactement dire ce qu'il dit. Confondre les deux questions faisait
+// disparaître le pourcentage du velouté poireau-pomme de terre.
+const SHARE_BLOCKED_WORDS = new Set(
+  [...CATEGORY_WORDS].filter((w) => w !== 'patate' && w !== 'potato')
+);
+
 // Le mot figure-t-il quelque part dans les ingrédients (peu importe le contexte) ?
 function isMentionedInIngredients(word, ingredientsNorm) {
   const allVariants = INGREDIENT_VARIANTS[word] || [word];
@@ -585,7 +596,7 @@ function onlyAppearsAsArome(word, ingredientsNorm) {
 }
 
 // ===========================================================================
-// RÉSERVES DANS LE NOM — le fabricant a prévenu
+// RÉSERVES DANS LE NOM - le fabricant a prévenu
 // ---------------------------------------------------------------------------
 // Trois familles, à tester séparément car elles se construisent différemment.
 
@@ -935,7 +946,7 @@ function ingredientShare(word, ingredients) {
   if (!word || !Array.isArray(ingredients) || ingredients.length === 0) return null;
   // Un mot de catégorie ne figure jamais dans sa propre liste : le chiffrer
   // n'aurait pas de sens ("beurre" dans un beurre d'amandes).
-  if (CATEGORY_WORDS.has(word)) return null;
+  if (SHARE_BLOCKED_WORDS.has(word)) return null;
 
   const targets = new Set((INGREDIENT_VARIANTS[word] || [word]).map((v) => normalize(v)));
   const flat = flattenIngredients(ingredients);
@@ -979,6 +990,6 @@ function ingredientShare(word, ingredients) {
 if (typeof module !== 'undefined') {
   module.exports = {
     detectVerdict, normalize, findFlavorMention, onlyAppearsAsArome,
-    findIngredientPosition, ingredientShare,
+    findIngredientPosition, ingredientShare, isMentionedInIngredients,
   };
 }

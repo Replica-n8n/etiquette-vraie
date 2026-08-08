@@ -132,6 +132,16 @@ check('libellé contenant déjà un % : pas de doublon',
   rendu({ matched: 'homard', compareReal: 'homard : 3.8% seulement' }, { ingredients: F.bisqueEstimee.ingredients }),
   'homard : 3.8% seulement');
 
+console.log('\n--- Catégorie : conclure, ou chiffrer ? Deux questions distinctes ---');
+// La patate est une CATÉGORIE pour la conclusion (muette si absente de la
+// liste), mais son pourcentage est parfaitement lisible. Confondre les deux
+// faisait disparaître le chiffre du velouté poireau-pomme de terre, alors
+// qu'Open Food Facts l'estime à 10 %.
+part('pomme de terre chiffrée malgré son statut de catégorie', 'patate', 'veloutePommeDeTerre', { v: 10, s: 'estime' });
+part('poireau chiffré dans le même produit', 'poireau', 'veloutePommeDeTerre', { v: 60, s: 'estime' });
+// En face : "beurre" reste muet, sinon il attraperait le beurre de cacao.
+part('beurre reste sans chiffre', 'beurre', 'biscuitsNutella', null);
+
 check('libellé en phrase : aucun chiffre',
   rendu({ matched: 'miel', compareReal: 'Très faible taux de miel réel' }, { ingredients: F.bisqueDeclaree.ingredients }),
   'Très faible taux de miel réel');

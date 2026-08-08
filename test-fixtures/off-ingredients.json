@@ -1,969 +1,1038 @@
 {
- "bisqueEstimee": {
-  "code": "5414972115740",
-  "nom": "Bisque de homard",
-  "ingredients": [
-   {
-    "ciqual_food_code": "18066",
-    "ecobalyse_code": "36b3ffec-51e7-4e26-b1b5-7d52554e0aa6",
-    "id": "en:water",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 46.3,
-    "percent_max": 60.6,
-    "percent_min": 32,
-    "text": "Eau",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "id": "en:vegetable",
+  "bisqueEstimee": {
+    "code": "5414972115740",
+    "nom": "Bisque de homard",
     "ingredients": [
-     {
-      "ciqual_food_code": "20047",
-      "ecobalyse_code": "tomato-heated-greenhouse-eu",
-      "id": "en:tomato",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 20,
-      "percent_max": 32,
-      "percent_min": 8,
-      "text": "tomate",
-      "vegan": "yes",
-      "vegetarian": "yes"
-     },
-     {
-      "ciqual_food_code": "20034",
-      "ecobalyse_code": "onion-non-eu",
-      "id": "en:onion",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 6,
-      "percent_max": 16,
-      "percent_min": 0,
-      "text": "oignon",
-      "vegan": "yes",
-      "vegetarian": "yes"
-     },
-     {
-      "ciqual_food_code": "20009",
-      "ecobalyse_code": "carrot-non-eu",
-      "id": "en:carrot",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 3,
-      "percent_max": 10.6666666666667,
-      "percent_min": 0,
-      "text": "carotte",
-      "vegan": "yes",
-      "vegetarian": "yes"
-     },
-     {
-      "ciqual_food_code": "20039",
-      "ecobalyse_code": "leek-fr",
-      "id": "en:leek",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 3,
-      "percent_max": 8,
-      "percent_min": 0,
-      "text": "poireau",
-      "vegan": "yes",
-      "vegetarian": "yes"
-     }
-    ],
-    "is_in_taxonomy": 1,
-    "percent": 32,
-    "percent_estimate": 32,
-    "percent_max": 32,
-    "percent_min": 32,
-    "text": "légumes",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "id": "en:crustacean",
-    "ingredients": [
-     {
-      "id": "en:lobster",
-      "is_in_taxonomy": 1,
-      "percent": 3.8,
-      "percent_estimate": 3.8,
-      "percent_max": 3.8,
-      "percent_min": 3.8,
-      "text": "homard",
-      "vegan": "no",
-      "vegetarian": "no"
-     },
-     {
-      "ciqual_food_code": "10021",
-      "ecobalyse_code": "fresh-shrimps",
-      "id": "en:shrimp",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 2.7,
-      "percent_max": 3.6,
-      "percent_min": 1.8,
-      "text": "crevette",
-      "vegan": "no",
-      "vegetarian": "no"
-     },
-     {
-      "id": "en:crab",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 0.9,
-      "percent_max": 1.8,
-      "percent_min": 0,
-      "text": "crabe",
-      "vegan": "no",
-      "vegetarian": "no"
-     }
-    ],
-    "is_in_taxonomy": 1,
-    "percent": 7.4,
-    "percent_estimate": 7.4,
-    "percent_max": 7.4,
-    "percent_min": 7.4,
-    "text": "crustacés",
-    "vegan": "no",
-    "vegetarian": "no"
-   },
-   {
-    "ciqual_food_code": "1014",
-    "id": "en:white-wine",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 3.7,
-    "percent_max": 7.4,
-    "percent_min": 0,
-    "text": "vin blanc",
-    "vegan": "maybe",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_proxy_food_code": "9510",
-    "id": "en:modified-starch",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 3.7,
-    "percent_max": 7.4,
-    "percent_min": 0,
-    "text": "amidon modifié",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "17440",
-    "ecobalyse_code": "3cfab110-363e-442a-9170-1af337fe9ea3",
-    "from_palm_oil": "no",
-    "id": "en:sunflower-oil",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 3.45,
-    "percent_max": 7.4,
-    "percent_min": 0,
-    "text": "huile de tournesol",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "17130",
-    "ecobalyse_code": "96b301d9-d21b-4cea-8903-bd7917e95a30",
-    "from_palm_oil": "no",
-    "id": "en:colza-oil",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 1.72499999999999,
-    "percent_max": 7.2,
-    "percent_min": 0,
-    "text": "huile de colza",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "11058",
-    "id": "en:salt",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.4,
-    "percent_max": 0.8,
-    "percent_min": 0,
-    "text": "sel",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "1014",
-    "id": "en:cognac",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.4,
-    "percent_max": 0.8,
-    "percent_min": 0,
-    "text": "cognac",
-    "vegan": "maybe",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "11000",
-    "id": "en:garlic",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.4,
-    "percent_max": 0.8,
-    "percent_min": 0,
-    "text": "ail",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "17270",
-    "ecobalyse_code": "fbe48b5b-62f2-4ccb-8aa6-66d08a4c7fac",
-    "from_palm_oil": "no",
-    "id": "en:extra-virgin-olive-oil",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.262499999999989,
-    "percent_max": 0.8,
-    "percent_min": 0,
-    "text": "huile d'olive vierge extra",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "id": "en:flavouring",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.131249999999994,
-    "percent_max": 0.8,
-    "percent_min": 0,
-    "text": "arômes",
-    "vegan": "maybe",
-    "vegetarian": "maybe"
-   },
-   {
-    "id": "en:lactose-and-milk-proteins",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.0656249999999972,
-    "percent_max": 0.8,
-    "percent_min": 0,
-    "text": "protéines de lait et lactose",
-    "vegan": "no",
-    "vegetarian": "yes"
-   },
-   {
-    "id": "en:acid",
-    "ingredients": [
-     {
-      "id": "en:e330",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 0.0328124999999986,
-      "percent_max": 0.8,
-      "percent_min": 0,
-      "text": "acide citrique",
-      "vegan": "yes",
-      "vegetarian": "yes"
-     }
-    ],
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.0328124999999986,
-    "percent_max": 0.8,
-    "percent_min": 0,
-    "text": "acidifiant"
-   },
-   {
-    "ciqual_food_code": "11088",
-    "id": "en:cayenne-pepper",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.0328125000000057,
-    "percent_max": 0.8,
-    "percent_min": 0,
-    "text": "piment de Cayenne",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   }
-  ]
- },
- "bisqueDeclaree": {
-  "code": "3267616001068",
-  "nom": "Bisque de homard soupe",
-  "ingredients": [
-   {
-    "ciqual_food_code": "18066",
-    "ecobalyse_code": "36b3ffec-51e7-4e26-b1b5-7d52554e0aa6",
-    "id": "en:water",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 50,
-    "percent_max": 88,
-    "percent_min": 12,
-    "text": "Water",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "id": "en:american-lobster",
-    "is_in_taxonomy": 1,
-    "percent": 12,
-    "percent_estimate": 12,
-    "percent_max": 12,
-    "percent_min": 12,
-    "text": "American lobster",
-    "vegan": "no",
-    "vegetarian": "no"
-   },
-   {
-    "id": "en:fishes",
-    "is_in_taxonomy": 0,
-    "percent_estimate": 6,
-    "percent_max": 12,
-    "percent_min": 0,
-    "text": "fishes"
-   },
-   {
-    "id": "en:carots",
-    "is_in_taxonomy": 0,
-    "percent_estimate": 6,
-    "percent_max": 12,
-    "percent_min": 0,
-    "text": "carots"
-   },
-   {
-    "ciqual_food_code": "20068",
-    "ecobalyse_code": "tomato-concentrated",
-    "id": "en:tomato-concentrate",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 6,
-    "percent_max": 12,
-    "percent_min": 0,
-    "text": "tomato concentrate",
-    "vegan": "maybe",
-    "vegetarian": "maybe"
-   },
-   {
-    "ciqual_food_code": "1014",
-    "id": "en:white-wine",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 6,
-    "percent_max": 12,
-    "percent_min": 0,
-    "text": "White wine",
-    "vegan": "maybe",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "19402",
-    "id": "en:sour-cream",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 6,
-    "percent_max": 12,
-    "percent_min": 0,
-    "text": "sour cream",
-    "vegan": "no",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_proxy_food_code": "9510",
-    "id": "en:starch",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 4,
-    "percent_max": 12,
-    "percent_min": 0,
-    "text": "starch",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "20039",
-    "ecobalyse_code": "leek-fr",
-    "id": "en:leek",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 2,
-    "percent_max": 10.8571428571429,
-    "percent_min": 0,
-    "text": "leeks",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "20034",
-    "ecobalyse_code": "onion-non-eu",
-    "id": "en:onion",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 1,
-    "percent_max": 9.5,
-    "percent_min": 0,
-    "text": "onions",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "11058",
-    "id": "en:salt",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.385,
-    "percent_max": 0.77,
-    "percent_min": 0,
-    "text": "salt",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_proxy_food_code": "19051",
-    "ecobalyse_code": "8f3863e7-f981-4367-90a2-e1aaa096a6e0",
-    "id": "en:skimmed-milk",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.307499999999997,
-    "percent_max": 0.77,
-    "percent_min": 0,
-    "processing": "en:powder",
-    "text": "skimmed milk",
-    "vegan": "no",
-    "vegetarian": "yes"
-   },
-   {
-    "ecobalyse_code": "rapeseed-non-eu",
-    "id": "en:canola",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.153750000000002,
-    "percent_max": 0.77,
-    "percent_min": 0,
-    "text": "canola",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "id": "en:green-crab",
-    "is_in_taxonomy": 0,
-    "percent_estimate": 0.0768750000000011,
-    "percent_max": 0.77,
-    "percent_min": 0,
-    "text": "Green crab"
-   },
-   {
-    "ciqual_proxy_food_code": "16400",
-    "ecobalyse_code": "bbda834e-1548-4682-a461-c367dc1ce517",
-    "id": "en:butter",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.0384375000000006,
-    "percent_max": 0.77,
-    "percent_min": 0,
-    "text": "butter",
-    "vegan": "no",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "1014",
-    "id": "en:brandy",
-    "ingredients": [
-     {
-      "ciqual_food_code": "1014",
-      "id": "en:cognac",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 0.0192187500000003,
-      "percent_max": 0.77,
-      "percent_min": 0,
-      "text": "cognac",
-      "vegan": "maybe",
-      "vegetarian": "yes"
-     }
-    ],
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.0192187500000003,
-    "percent_max": 0.77,
-    "percent_min": 0,
-    "text": "brandy",
-    "vegan": "maybe",
-    "vegetarian": "yes"
-   },
-   {
-    "id": "en:spice",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.00960937499999659,
-    "percent_max": 0.77,
-    "percent_min": 0,
-    "text": "spices",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "id": "en:e415",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.00960937499999659,
-    "percent_max": 0.77,
-    "percent_min": 0,
-    "text": "xanthan gum",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   }
-  ]
- },
- "biscuitsNutella": {
-  "code": "8000500310427",
-  "nom": "Biscuits NUTELLA Biscuits Noisettes et Cacao x22 - 304g",
-  "ingredients": [
-   {
-    "id": "en:hazelnut-spread",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 53.5,
-    "quantity_estimate": 53.5,
-    "text": "Pâte à tartiner aux NOISETTES",
-    "vegan": "maybe",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_proxy_food_code": "18100",
-    "id": "en:cocoa",
-    "ingredients": [
-     {
-      "ciqual_food_code": "31016",
-      "ciqual_proxy_food_code": "31016",
-      "ecobalyse_code": "8f075c25-9ebf-430c-b41d-51d165c6e0d8",
-      "id": "en:sugar",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 9.65,
-      "quantity_estimate": 9.65,
-      "text": "sucre",
-      "vegan": "maybe",
-      "vegetarian": "yes"
-     },
-     {
-      "ciqual_food_code": "16129",
-      "ecobalyse_code": "45658c32-66d9-4305-a34b-21d6a4cef89c",
-      "from_palm_oil": "yes",
-      "id": "en:palm-oil",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 2.97,
-      "quantity_estimate": 2.97,
-      "text": "huile de palme",
-      "vegan": "yes",
-      "vegetarian": "yes"
-     },
-     {
-      "ciqual_food_code": "15004",
-      "ecobalyse_code": "hazelnut-unshelled-non-eu",
-      "id": "en:hazelnut",
-      "is_in_taxonomy": 1,
-      "percent": 13,
-      "percent_estimate": 1.49,
-      "quantity_estimate": 1.49,
-      "text": "NOISETTES",
-      "vegan": "yes",
-      "vegetarian": "yes"
-     },
-     {
-      "ciqual_food_code": "19054",
-      "ecobalyse_code": "b6776a28-ec84-4bf3-988c-07b3c29f6136",
-      "id": "en:skimmed-milk-powder",
-      "is_in_taxonomy": 1,
-      "percent": 8.7,
-      "percent_estimate": 0.91,
-      "quantity_estimate": 0.91,
-      "text": "LAIT écrémé en poudre",
-      "vegan": "no",
-      "vegetarian": "yes"
-     },
-     {
-      "ciqual_food_code": "18100",
-      "ciqual_proxy_food_code": "18100",
-      "id": "en:fat-reduced-cocoa",
-      "is_in_taxonomy": 1,
-      "percent": 7.4,
-      "percent_estimate": 0.63,
-      "quantity_estimate": 0.63,
-      "text": "cacao maigre",
-      "vegan": "yes",
-      "vegetarian": "yes"
-     },
-     {
-      "id": "en:emulsifier",
-      "ingredients": [
-       {
-        "id": "en:e322",
+      {
+        "ciqual_food_code": "18066",
+        "ecobalyse_code": "36b3ffec-51e7-4e26-b1b5-7d52554e0aa6",
+        "id": "en:water",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 46.3,
+        "percent_max": 60.6,
+        "percent_min": 32,
+        "text": "Eau",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "id": "en:vegetable",
         "ingredients": [
-         {
-          "ciqual_food_code": "42200",
-          "id": "en:soya-lecithin",
-          "is_in_taxonomy": 1,
-          "percent_estimate": 0.46,
-          "quantity_estimate": 0.46,
-          "text": "lécithines de SOJA",
-          "vegan": "yes",
-          "vegetarian": "yes"
-         }
+          {
+            "ciqual_food_code": "20047",
+            "ecobalyse_code": "tomato-heated-greenhouse-eu",
+            "id": "en:tomato",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 20,
+            "percent_max": 32,
+            "percent_min": 8,
+            "text": "tomate",
+            "vegan": "yes",
+            "vegetarian": "yes"
+          },
+          {
+            "ciqual_food_code": "20034",
+            "ecobalyse_code": "onion-non-eu",
+            "id": "en:onion",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 6,
+            "percent_max": 16,
+            "percent_min": 0,
+            "text": "oignon",
+            "vegan": "yes",
+            "vegetarian": "yes"
+          },
+          {
+            "ciqual_food_code": "20009",
+            "ecobalyse_code": "carrot-non-eu",
+            "id": "en:carrot",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 3,
+            "percent_max": 10.6666666666667,
+            "percent_min": 0,
+            "text": "carotte",
+            "vegan": "yes",
+            "vegetarian": "yes"
+          },
+          {
+            "ciqual_food_code": "20039",
+            "ecobalyse_code": "leek-fr",
+            "id": "en:leek",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 3,
+            "percent_max": 8,
+            "percent_min": 0,
+            "text": "poireau",
+            "vegan": "yes",
+            "vegetarian": "yes"
+          }
         ],
         "is_in_taxonomy": 1,
-        "percent_estimate": 0.46,
-        "quantity_estimate": 0.46,
-        "text": "lécithines",
+        "percent": 32,
+        "percent_estimate": 32,
+        "percent_max": 32,
+        "percent_min": 32,
+        "text": "légumes",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "id": "en:crustacean",
+        "ingredients": [
+          {
+            "id": "en:lobster",
+            "is_in_taxonomy": 1,
+            "percent": 3.8,
+            "percent_estimate": 3.8,
+            "percent_max": 3.8,
+            "percent_min": 3.8,
+            "text": "homard",
+            "vegan": "no",
+            "vegetarian": "no"
+          },
+          {
+            "ciqual_food_code": "10021",
+            "ecobalyse_code": "fresh-shrimps",
+            "id": "en:shrimp",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 2.7,
+            "percent_max": 3.6,
+            "percent_min": 1.8,
+            "text": "crevette",
+            "vegan": "no",
+            "vegetarian": "no"
+          },
+          {
+            "id": "en:crab",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 0.9,
+            "percent_max": 1.8,
+            "percent_min": 0,
+            "text": "crabe",
+            "vegan": "no",
+            "vegetarian": "no"
+          }
+        ],
+        "is_in_taxonomy": 1,
+        "percent": 7.4,
+        "percent_estimate": 7.4,
+        "percent_max": 7.4,
+        "percent_min": 7.4,
+        "text": "crustacés",
+        "vegan": "no",
+        "vegetarian": "no"
+      },
+      {
+        "ciqual_food_code": "1014",
+        "id": "en:white-wine",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 3.7,
+        "percent_max": 7.4,
+        "percent_min": 0,
+        "text": "vin blanc",
+        "vegan": "maybe",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_proxy_food_code": "9510",
+        "id": "en:modified-starch",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 3.7,
+        "percent_max": 7.4,
+        "percent_min": 0,
+        "text": "amidon modifié",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "17440",
+        "ecobalyse_code": "3cfab110-363e-442a-9170-1af337fe9ea3",
+        "from_palm_oil": "no",
+        "id": "en:sunflower-oil",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 3.45,
+        "percent_max": 7.4,
+        "percent_min": 0,
+        "text": "huile de tournesol",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "17130",
+        "ecobalyse_code": "96b301d9-d21b-4cea-8903-bd7917e95a30",
+        "from_palm_oil": "no",
+        "id": "en:colza-oil",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 1.72499999999999,
+        "percent_max": 7.2,
+        "percent_min": 0,
+        "text": "huile de colza",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "11058",
+        "id": "en:salt",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.4,
+        "percent_max": 0.8,
+        "percent_min": 0,
+        "text": "sel",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "1014",
+        "id": "en:cognac",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.4,
+        "percent_max": 0.8,
+        "percent_min": 0,
+        "text": "cognac",
+        "vegan": "maybe",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "11000",
+        "id": "en:garlic",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.4,
+        "percent_max": 0.8,
+        "percent_min": 0,
+        "text": "ail",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "17270",
+        "ecobalyse_code": "fbe48b5b-62f2-4ccb-8aa6-66d08a4c7fac",
+        "from_palm_oil": "no",
+        "id": "en:extra-virgin-olive-oil",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.262499999999989,
+        "percent_max": 0.8,
+        "percent_min": 0,
+        "text": "huile d'olive vierge extra",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "id": "en:flavouring",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.131249999999994,
+        "percent_max": 0.8,
+        "percent_min": 0,
+        "text": "arômes",
         "vegan": "maybe",
         "vegetarian": "maybe"
-       }
-      ],
-      "is_in_taxonomy": 1,
-      "percent_estimate": 0.46,
-      "quantity_estimate": 0.46,
-      "text": "émulsifiants"
-     },
-     {
-      "id": "en:vanillin",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 0.35,
-      "quantity_estimate": 0.35,
-      "text": "vanilline",
-      "vegan": "yes",
-      "vegetarian": "yes"
-     }
-    ],
-    "is_in_taxonomy": 1,
-    "percent": 40,
-    "percent_estimate": 16.46,
-    "quantity_estimate": 16.46,
-    "text": "au cacao",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "9410",
-    "ciqual_proxy_food_code": "9410",
-    "ecobalyse_code": "a2e25aca-1f42-4bc8-bc0e-4d7c751775aa",
-    "id": "en:wheat-flour",
-    "is_in_taxonomy": 1,
-    "percent": 32.5,
-    "percent_estimate": 8.27,
-    "quantity_estimate": 8.27,
-    "text": "farine de FROMENT",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "from_palm_oil": "maybe",
-    "id": "en:vegetable-fat",
+      },
+      {
+        "id": "en:lactose-and-milk-proteins",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.0656249999999972,
+        "percent_max": 0.8,
+        "percent_min": 0,
+        "text": "protéines de lait et lactose",
+        "vegan": "no",
+        "vegetarian": "yes"
+      },
+      {
+        "id": "en:acid",
+        "ingredients": [
+          {
+            "id": "en:e330",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 0.0328124999999986,
+            "percent_max": 0.8,
+            "percent_min": 0,
+            "text": "acide citrique",
+            "vegan": "yes",
+            "vegetarian": "yes"
+          }
+        ],
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.0328124999999986,
+        "percent_max": 0.8,
+        "percent_min": 0,
+        "text": "acidifiant"
+      },
+      {
+        "ciqual_food_code": "11088",
+        "id": "en:cayenne-pepper",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.0328125000000057,
+        "percent_max": 0.8,
+        "percent_min": 0,
+        "text": "piment de Cayenne",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      }
+    ]
+  },
+  "bisqueDeclaree": {
+    "code": "3267616001068",
+    "nom": "Bisque de homard soupe",
     "ingredients": [
-     {
-      "ciqual_food_code": "16129",
-      "ecobalyse_code": "45658c32-66d9-4305-a34b-21d6a4cef89c",
-      "from_palm_oil": "yes",
-      "id": "en:palm-oil",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 3.88,
-      "quantity_estimate": 3.88,
-      "text": "huile de palme",
-      "vegan": "yes",
-      "vegetarian": "yes"
-     },
-     {
-      "from_palm_oil": "yes",
-      "id": "en:palm-kernel-fat",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 1.19,
-      "quantity_estimate": 1.19,
-      "text": "huile de palmiste",
-      "vegan": "yes",
-      "vegetarian": "yes"
-     }
-    ],
-    "is_in_taxonomy": 1,
-    "percent_estimate": 5.07,
-    "quantity_estimate": 5.07,
-    "text": "graisses végétales",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "31016",
-    "ciqual_proxy_food_code": "31016",
-    "ecobalyse_code": "8f075c25-9ebf-430c-b41d-51d165c6e0d8",
-    "id": "en:cane-sugar",
-    "is_in_taxonomy": 1,
-    "percent": 8.5,
-    "percent_estimate": 3.47,
-    "quantity_estimate": 3.47,
-    "text": "sucre de canne",
-    "vegan": "maybe",
-    "vegetarian": "yes"
-   },
-   {
-    "id": "en:lactose",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 2.54,
-    "quantity_estimate": 2.54,
-    "text": "LACTOSE",
-    "vegan": "no",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "9621",
-    "id": "en:wheat-bran",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 1.96,
-    "quantity_estimate": 1.96,
-    "text": "son de BLE",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "19044",
-    "ciqual_proxy_food_code": "19044",
-    "ecobalyse_code": "b6776a28-ec84-4bf3-988c-07b3c29f6136",
-    "id": "en:milk-powder",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 1.56,
-    "quantity_estimate": 1.56,
-    "text": "LAIT en poudre",
-    "vegan": "no",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "31008",
-    "id": "en:honey",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 1.28,
-    "quantity_estimate": 1.28,
-    "text": "miel",
-    "vegan": "no",
-    "vegetarian": "yes"
-   },
-   {
-    "id": "en:raising-agent",
+      {
+        "ciqual_food_code": "18066",
+        "ecobalyse_code": "36b3ffec-51e7-4e26-b1b5-7d52554e0aa6",
+        "id": "en:water",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 50,
+        "percent_max": 88,
+        "percent_min": 12,
+        "text": "Water",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "id": "en:american-lobster",
+        "is_in_taxonomy": 1,
+        "percent": 12,
+        "percent_estimate": 12,
+        "percent_max": 12,
+        "percent_min": 12,
+        "text": "American lobster",
+        "vegan": "no",
+        "vegetarian": "no"
+      },
+      {
+        "id": "en:fishes",
+        "is_in_taxonomy": 0,
+        "percent_estimate": 6,
+        "percent_max": 12,
+        "percent_min": 0,
+        "text": "fishes"
+      },
+      {
+        "id": "en:carots",
+        "is_in_taxonomy": 0,
+        "percent_estimate": 6,
+        "percent_max": 12,
+        "percent_min": 0,
+        "text": "carots"
+      },
+      {
+        "ciqual_food_code": "20068",
+        "ecobalyse_code": "tomato-concentrated",
+        "id": "en:tomato-concentrate",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 6,
+        "percent_max": 12,
+        "percent_min": 0,
+        "text": "tomato concentrate",
+        "vegan": "maybe",
+        "vegetarian": "maybe"
+      },
+      {
+        "ciqual_food_code": "1014",
+        "id": "en:white-wine",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 6,
+        "percent_max": 12,
+        "percent_min": 0,
+        "text": "White wine",
+        "vegan": "maybe",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "19402",
+        "id": "en:sour-cream",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 6,
+        "percent_max": 12,
+        "percent_min": 0,
+        "text": "sour cream",
+        "vegan": "no",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_proxy_food_code": "9510",
+        "id": "en:starch",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 4,
+        "percent_max": 12,
+        "percent_min": 0,
+        "text": "starch",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "20039",
+        "ecobalyse_code": "leek-fr",
+        "id": "en:leek",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 2,
+        "percent_max": 10.8571428571429,
+        "percent_min": 0,
+        "text": "leeks",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "20034",
+        "ecobalyse_code": "onion-non-eu",
+        "id": "en:onion",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 1,
+        "percent_max": 9.5,
+        "percent_min": 0,
+        "text": "onions",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "11058",
+        "id": "en:salt",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.385,
+        "percent_max": 0.77,
+        "percent_min": 0,
+        "text": "salt",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_proxy_food_code": "19051",
+        "ecobalyse_code": "8f3863e7-f981-4367-90a2-e1aaa096a6e0",
+        "id": "en:skimmed-milk",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.307499999999997,
+        "percent_max": 0.77,
+        "percent_min": 0,
+        "processing": "en:powder",
+        "text": "skimmed milk",
+        "vegan": "no",
+        "vegetarian": "yes"
+      },
+      {
+        "ecobalyse_code": "rapeseed-non-eu",
+        "id": "en:canola",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.153750000000002,
+        "percent_max": 0.77,
+        "percent_min": 0,
+        "text": "canola",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "id": "en:green-crab",
+        "is_in_taxonomy": 0,
+        "percent_estimate": 0.0768750000000011,
+        "percent_max": 0.77,
+        "percent_min": 0,
+        "text": "Green crab"
+      },
+      {
+        "ciqual_proxy_food_code": "16400",
+        "ecobalyse_code": "bbda834e-1548-4682-a461-c367dc1ce517",
+        "id": "en:butter",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.0384375000000006,
+        "percent_max": 0.77,
+        "percent_min": 0,
+        "text": "butter",
+        "vegan": "no",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "1014",
+        "id": "en:brandy",
+        "ingredients": [
+          {
+            "ciqual_food_code": "1014",
+            "id": "en:cognac",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 0.0192187500000003,
+            "percent_max": 0.77,
+            "percent_min": 0,
+            "text": "cognac",
+            "vegan": "maybe",
+            "vegetarian": "yes"
+          }
+        ],
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.0192187500000003,
+        "percent_max": 0.77,
+        "percent_min": 0,
+        "text": "brandy",
+        "vegan": "maybe",
+        "vegetarian": "yes"
+      },
+      {
+        "id": "en:spice",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.00960937499999659,
+        "percent_max": 0.77,
+        "percent_min": 0,
+        "text": "spices",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "id": "en:e415",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.00960937499999659,
+        "percent_max": 0.77,
+        "percent_min": 0,
+        "text": "xanthan gum",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      }
+    ]
+  },
+  "biscuitsNutella": {
+    "code": "8000500310427",
+    "nom": "Biscuits NUTELLA Biscuits Noisettes et Cacao x22 - 304g",
     "ingredients": [
-     {
-      "id": "en:e450i",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 0.73,
-      "quantity_estimate": 0.73,
-      "text": "diphosphate disodique",
-      "vegan": "yes",
-      "vegetarian": "yes"
-     },
-     {
-      "id": "en:e500ii",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 0.23,
-      "quantity_estimate": 0.23,
-      "text": "carbonate acide de sodium",
-      "vegan": "yes",
-      "vegetarian": "yes"
-     },
-     {
-      "id": "en:e503ii",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 0.11,
-      "quantity_estimate": 0.11,
-      "text": "carbonate acide d'ammonium",
-      "vegan": "yes",
-      "vegetarian": "yes"
-     }
-    ],
-    "is_in_taxonomy": 1,
-    "percent_estimate": 1.07,
-    "quantity_estimate": 1.07,
-    "text": "poudres à lever"
-   },
-   {
-    "ciqual_food_code": "9550",
-    "ecobalyse_code": "a2e25aca-1f42-4bc8-bc0e-4d7c751775aa",
-    "id": "en:barley-malt-flour",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.91,
-    "quantity_estimate": 0.91,
-    "text": "farine d'ORGE malté",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "18100",
-    "id": "en:fat-reduced-cocoa-powder",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.78,
-    "quantity_estimate": 0.78,
-    "text": "cacao maigre en poudre",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "11058",
-    "id": "en:salt",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.68,
-    "quantity_estimate": 0.68,
-    "text": "sel",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "id": "en:malted-barley",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.6,
-    "processing": "de:extrahiert,en:powder",
-    "quantity_estimate": 0.6,
-    "text": "de malt d'ORGE",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "9200",
-    "id": "en:corn",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.54,
-    "quantity_estimate": 0.54,
-    "text": "de maïs",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_food_code": "9510",
-    "ciqual_proxy_food_code": "9510",
-    "id": "en:wheat-starch",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.48,
-    "quantity_estimate": 0.48,
-    "text": "amidon de FROMENT",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "id": "en:emulsifier",
-    "ingredients": [
-     {
-      "id": "en:e322",
-      "ingredients": [
-       {
-        "ciqual_food_code": "42200",
-        "id": "en:soya-lecithin",
+      {
+        "id": "en:hazelnut-spread",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 53.5,
+        "quantity_estimate": 53.5,
+        "text": "Pâte à tartiner aux NOISETTES",
+        "vegan": "maybe",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_proxy_food_code": "18100",
+        "id": "en:cocoa",
+        "ingredients": [
+          {
+            "ciqual_food_code": "31016",
+            "ciqual_proxy_food_code": "31016",
+            "ecobalyse_code": "8f075c25-9ebf-430c-b41d-51d165c6e0d8",
+            "id": "en:sugar",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 9.65,
+            "quantity_estimate": 9.65,
+            "text": "sucre",
+            "vegan": "maybe",
+            "vegetarian": "yes"
+          },
+          {
+            "ciqual_food_code": "16129",
+            "ecobalyse_code": "45658c32-66d9-4305-a34b-21d6a4cef89c",
+            "from_palm_oil": "yes",
+            "id": "en:palm-oil",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 2.97,
+            "quantity_estimate": 2.97,
+            "text": "huile de palme",
+            "vegan": "yes",
+            "vegetarian": "yes"
+          },
+          {
+            "ciqual_food_code": "15004",
+            "ecobalyse_code": "hazelnut-unshelled-non-eu",
+            "id": "en:hazelnut",
+            "is_in_taxonomy": 1,
+            "percent": 13,
+            "percent_estimate": 1.49,
+            "quantity_estimate": 1.49,
+            "text": "NOISETTES",
+            "vegan": "yes",
+            "vegetarian": "yes"
+          },
+          {
+            "ciqual_food_code": "19054",
+            "ecobalyse_code": "b6776a28-ec84-4bf3-988c-07b3c29f6136",
+            "id": "en:skimmed-milk-powder",
+            "is_in_taxonomy": 1,
+            "percent": 8.7,
+            "percent_estimate": 0.91,
+            "quantity_estimate": 0.91,
+            "text": "LAIT écrémé en poudre",
+            "vegan": "no",
+            "vegetarian": "yes"
+          },
+          {
+            "ciqual_food_code": "18100",
+            "ciqual_proxy_food_code": "18100",
+            "id": "en:fat-reduced-cocoa",
+            "is_in_taxonomy": 1,
+            "percent": 7.4,
+            "percent_estimate": 0.63,
+            "quantity_estimate": 0.63,
+            "text": "cacao maigre",
+            "vegan": "yes",
+            "vegetarian": "yes"
+          },
+          {
+            "id": "en:emulsifier",
+            "ingredients": [
+              {
+                "id": "en:e322",
+                "ingredients": [
+                  {
+                    "ciqual_food_code": "42200",
+                    "id": "en:soya-lecithin",
+                    "is_in_taxonomy": 1,
+                    "percent_estimate": 0.46,
+                    "quantity_estimate": 0.46,
+                    "text": "lécithines de SOJA",
+                    "vegan": "yes",
+                    "vegetarian": "yes"
+                  }
+                ],
+                "is_in_taxonomy": 1,
+                "percent_estimate": 0.46,
+                "quantity_estimate": 0.46,
+                "text": "lécithines",
+                "vegan": "maybe",
+                "vegetarian": "maybe"
+              }
+            ],
+            "is_in_taxonomy": 1,
+            "percent_estimate": 0.46,
+            "quantity_estimate": 0.46,
+            "text": "émulsifiants"
+          },
+          {
+            "id": "en:vanillin",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 0.35,
+            "quantity_estimate": 0.35,
+            "text": "vanilline",
+            "vegan": "yes",
+            "vegetarian": "yes"
+          }
+        ],
+        "is_in_taxonomy": 1,
+        "percent": 40,
+        "percent_estimate": 16.46,
+        "quantity_estimate": 16.46,
+        "text": "au cacao",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "9410",
+        "ciqual_proxy_food_code": "9410",
+        "ecobalyse_code": "a2e25aca-1f42-4bc8-bc0e-4d7c751775aa",
+        "id": "en:wheat-flour",
+        "is_in_taxonomy": 1,
+        "percent": 32.5,
+        "percent_estimate": 8.27,
+        "quantity_estimate": 8.27,
+        "text": "farine de FROMENT",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "from_palm_oil": "maybe",
+        "id": "en:vegetable-fat",
+        "ingredients": [
+          {
+            "ciqual_food_code": "16129",
+            "ecobalyse_code": "45658c32-66d9-4305-a34b-21d6a4cef89c",
+            "from_palm_oil": "yes",
+            "id": "en:palm-oil",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 3.88,
+            "quantity_estimate": 3.88,
+            "text": "huile de palme",
+            "vegan": "yes",
+            "vegetarian": "yes"
+          },
+          {
+            "from_palm_oil": "yes",
+            "id": "en:palm-kernel-fat",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 1.19,
+            "quantity_estimate": 1.19,
+            "text": "huile de palmiste",
+            "vegan": "yes",
+            "vegetarian": "yes"
+          }
+        ],
+        "is_in_taxonomy": 1,
+        "percent_estimate": 5.07,
+        "quantity_estimate": 5.07,
+        "text": "graisses végétales",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "31016",
+        "ciqual_proxy_food_code": "31016",
+        "ecobalyse_code": "8f075c25-9ebf-430c-b41d-51d165c6e0d8",
+        "id": "en:cane-sugar",
+        "is_in_taxonomy": 1,
+        "percent": 8.5,
+        "percent_estimate": 3.47,
+        "quantity_estimate": 3.47,
+        "text": "sucre de canne",
+        "vegan": "maybe",
+        "vegetarian": "yes"
+      },
+      {
+        "id": "en:lactose",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 2.54,
+        "quantity_estimate": 2.54,
+        "text": "LACTOSE",
+        "vegan": "no",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "9621",
+        "id": "en:wheat-bran",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 1.96,
+        "quantity_estimate": 1.96,
+        "text": "son de BLE",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "19044",
+        "ciqual_proxy_food_code": "19044",
+        "ecobalyse_code": "b6776a28-ec84-4bf3-988c-07b3c29f6136",
+        "id": "en:milk-powder",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 1.56,
+        "quantity_estimate": 1.56,
+        "text": "LAIT en poudre",
+        "vegan": "no",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "31008",
+        "id": "en:honey",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 1.28,
+        "quantity_estimate": 1.28,
+        "text": "miel",
+        "vegan": "no",
+        "vegetarian": "yes"
+      },
+      {
+        "id": "en:raising-agent",
+        "ingredients": [
+          {
+            "id": "en:e450i",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 0.73,
+            "quantity_estimate": 0.73,
+            "text": "diphosphate disodique",
+            "vegan": "yes",
+            "vegetarian": "yes"
+          },
+          {
+            "id": "en:e500ii",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 0.23,
+            "quantity_estimate": 0.23,
+            "text": "carbonate acide de sodium",
+            "vegan": "yes",
+            "vegetarian": "yes"
+          },
+          {
+            "id": "en:e503ii",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 0.11,
+            "quantity_estimate": 0.11,
+            "text": "carbonate acide d'ammonium",
+            "vegan": "yes",
+            "vegetarian": "yes"
+          }
+        ],
+        "is_in_taxonomy": 1,
+        "percent_estimate": 1.07,
+        "quantity_estimate": 1.07,
+        "text": "poudres à lever"
+      },
+      {
+        "ciqual_food_code": "9550",
+        "ecobalyse_code": "a2e25aca-1f42-4bc8-bc0e-4d7c751775aa",
+        "id": "en:barley-malt-flour",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.91,
+        "quantity_estimate": 0.91,
+        "text": "farine d'ORGE malté",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "18100",
+        "id": "en:fat-reduced-cocoa-powder",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.78,
+        "quantity_estimate": 0.78,
+        "text": "cacao maigre en poudre",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "11058",
+        "id": "en:salt",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.68,
+        "quantity_estimate": 0.68,
+        "text": "sel",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "id": "en:malted-barley",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.6,
+        "processing": "de:extrahiert,en:powder",
+        "quantity_estimate": 0.6,
+        "text": "de malt d'ORGE",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "9200",
+        "id": "en:corn",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.54,
+        "quantity_estimate": 0.54,
+        "text": "de maïs",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "9510",
+        "ciqual_proxy_food_code": "9510",
+        "id": "en:wheat-starch",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.48,
+        "quantity_estimate": 0.48,
+        "text": "amidon de FROMENT",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "id": "en:emulsifier",
+        "ingredients": [
+          {
+            "id": "en:e322",
+            "ingredients": [
+              {
+                "ciqual_food_code": "42200",
+                "id": "en:soya-lecithin",
+                "is_in_taxonomy": 1,
+                "percent_estimate": 0.43,
+                "quantity_estimate": 0.43,
+                "text": "lécithines de SOJA",
+                "vegan": "yes",
+                "vegetarian": "yes"
+              }
+            ],
+            "is_in_taxonomy": 1,
+            "percent_estimate": 0.43,
+            "quantity_estimate": 0.43,
+            "text": "lécithines",
+            "vegan": "maybe",
+            "vegetarian": "maybe"
+          }
+        ],
         "is_in_taxonomy": 1,
         "percent_estimate": 0.43,
         "quantity_estimate": 0.43,
-        "text": "lécithines de SOJA",
+        "text": "émulsifiants"
+      },
+      {
+        "id": "en:vanillin",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 0.39,
+        "quantity_estimate": 0.39,
+        "text": "vanilline",
         "vegan": "yes",
         "vegetarian": "yes"
-       }
-      ],
-      "is_in_taxonomy": 1,
-      "percent_estimate": 0.43,
-      "quantity_estimate": 0.43,
-      "text": "lécithines",
-      "vegan": "maybe",
-      "vegetarian": "maybe"
-     }
-    ],
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.43,
-    "quantity_estimate": 0.43,
-    "text": "émulsifiants"
-   },
-   {
-    "id": "en:vanillin",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 0.39,
-    "quantity_estimate": 0.39,
-    "text": "vanilline",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   }
-  ]
- },
- "peanutButter": {
-  "code": "0068100084245",
-  "nom": "Smooth Peanut Butter",
-  "ingredients": [
-   {
-    "id": "en:_Select roasted peanuts_",
-    "is_in_taxonomy": 0,
-    "percent_estimate": 58.62,
-    "quantity_estimate": 58.62,
-    "text": "_Select roasted peanuts_"
-   },
-   {
-    "ciqual_food_code": "17420",
-    "from_palm_oil": "no",
-    "id": "en:soya-oil",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 18.04,
-    "quantity_estimate": 18.04,
-    "text": "Soybean oil",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "ciqual_proxy_food_code": "31016",
-    "ecobalyse_code": "8f075c25-9ebf-430c-b41d-51d165c6e0d8",
-    "id": "en:sugar",
+      }
+    ]
+  },
+  "peanutButter": {
+    "code": "0068100084245",
+    "nom": "Smooth Peanut Butter",
     "ingredients": [
-     {
-      "id": "en:corn-maltodextrin",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 6.93,
-      "quantity_estimate": 6.93,
-      "text": "corn maltodextrin",
-      "vegan": "yes",
-      "vegetarian": "yes"
-     },
-     {
-      "ciqual_food_code": "31016",
-      "ciqual_proxy_food_code": "31016",
-      "ecobalyse_code": "8f075c25-9ebf-430c-b41d-51d165c6e0d8",
-      "id": "en:sugar",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 2.13,
-      "quantity_estimate": 2.13,
-      "text": "sugar",
-      "vegan": "maybe",
-      "vegetarian": "yes"
-     }
-    ],
-    "is_in_taxonomy": 1,
-    "percent_estimate": 9.06,
-    "quantity_estimate": 9.06,
-    "text": "Sugars",
-    "vegan": "maybe",
-    "vegetarian": "yes"
-   },
-   {
-    "from_palm_oil": "maybe",
-    "id": "en:hydrogenated-vegetable-oil",
+      {
+        "id": "en:_Select roasted peanuts_",
+        "is_in_taxonomy": 0,
+        "percent_estimate": 58.62,
+        "quantity_estimate": 58.62,
+        "text": "_Select roasted peanuts_"
+      },
+      {
+        "ciqual_food_code": "17420",
+        "from_palm_oil": "no",
+        "id": "en:soya-oil",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 18.04,
+        "quantity_estimate": 18.04,
+        "text": "Soybean oil",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_proxy_food_code": "31016",
+        "ecobalyse_code": "8f075c25-9ebf-430c-b41d-51d165c6e0d8",
+        "id": "en:sugar",
+        "ingredients": [
+          {
+            "id": "en:corn-maltodextrin",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 6.93,
+            "quantity_estimate": 6.93,
+            "text": "corn maltodextrin",
+            "vegan": "yes",
+            "vegetarian": "yes"
+          },
+          {
+            "ciqual_food_code": "31016",
+            "ciqual_proxy_food_code": "31016",
+            "ecobalyse_code": "8f075c25-9ebf-430c-b41d-51d165c6e0d8",
+            "id": "en:sugar",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 2.13,
+            "quantity_estimate": 2.13,
+            "text": "sugar",
+            "vegan": "maybe",
+            "vegetarian": "yes"
+          }
+        ],
+        "is_in_taxonomy": 1,
+        "percent_estimate": 9.06,
+        "quantity_estimate": 9.06,
+        "text": "Sugars",
+        "vegan": "maybe",
+        "vegetarian": "yes"
+      },
+      {
+        "from_palm_oil": "maybe",
+        "id": "en:hydrogenated-vegetable-oil",
+        "ingredients": [
+          {
+            "id": "en:cottonseed vegetable oil",
+            "is_in_taxonomy": 0,
+            "percent_estimate": 4.24,
+            "quantity_estimate": 4.24,
+            "text": "cottonseed vegetable oil"
+          },
+          {
+            "ciqual_food_code": "17130",
+            "ecobalyse_code": "96b301d9-d21b-4cea-8903-bd7917e95a30",
+            "from_palm_oil": "no",
+            "id": "en:rapeseed-oil",
+            "is_in_taxonomy": 1,
+            "percent_estimate": 1.31,
+            "quantity_estimate": 1.31,
+            "text": "rapeseed vegetable oil",
+            "vegan": "yes",
+            "vegetarian": "yes"
+          }
+        ],
+        "is_in_taxonomy": 1,
+        "percent_estimate": 5.55,
+        "quantity_estimate": 5.55,
+        "text": "Hydrogenated vegetable oil",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "from_palm_oil": "maybe",
+        "id": "en:oil",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 3.8,
+        "quantity_estimate": 3.8,
+        "text": "oil",
+        "vegan": "maybe",
+        "vegetarian": "maybe"
+      },
+      {
+        "ciqual_food_code": "11058",
+        "id": "en:salt",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 2.79,
+        "quantity_estimate": 2.79,
+        "text": "Salt",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "from_palm_oil": "maybe",
+        "id": "en:e471",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 2.14,
+        "quantity_estimate": 2.14,
+        "text": "mono- and diglycerides",
+        "vegan": "maybe",
+        "vegetarian": "maybe"
+      }
+    ]
+  },
+  "veloutePommeDeTerre": {
+    "source": "3760325480433 - Velouté poireau et pomme de terre",
     "ingredients": [
-     {
-      "id": "en:cottonseed vegetable oil",
-      "is_in_taxonomy": 0,
-      "percent_estimate": 4.24,
-      "quantity_estimate": 4.24,
-      "text": "cottonseed vegetable oil"
-     },
-     {
-      "ciqual_food_code": "17130",
-      "ecobalyse_code": "96b301d9-d21b-4cea-8903-bd7917e95a30",
-      "from_palm_oil": "no",
-      "id": "en:rapeseed-oil",
-      "is_in_taxonomy": 1,
-      "percent_estimate": 1.31,
-      "quantity_estimate": 1.31,
-      "text": "rapeseed vegetable oil",
-      "vegan": "yes",
-      "vegetarian": "yes"
-     }
-    ],
-    "is_in_taxonomy": 1,
-    "percent_estimate": 5.55,
-    "quantity_estimate": 5.55,
-    "text": "Hydrogenated vegetable oil",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "from_palm_oil": "maybe",
-    "id": "en:oil",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 3.8,
-    "quantity_estimate": 3.8,
-    "text": "oil",
-    "vegan": "maybe",
-    "vegetarian": "maybe"
-   },
-   {
-    "ciqual_food_code": "11058",
-    "id": "en:salt",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 2.79,
-    "quantity_estimate": 2.79,
-    "text": "Salt",
-    "vegan": "yes",
-    "vegetarian": "yes"
-   },
-   {
-    "from_palm_oil": "maybe",
-    "id": "en:e471",
-    "is_in_taxonomy": 1,
-    "percent_estimate": 2.14,
-    "quantity_estimate": 2.14,
-    "text": "mono- and diglycerides",
-    "vegan": "maybe",
-    "vegetarian": "maybe"
-   }
-  ]
- }
+      {
+        "ciqual_food_code": "20039",
+        "ecobalyse_code": "leek-fr",
+        "id": "en:leek",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 60,
+        "percent_max": 100,
+        "percent_min": 20,
+        "rank": 1,
+        "text": "Poireaux",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "18066",
+        "ecobalyse_code": "36b3ffec-51e7-4e26-b1b5-7d52554e0aa6",
+        "id": "en:water",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 20,
+        "percent_max": 50,
+        "percent_min": 0,
+        "rank": 2,
+        "text": "eau",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "4003",
+        "ecobalyse_code": "potato-industry-fr",
+        "id": "en:potato",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 10,
+        "percent_max": 33.3333333333333,
+        "percent_min": 0,
+        "rank": 3,
+        "text": "pomme de terre",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_proxy_food_code": "19051",
+        "ecobalyse_code": "8f3863e7-f981-4367-90a2-e1aaa096a6e0",
+        "id": "en:milk",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 5,
+        "percent_max": 25,
+        "percent_min": 0,
+        "rank": 4,
+        "text": "lait",
+        "vegan": "no",
+        "vegetarian": "yes"
+      },
+      {
+        "ciqual_food_code": "11058",
+        "id": "en:salt",
+        "is_in_taxonomy": 1,
+        "percent_estimate": 5,
+        "percent_max": 0.52,
+        "percent_min": 0,
+        "rank": 5,
+        "text": "sel",
+        "vegan": "yes",
+        "vegetarian": "yes"
+      }
+    ]
+  }
 }

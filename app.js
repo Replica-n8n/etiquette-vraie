@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.42';
+const APP_VERSION = 'v1.43';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786137046';
+const BUILD = '1786230856';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -394,7 +394,7 @@ async function startScanner() {
 
     const videoElement = await openCameraInto(qrReader, scanStatus);
     if (!videoElement) return;
-    scanStatus.textContent = '✓ Prêt — pointe vers un code-barres';
+    scanStatus.textContent = '✓ Prêt : pointe vers un code-barres';
     scannerInitialized = true;
 
     // Anti-faux-positifs : exiger 2 lectures identiques d'affilée d'un code
@@ -655,7 +655,7 @@ function fetchErrorMessage(err) {
 // (pas à l'app) et oriente vers le scan, qui utilise un service fiable et séparé.
 function searchErrorMessage(err) {
   if (err.name === 'AbortError' || err.name === 'TimeoutError' || err.message === 'off-search-down') {
-    return 'La recherche Open Food Facts est momentanément indisponible (pas l\'app). Réessaie, ou scanne le code-barres — c\'est plus fiable.';
+    return 'La recherche Open Food Facts est momentanément indisponible (pas l\'app). Réessaie, ou scanne le code-barres, c\'est plus fiable.';
   }
   if (err.message === 'off-rate-limit') {
     return 'Trop de recherches d\'un coup. Attends quelques secondes et réessaie.';
@@ -903,6 +903,13 @@ function buildIngredientExcerpt(ingredientsText, detail) {
   const items = (ingredientsText || '')
     .split(',')
     .map((s) => s.trim())
+    // Couper la PROSE que les fabricants collent après la liste : "*Ingrédient
+    // issu de l'agriculture biologique.", "Origine : ...", "Peut contenir...".
+    // Elle se retrouve agglutinée au dernier ingrédient et se fait surligner :
+    // sur "Soupe de poireaux", la phrase d'origine contient le mot "poireaux",
+    // donc c'est la ligne "poivre blanc" qui s'allumait. Le point doit être
+    // suivi d'une espace ou de la fin, sinon on couperait un "0.5%" anglais.
+    .map((s) => s.split(/\.(?:\s|$)/)[0].trim())
     .map(s => s.replace(/^\d+[\s%(\-]*/, '').replace(/\s*\d+[\s%]*$/, '').trim()) // Nettoyer pourcentages début/fin
     .filter(Boolean);
   if (items.length === 0) return { rows: [], caption: '' };
@@ -926,10 +933,17 @@ function buildIngredientExcerpt(ingredientsText, detail) {
   // voyait 5, sans rien à faire défiler. La liste est déjà déroulante en CSS
   // (max-height + overflow-y) ; renderIngredientExcerpt l'amène tout seul sur
   // l'ingrédient repéré à l'ouverture de l'accordéon.
+  // Le surlignage passe par les VARIANTES du mot, pas par une inclusion de
+  // texte brut. Le moteur raisonne sur des mots de base ("patate") quand la
+  // liste écrit tout autre chose ("pomme de terre") : la ligne promise n'était
+  // alors pas mise en valeur. isMentionedInIngredients connaît les variantes
+  // ET travaille sur des limites de mot, ce qui évite en prime d'allumer une
+  // ligne parce qu'un mot en contient un autre.
   const rows = items.map((text, i) => ({
     num: i + 1,
     text,
-    flagged: matchedIngredients.some((m) => text.toLowerCase().includes(m)) || i === detail.index,
+    flagged: matchedIngredients.some((m) => isMentionedInIngredients(m, normalize(text)))
+      || i === detail.index,
   }));
   return { rows, caption: `${items.length} ingrédient(s) au total.` };
 }
@@ -1195,7 +1209,7 @@ function showResultContent() {
 }
 
 // `title` : le titre était figé sur "Produit non trouvé", y compris quand la
-// vraie cause était le réseau — l'écran se contredisait tout seul.
+// vraie cause était le réseau - l'écran se contredisait tout seul.
 function showResultError(message, missingCode, title) {
   document.getElementById('result-loading').classList.add('hidden');
   document.getElementById('result-error').classList.remove('hidden');
@@ -1537,7 +1551,7 @@ document.getElementById('fillgap-send').addEventListener('click', async () => {
       // Dire la vérité sur le délai : un annotateur d'OFF doit valider la
       // lecture. Sans ça l'utilisateur rescanne, revoit "impossible de vérifier"
       // et conclut que son envoi a échoué.
-      status.textContent = 'Merci ! Ta photo est partie chez Open Food Facts. Les ingrédients apparaîtront une fois la lecture vérifiée par leur équipe — compte quelques jours.';
+      status.textContent = 'Merci ! Ta photo est partie chez Open Food Facts. Les ingrédients apparaîtront une fois la lecture vérifiée par leur équipe : compte quelques jours.';
       document.getElementById('fillgap-open').classList.add('hidden');
       document.getElementById('fillgap-info').textContent = '';
       sendBtn.classList.add('hidden');
