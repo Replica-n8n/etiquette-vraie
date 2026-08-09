@@ -516,6 +516,23 @@ button, .back, .result-item, .history-item{ -webkit-tap-highlight-color:transpar
 .compare-forme{ display:block; font-size:9px; font-weight:600; line-height:1.3; margin-top:1px; }
 .compare-forme.ok{ color:var(--green); }
 .compare-forme.ko{ color:var(--amber); }
+.compare-forme .info-inline{ vertical-align:middle; }
+
+/* Popup "vrai chocolat ou cacao" : la réponse d'abord, la règle ensuite,
+   les listes en deux colonnes. En rayon on balaie, on ne lit pas un pavé. */
+.choco-verdict{ border-radius:10px; padding:9px 11px; margin-bottom:11px; border:1.5px solid var(--line); }
+.choco-verdict.ok{ background:var(--green-soft); border-color:var(--green); }
+.choco-verdict.ko{ background:var(--amber-soft); border-color:var(--amber); }
+.choco-answer{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px; line-height:1.3; }
+.choco-verdict.ok .choco-answer{ color:var(--green-ink); }
+.choco-verdict.ko .choco-answer{ color:var(--amber-ink); }
+.choco-found{ font-size:11.5px; margin-top:3px; color:var(--ink-2); }
+.choco-why{ font-size:12.5px; line-height:1.45; margin-bottom:11px; }
+.choco-cols{ display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:11.5px; line-height:1.5; color:var(--ink-2); }
+.choco-head{ font-weight:700; font-size:10px; letter-spacing:0.03em; text-transform:uppercase; margin-bottom:3px; }
+.choco-head.ok{ color:var(--green); }
+.choco-head.ko{ color:var(--amber); }
+.choco-source{ font-size:10px; color:var(--ink-soft); margin-top:11px; }
 
 /* Pastille "i" : UN SEUL repère visuel dans toute la fiche - dénomination
    officielle et liste des additifs. Deux "i" d'aspect différent, c'est deux

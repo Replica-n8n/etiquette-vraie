@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.47';
+const APP_VERSION = 'v1.48';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786249469';
+const BUILD = '1786289266';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1056,10 +1056,14 @@ function shareSuffix(part) {
 // forme brute ("cacao maigre en poudre") n'apprendrait rien à qui ignore le
 // rôle du beurre de cacao - c'est ce qui a fait écarter cette variante.
 function formeSuffix(forme) {
-  const frag = document.createDocumentFragment();
-  // Le bouton n'apparaît QUE si son popup existe déjà dans le HTML : au
-  // déploiement, le nouveau app.js tourne un ou deux chargements avec l'ancien
-  // index.html, et un "i" qui n'ouvre rien serait pire que pas de "i".
+  const sub = document.createElement('span');
+  sub.className = `compare-forme ${forme.vrai ? 'ok' : 'ko'}`;
+  sub.textContent = forme.vrai ? 'vrai chocolat' : 'cacao en poudre, pas du chocolat';
+  // Le "i" se pose SUR la mention qu'il explique, pas sur le nom de l'aliment
+  // au-dessus : c'est "vrai chocolat" qui demande un pourquoi.
+  // Il n'apparaît QUE si son popup existe déjà dans le HTML : au déploiement,
+  // le nouveau app.js tourne un ou deux chargements avec l'ancien index.html,
+  // et un "i" qui n'ouvre rien serait pire que pas de "i".
   if (document.getElementById('choco-modal')) {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -1067,26 +1071,21 @@ function formeSuffix(forme) {
     btn.textContent = 'i';
     btn.setAttribute('aria-label', 'Pourquoi cette forme compte, ou non, comme du chocolat');
     btn.addEventListener('click', () => ouvrirFormeModal(forme));
-    frag.appendChild(btn);
+    sub.appendChild(document.createTextNode(' '));
+    sub.appendChild(btn);
   }
-  const sub = document.createElement('span');
-  sub.className = `compare-forme ${forme.vrai ? 'ok' : 'ko'}`;
-  sub.textContent = forme.vrai ? 'vrai chocolat' : 'cacao en poudre, pas du chocolat';
-  frag.appendChild(sub);
-  return frag;
+  return sub;
 }
 
 function ouvrirFormeModal(forme) {
   const modal = document.getElementById('choco-modal');
   if (!modal) return;
+  const bloc = document.getElementById('choco-verdict');
+  const reponse = document.getElementById('choco-answer');
   const found = document.getElementById('choco-modal-found');
-  if (found) {
-    found.innerHTML = '';
-    const b = document.createElement('b');
-    b.textContent = 'Dans ce produit : ';
-    found.appendChild(b);
-    found.appendChild(document.createTextNode(forme.formes.join(', ') + '.'));
-  }
+  if (bloc) bloc.className = `choco-verdict ${forme.vrai ? 'ok' : 'ko'}`;
+  if (reponse) reponse.textContent = forme.vrai ? 'C\'est du vrai chocolat' : 'Ce n\'est pas du chocolat';
+  if (found) found.textContent = `Dans ce produit : ${forme.formes.join(', ')}`;
   modal.classList.remove('hidden');
 }
 

@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1786249469">
+<link rel="stylesheet" href="./style.css?v=1786289266">
 </head>
 <body>
 
@@ -241,14 +241,33 @@
         <div class="modal-backdrop"></div>
         <div class="modal-content">
           <div class="modal-header">
-            <h2>Le chocolat n'est pas le cacao</h2>
+            <h2>Vrai chocolat ou cacao ?</h2>
             <button class="modal-close" id="choco-modal-close">✕</button>
           </div>
           <div class="modal-body">
-            <p>Un chocolat doit contenir la fève entière : la <b>pâte de cacao</b> et le <b>beurre de cacao</b>, sa matière grasse (directive 2000/36/CE). Le cacao en poudre, lui, est cette même fève dont on a retiré ce beurre, la partie la moins chère. Il donne le goût, pas la matière.</p>
-            <p id="choco-modal-found"></p>
-            <p><b>Comptent comme du vrai chocolat :</b> chocolat, pâte ou masse de cacao, fèves de cacao, grué, beurre de cacao.</p>
-            <p><b>Ne comptent pas :</b> cacao en poudre, cacao maigre, cacao alcalinisé, cocoa solids.</p>
+            <!-- La réponse d'abord : en rayon, on lit trois lignes, pas un bloc. -->
+            <div class="choco-verdict" id="choco-verdict">
+              <div class="choco-answer" id="choco-answer"></div>
+              <div class="choco-found" id="choco-modal-found"></div>
+            </div>
+            <p class="choco-why">Le chocolat, c'est la fève entière : sa pâte <b>et</b> son beurre. Le cacao en poudre, c'est la même fève sans le beurre : le goût, pas la matière.</p>
+            <div class="choco-cols">
+              <div>
+                <div class="choco-head ok">Du vrai chocolat</div>
+                <div>chocolat</div>
+                <div>pâte ou masse de cacao</div>
+                <div>fèves de cacao, grué</div>
+                <div>beurre de cacao</div>
+              </div>
+              <div>
+                <div class="choco-head ko">Du cacao seul</div>
+                <div>cacao en poudre</div>
+                <div>cacao maigre</div>
+                <div>cacao alcalinisé</div>
+                <div>cocoa solids</div>
+              </div>
+            </div>
+            <p class="choco-source">Directive 2000/36/CE</p>
           </div>
         </div>
       </div>
@@ -270,7 +289,7 @@
   </div>
 </div>
 
-<script src="./rules.js?v=1786249469" defer></script>
-<script src="./app.js?v=1786249469" defer></script>
+<script src="./rules.js?v=1786289266" defer></script>
+<script src="./app.js?v=1786289266" defer></script>
 </body>
 </html>
