@@ -165,6 +165,33 @@ const T = [
  ['poireaux dans les ingrédients','Veloute poireau et pomme de terre','poireaux, eau, pomme de terre, lait, sel','clean'],
  ['poireaux dans le nom','Soupe aux poireaux','poireaux, eau, creme, sel','clean'],
  ['choux dans les ingrédients','Salade de chou','choux blancs, carottes, vinaigre','clean'],
+ // ---- FAMILLE 14 : LE MARQUEUR "GOÛT" N'EST PAS UN MORCEAU DE MOT ----
+ // Trouvé le 2026-08-08 sur de vrais produits. "gout" se déclenchait à
+ // l'intérieur de "goûter" et de "gouttes", et la capture prenait jusqu'à DEUX
+ // mots : d'où des jetons impossibles ("er aux", "tes de", "chocolat au") que
+ // le moteur cherchait ensuite dans les ingrédients, sans jamais les trouver.
+ // Résultat : accusation automatique de produits parfaitement honnêtes.
+ ['gouter n est pas gout','Goûter aux raisins','farine de ble 59,4%, sucre, huile de colza, raisins secs 10%, pate de raisins 3,3%','clean'],
+ ['gouter + vraie saveur','Goûter 4S Saveur pommes','farine de ble 64,4%, huile de colza, semoule de pommes sechees','clean'],
+ ['gouter + pepites reelles','Goûter pépites de chocolat','farine de ble 52%, pepites de chocolat 14,6% (pate de cacao, sucre, beurre de cacao)','clean'],
+ ['capture a deux mots','Prince Goût Chocolat au blé complet','cereale 50% (farine de ble), sucre, huiles vegetales, cacao maigre 4,5%','clean'],
+ ['gouttes ne sont pas gout','Cookies aux gouttes de chocolat','farine, gouttes de chocolat 20%, sucre, oeufs','clean'],
+ ['gouttes de citron','Tarte aux gouttes de citron','farine, beurre, gouttes de citron, sucre','clean'],
+ // Un mot inconnu du dictionnaire n'est pas vérifiable : on se tait, on
+ // n'accuse pas. Chercher "barbecue" tel quel dans les ingrédients est
+ // exactement le mécanisme de fausse accusation que les paires FR/EN évitent.
+ ['saveur inconnue = muet','Chips goût barbecue','pomme de terre, huile de tournesol, sel, aromes','noclaim'],
+ // NON-RÉGRESSION : le vrai "goût X" doit rester détecté. Ici le fabricant a
+ // prévenu ("goût fraise"), donc "À vérifier" et non "Trompeur" - mais surtout
+ // pas silencieux : il n'y a que de l'arôme dans le pot.
+ ['vrai gout X detecte','Yaourt gout fraise','lait, sucre, arome de fraise','warning'],
+ ['vraie tromperie sans reserve','Yaourt a la fraise','lait, sucre, arome de fraise','misleading'],
+ // "corn" et "maize" sont le même grain. Sans la seconde forme, les Corn Flakes
+ // de Kellogg's - dont la liste commence par "Maize" - étaient déclarés
+ // TROMPEURS, sur l'un des produits les plus scannés au monde.
+ ['corn = maize','Corn Flakes','maize, barley malt extract, sugar, salt','clean'],
+ ['corn = mais FR','Corn Flakes','mais, extrait de malt d orge, sucre, sel','clean'],
+ ['corn vraiment absent','Corn Flakes','rice, sugar, salt, barley malt','misleading'],
  // ---- FAMILLE 8 : substitution d'un aliment cher par un moins cher ----
  // Le coeur du sujet : payer le prix du noble, manger le bon marché.
  ['cabillaud -> pangasius','Filet de cabillaud','pangasius, eau, sel','misleading'],

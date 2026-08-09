@@ -72,10 +72,33 @@ const NON_LITERAL_EXPRESSIONS = [
   /\bmettre du beurre dans les epinards\b/,
 ];
 
+// Mots qui annoncent une SAVEUR. Leurs flexions sont écrites une par une, et
+// l'ensemble est encadré de limites de mot au moment de l'emploi.
+//
+// ⚠️ Un simple radical ne suffit pas, et ça a coûté cher : "gout" se déclenchait
+// à l'intérieur de "goûter" et de "gouttes". "Goûter aux raisins" (10 % de
+// raisins secs) était marqué À vérifier avec le libellé « "er aux" est une
+// saveur », et "Cookies aux gouttes de chocolat" (20 % de chocolat) était
+// accusé sur « tes de ». Un simple \b en tête n'aurait rien changé : il faut
+// une limite APRÈS le mot. D'où les flexions explicites plutôt que des
+// radicaux, sinon "aromatisée" ne correspondrait plus.
+const SAVEUR_WORDS = [
+  'aromes?', 'aromas?',
+  'aromatis(?:e|ee|es|ees|ant|ants|ante|antes)',
+  'saveurs?', 'gouts?',
+  'parfum(?:s|e|ee|es|ees)?',
+  'essences?',
+].join('|');
+
 // Extrait l'aliment annoncé derrière une formule de saveur : "arôme de fraise",
 // "à saveur de chocolat", "aromatisé à la vanille", "goût citron"...
-// (Complète la détection directe par FOOD_WORDS, pour les aliments hors liste.)
-const FLAVOR_PATTERN = /(?:arome|aromatise|saveur|gout|parfum|essence|extrait|concentre)s?\s*(?:naturels?\s*|artificiels?\s*)?(?:de\s+|d'|a la\s+|au\s+|aux\s+)?([a-z]+(?:\s+[a-z]+)?)/g;
+// (Complète la détection directe par FOOD_WORDS, pour les formes fléchies.)
+const FLAVOR_PATTERN = new RegExp(
+  `\\b(?:${SAVEUR_WORDS}|extraits?|concentre(?:s|e|es|ees)?)\\b` +
+  `\\s*(?:naturels?\\s*|artificiels?\\s*)?(?:de\\s+|d'|a la\\s+|au\\s+|aux\\s+)?` +
+  `([a-z]+(?:\\s+[a-z]+)?)`,
+  'g'
+);
 
 // Mots d'ingrédients/fruits assez identifiables pour qu'on les vérifie quand ils
 // apparaissent tels quels dans le nom du produit (ex. "Blueberry Waffles"),
@@ -245,7 +268,10 @@ const FOOD_PAIRS = [
   // -- Légumes
   ['tomate', 'tomato'], ['carotte', 'carrot'], ['oignon', 'onion'],
   ['ail', 'garlic'], ['epinard', 'spinach'], ['courgette', 'zucchini'],
-  ['brocoli', 'broccoli'], ['champignon', 'mushroom'], ['mais', 'corn'],
+  ['brocoli', 'broccoli'], ['champignon', 'mushroom'],
+  // "maize" est la forme britannique de "corn" : les Corn Flakes de Kellogg's
+  // listent "Maize", et étaient donc accusés de ne pas contenir de maïs.
+  ['mais', 'corn', 'maize'],
   ['betterave', 'beet'], ['concombre', 'cucumber'], ['chou', 'cabbage'],
   ['celeri', 'celery'], ['poireau', 'leek'], ['olive'],
   ['citrouille', 'pumpkin'], ['poivron'],
@@ -452,10 +478,19 @@ function findFlavorMention(productName) {
   const nameNorm = normalize(productName);
   const flavors = new Set();
 
-  // Cherche toutes les saveurs "saveur X", "goût X", "parfum X"
+  // Cherche toutes les saveurs "saveur X", "goût X", "parfum X".
+  // La capture peut ramener deux mots ("chocolat au blé") ou un mot inconnu
+  // ("barbecue"). On ne retient que ce qui est un ALIMENT CONNU, sinon on se
+  // tait : sans entrée au dictionnaire, on n'a pas ses traductions, et
+  // isMentionedInIngredients irait chercher le mot brut dans les ingrédients -
+  // le mécanisme exact des fausses accusations que les paires FR/EN évitent.
+  // "Prince Goût Chocolat au blé complet" capturait "chocolat au", introuvable
+  // par construction, donc accusé à coup sûr.
   const explicitMatches = nameNorm.matchAll(FLAVOR_PATTERN);
   for (const match of explicitMatches) {
-    flavors.add(match[1].trim());
+    const capture = match[1].trim();
+    const base = NAME_FORM_TO_BASE[capture] || NAME_FORM_TO_BASE[capture.split(/\s+/)[0]];
+    if (base) flavors.add(base);
   }
 
   // Cherche tous les FOOD_WORDS dans le nom - pluriels ET formes adjectivales
@@ -522,14 +557,11 @@ function nameFormPattern(word) {
 // aromatiques" sont un vrai ingrédient. Les deux radicaux sont distincts
 // (arome / aromatis vs aromatique), donc aucun chevauchement.
 const FLAVOUR_MARKER = new RegExp([
-  'arome',                       // arôme, arômes
-  'aromatis',                    // aromatisé, aromatisant, aromatisée
-  '\\baroma\\b',                 // aroma (EN) sans attraper "aromatic"
-  'saveur',                      // « à saveur de » : la formule exigée par l'ACIA
-  'gout',                        // goût de
-  'parfum',                      // parfum, parfumé
-  'essence',
-  'artificiel', 'artificial',    // « arôme artificiel »
+  // arôme(s), aromatisé(e), saveur(s), goût(s), parfum(é), essence(s) - avec
+  // limites de mot : sans elles, l'ingrédient réel "gouttes de chocolat" était
+  // pris pour un marqueur de saveur, et le chocolat déclaré absent.
+  `\\b(?:${SAVEUR_WORDS})\\b`,
+  'artificiels?', 'artificial',  // « arôme artificiel »
   'imitation',
   'simul',                       // simulé / simulated
   'simili',                      // ACIA : « pizza au simili-crabe »
@@ -623,8 +655,11 @@ const HEDGE_ADJ_EN = /\b(?:chocolate?y|fruity|buttery|cheesy|creamy|nutty|minty|
 //    "façon", "type", "style", "imitation", "simili-" (formule ACIA)...
 const HEDGE_STRUCTURAL = /\bfacon\b|\bmaniere de\b|\btype\b|\bstyle\b|\bgenre\b|\bimitation\b|simili|\bsubstitut|\bsimilaire\b|\bsuccedane|\blike\b|\bvegan\b/;
 
-// 4) Mots de saveur explicites, sur le nom normalisé.
-const HEDGE_FLAVOUR_WORDS = /arome|aromatis|saveur|gout|parfum|essence|artificiel|artificial|flavou?r/;
+// 4) Mots de saveur explicites, sur le nom normalisé. Mêmes limites de mot :
+//    "Goûter aux raisins" n'est pas une réserve, c'est un nom de biscuit.
+const HEDGE_FLAVOUR_WORDS = new RegExp(
+  `\\b(?:${SAVEUR_WORDS})\\b|artificiels?|artificial|flavou?r`
+);
 
 function hasHedgeWord(productName) {
   const raw = String(productName || '');

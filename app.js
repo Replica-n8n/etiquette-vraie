@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.43';
+const APP_VERSION = 'v1.44';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786230856';
+const BUILD = '1786245020';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -49,6 +49,9 @@ const VERDICT_META = {
   // OFF n'a pas la composition. Ici tout va bien, il n'y avait rien à comparer.
   noclaim: { label: 'Rien à vérifier', className: 'v-noclaim' },
   unknown: { label: 'Impossible de vérifier', className: 'v-unknown' },
+  // La liste existe, mais dans une langue hors du dictionnaire. Distinct de
+  // "unknown" : proposer une photo ne servirait à rien, la liste est déjà là.
+  foreign: { label: 'Langue non prise en charge', className: 'v-unknown' },
 };
 
 // Couleurs alignées sur les 3 tokens du design system (var --green/--amber/--red)
@@ -747,7 +750,7 @@ async function searchProducts(term, onRetry, signal) {
 // de "photo envoyée, OFF ne l'a pas encore validée". Sans ce champ, plusieurs
 // utilisateurs photographieraient le même produit en série - chaque envoi
 // REMPLACE l'image de référence, donc une photo floue peut en dégrader une nette.
-const PRODUCT_FIELDS = 'product_name,generic_name,ingredients_text,brands,last_modified_t,image_front_small_url,image_ingredients_url,ingredients,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags';
+const PRODUCT_FIELDS = 'product_name,generic_name,ingredients_text,ingredients_text_fr,ingredients_text_en,lang,brands,last_modified_t,image_front_small_url,image_ingredients_url,ingredients,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags';
 
 async function fetchProduct(code) {
   // API v2 et NON v0 : la v0 APLATIT l'arbre des ingrédients. Un sous-ingrédient
@@ -967,6 +970,32 @@ function renderIngredientExcerpt(ingredientsText, detail, verdictClassName) {
   captionEl.textContent = caption;
 }
 
+// QUEL TEXTE D'INGRÉDIENTS ANALYSER.
+//
+// Le dictionnaire du moteur ne connaît que le français et l'anglais. Or l'app
+// lisait `ingredients_text`, c'est-à-dire la langue PRINCIPALE de la fiche :
+// sur un produit belge ou allemand, elle cherchait "vanille" dans un texte
+// néerlandais et concluait à son absence. Résultat mesuré le 2026-08-08 :
+// 6 des 13 accusations d'un échantillon de 242 produits étaient fausses pour
+// cette seule raison, dont ALPRO vanille et Lindt Excellence 70 % Cacao.
+//
+// Open Food Facts stocke pourtant les traductions à part : les six fiches
+// fautives avaient toutes une version française ou anglaise. Il suffisait de
+// demander le bon champ.
+//
+// Repli sur `ingredients_text` quand la fiche se déclare fr/en sans remplir le
+// champ traduit - cas réel ("Kilishi", lang=en, ingredients_text_en vide).
+// Si rien n'est lisible, on ne conclut PAS : mieux vaut se taire qu'accuser.
+function ingredientsForAnalysis(product) {
+  const fr = cleanText(product.ingredients_text_fr);
+  if (fr) return { texte: fr, lisible: true };
+  const en = cleanText(product.ingredients_text_en);
+  if (en) return { texte: en, lisible: true };
+  const brut = cleanText(product.ingredients_text);
+  const langueConnue = product.lang === 'fr' || product.lang === 'en';
+  return { texte: brut, lisible: !brut || langueConnue };
+}
+
 // OFF contient parfois la chaîne littérale "null"/"undefined" (saisie ou import
 // de travers) : ne jamais l'afficher telle quelle à l'utilisateur.
 function cleanText(value) {
@@ -1037,7 +1066,13 @@ function realShares(detail, product) {
 }
 
 function renderResult(product) {
-  const { verdict, headline, legalNote, detail } = detectVerdict(product.product_name, product.ingredients_text);
+  const ingr = ingredientsForAnalysis(product);
+  const { verdict, headline, legalNote, detail } = ingr.lisible || !ingr.texte
+    ? detectVerdict(product.product_name, ingr.texte)
+    : {
+      verdict: 'foreign',
+      headline: "Composition écrite dans une langue que l'app ne lit pas encore",
+    };
   const meta = VERDICT_META[verdict];
 
   const productName = cleanText(product.product_name);
@@ -1162,7 +1197,9 @@ function renderResult(product) {
     legalAccordion.classList.add('hidden');
   }
 
-  renderIngredientExcerpt(product.ingredients_text, detail, meta.className);
+  // La liste AFFICHÉE est celle qui a été ANALYSÉE : sinon le surlignage
+  // désignerait des lignes d'un autre texte que celui du verdict.
+  renderIngredientExcerpt(ingr.texte, detail, meta.className);
 
   document.getElementById('freshness-text').textContent = freshnessText(product.last_modified_t);
   document.getElementById('off-link').href = `https://world.openfoodfacts.org/product/${product.code}`;
