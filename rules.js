@@ -743,11 +743,48 @@ const LEGAL_NOTE_POSITION =
 const LEGAL_NOTE_LOW_PERCENT =
   'L\'ingrédient mis en avant par le nom est bien présent, mais en très faible quantité. Les lignes directrices de l\'ACIA visent précisément ce cas : mettre un aliment en évidence alors qu\'il est "présent en très faible concentration" donne une fausse impression de sa quantité réelle. Le pourcentage affiché ici est celui déclaré par le fabricant lui-même dans la liste d\'ingrédients.';
 
-const LEGAL_NOTE_HEDGE =
-  'Une mention comme "chocolaté", "saveur X" ou "goût X" est légalement autorisée pour un produit qui ne contient PAS l\'ingrédient : elle décrit une saveur, pas une présence. Ainsi "chocolaté" ne peut pas être appelé "chocolat", faute de beurre de cacao en quantité suffisante. Le fabricant respecte donc l\'étiquetage - mais le nom reste trompeur à la lecture rapide, d\'où cette mise en garde plutôt qu\'une accusation.';
+// TEXTES LÉGAUX NOMMÉS.
+//
+// Ils étaient génériques et prenaient TOUJOURS le chocolat en exemple : devant
+// un produit à la noisette, l'app expliquait une règle sur le beurre de cacao.
+// On nomme donc l'aliment réellement concerné.
+//
+// ⚠️ Piège évité : la phrase sur le beurre de cacao n'est pas un exemple
+// interchangeable, c'est un fait juridique PROPRE au chocolat (directive
+// 2000/36/CE). La recopier avec "noisette" à la place écrirait une règle qui
+// n'existe pas. Elle n'apparaît donc que quand le chocolat est en cause.
 
-const LEGAL_NOTE_FLAVOR =
-  'La mention d\'un ingrédient dans le nom ("saveur / goût X", ou le nom direct d\'un fruit/arôme) décrit une saveur perçue, pas un ingrédient garanti. Le règlement (UE) n°1169/2011 exige seulement que "arôme" figure dans la liste - pas qu\'il précise sa source.';
+// "de noisette" mais "d'amande". Le h reste aspiré en français : on écrit
+// bien "de homard", pas "d'homard".
+function articleDe(mot) {
+  return /^[aeiouyàâéèêîôûœ]/i.test(mot) ? `d'${mot}` : `de ${mot}`;
+}
+
+// "noisette", "noisette et chocolat", "noisette, amande et chocolat"
+function enumerer(mots) {
+  if (mots.length <= 1) return mots[0] || '';
+  return `${mots.slice(0, -1).join(', ')} et ${mots[mots.length - 1]}`;
+}
+
+const FAMILLE_CHOCOLAT = new Set(['chocolat', 'chocolate', 'chocolatey', 'choco', 'cacao', 'cocoa']);
+
+function legalNoteHedge(motsManquants) {
+  const noms = motsManquants.map(displayFlavor);
+  const premier = noms[0];
+  const phrases = [
+    `Une mention comme "goût ${premier}" ou "saveur ${premier}" est légalement autorisée sur un produit qui ne contient pas ${articleDe(premier)} : elle décrit une saveur, pas une présence.`,
+  ];
+  if (motsManquants.some((m) => FAMILLE_CHOCOLAT.has(m))) {
+    phrases.push('Pour le chocolat, la loi va plus loin : un produit "chocolaté" ne peut pas être appelé "chocolat", faute de beurre de cacao en quantité suffisante.');
+  }
+  phrases.push('Le fabricant respecte donc l\'étiquetage - mais le nom reste trompeur à la lecture rapide, d\'où cette mise en garde plutôt qu\'une accusation.');
+  return phrases.join(' ');
+}
+
+function legalNoteFlavor(motsManquants) {
+  const noms = enumerer(motsManquants.map(displayFlavor));
+  return `Le nom met en avant ${noms}, mais la liste d'ingrédients n'en contient que l'arôme. Un nom qui évoque un aliment décrit une saveur perçue, pas un ingrédient garanti : le règlement (UE) n°1169/2011 exige seulement que le mot "arôme" figure dans la liste, pas qu'il en précise la source.`;
+}
 
 // Détecte si le champ "ingrédients" d'OFF contient en fait un TABLEAU NUTRITIONNEL
 // (donnée corrompue) au lieu d'une vraie liste. On n'utilise QUE des marqueurs forts
@@ -904,7 +941,7 @@ function detectVerdict(productName, ingredientsText) {
             headline: missingFlavors.length === 1
               ? `"${liste}" est une saveur, pas l'ingrédient`
               : `${liste} : des saveurs, pas les ingrédients`,
-            legalNote: LEGAL_NOTE_HEDGE,
+            legalNote: legalNoteHedge(missingFlavors),
             detail: { ...detail, rule: 'saveur-annoncee' },
           };
         }
@@ -915,7 +952,7 @@ function detectVerdict(productName, ingredientsText) {
           headline: missingFlavors.length === 1
             ? `"${liste}" absent - seulement un arôme`
             : `${missingFlavors.length} saveurs absentes - seulement des arômes`,
-          legalNote: LEGAL_NOTE_FLAVOR,
+          legalNote: legalNoteFlavor(missingFlavors),
           detail: { ...detail, rule: 'saveur-sans-ingredient' },
         };
       }

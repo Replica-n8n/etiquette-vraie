@@ -252,3 +252,36 @@ for(const r of res){ if(!r.ok)ko++;
   console.log(`${r.ok?'✅':'❌'} ${r.v.padEnd(10)} (${r.exp.padEnd(10)}) ${r.lbl.padEnd(22)} ${r.ok?'':'→ '+r.h}`);
 }
 console.log(`\n${T.length-ko}/${T.length} passent` + (ko?` — ${ko} ÉCHEC(S)`:' — TOUT PASSE'));
+
+// ---------------------------------------------------------------------------
+// TEXTES LÉGAUX : ils doivent parler de l'aliment du produit, pas du chocolat
+// par défaut. Un texte qui explique le beurre de cacao devant un produit à la
+// noisette, c'est une règle inventée.
+// ---------------------------------------------------------------------------
+console.log('\n--- Textes légaux adaptés à l\'aliment ---');
+let kn = 0;
+function note(label, nom, ingredients, doitContenir, neDoitPas) {
+  const r = detectVerdict(nom, ingredients);
+  const t = r.legalNote || '';
+  const ok = doitContenir.every((m) => t.includes(m)) && (neDoitPas || []).every((m) => !t.includes(m));
+  if (!ok) kn++;
+  console.log(`${ok ? '✅' : '❌'} ${label}${ok ? '' : `\n     ${t}`}`);
+}
+note('noisette : nommée, et AUCUNE mention du beurre de cacao',
+  'Moelleux gout choco-noisette', 'cereales, sucre, cacao maigre 2,4%, aromes',
+  ['noisette'], ['beurre de cacao']);
+// Forme ACCENTUÉE obligatoire : "chocolatée" est la réserve, "chocolate" est
+// l'anglais. C'est ce qui aiguille vers le texte "le fabricant a prévenu".
+note('chocolat : la règle du beurre de cacao réapparaît',
+  'Barre chocolatée', 'avoine, sucre, arome chocolat',
+  ['chocolat', 'beurre de cacao'], []);
+note('élision : "d\'amande" et non "de amande"',
+  'Gateau gout amande', 'farine, sucre, arome amande',
+  ["d'amande"], ['de amande']);
+note('sans réserve : le texte nomme l\'aliment absent',
+  'Yaourt a la fraise', 'lait, sucre, arome de fraise',
+  ['fraise', '1169/2011'], []);
+note('plusieurs aliments : énumérés',
+  'Barre fraise framboise', 'avoine, sucre, arome de fraise, arome de framboise',
+  ['fraise et framboise'], []);
+console.log(kn ? `${kn} ÉCHEC(S) sur les textes légaux` : 'Textes légaux : tout passe');
