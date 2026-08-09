@@ -137,6 +137,28 @@ body{
 .home-button.scan:hover{ background:var(--brand-hover); border-color:var(--brand-hover); }
 .home-button .btn-icon{ width:18px; height:18px; flex-shrink:0; }
 
+/* Proposition d'installation : une ligne, ton discret. Elle ne recouvre rien
+   et ne demande pas de croix pour disparaître - elle s'efface d'elle-même une
+   fois l'app installée. */
+.install-hint{
+  margin-top:16px; text-align:center;
+  font-size:12px; color:var(--ink-soft); line-height:1.5;
+}
+.install-hint.hidden{ display:none; }
+.install-hint button{
+  /* 13px de marge intérieure verticale : la cible tactile atteint les 44px
+     imposés plus bas dans cette feuille. Sans ça elle faisait 23px, sur une
+     app qu'on utilise d'une main avec un caddie dans l'autre. */
+  background:none; border:none; padding:13px 10px; line-height:18px;
+  font-family:inherit; font-size:12px; font-weight:600;
+  /* --green, pas --brand : ce dernier est FIGÉ dans les deux modes parce qu'il
+     sert de fond plein sous du texte blanc. En texte sur fond sombre il
+     tomberait à un contraste de 2,5. --green, lui, s'éclaircit en mode sombre. */
+  color:var(--green); text-decoration:underline; cursor:pointer;
+}
+.install-hint button:hover{ color:var(--green-dark); }
+.install-hint button:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+
 /* Écran de recherche */
 .search-screen{ padding:2px 20px 20px; }
 .search-head{ margin-bottom:16px; }

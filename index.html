@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1786289266">
+<link rel="stylesheet" href="./style.css?v=1786295515">
 </head>
 <body>
 
@@ -41,6 +41,14 @@
         <div id="history-section" class="history-section hidden">
           <div class="history-title">Derniers produits</div>
           <ul id="history-list" class="history-list"></ul>
+        </div>
+        <!-- Proposition d'installation. Reste masquée tant que les trois
+             conditions ne sont pas réunies (voir app.js) : Android l'a
+             déclarée installable, la personne a déjà consulté un produit,
+             et elle ne l'a pas déjà installée. -->
+        <div id="install-hint" class="install-hint hidden">
+          Plus rapide depuis ton écran d'accueil :
+          <button id="install-button" type="button">installer</button>
         </div>
       </div>
     </div>
@@ -289,7 +297,7 @@
   </div>
 </div>
 
-<script src="./rules.js?v=1786289266" defer></script>
-<script src="./app.js?v=1786289266" defer></script>
+<script src="./rules.js?v=1786295515" defer></script>
+<script src="./app.js?v=1786295515" defer></script>
 </body>
 </html>

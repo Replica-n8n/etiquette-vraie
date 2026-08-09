@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.48';
+const APP_VERSION = 'v1.50';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786289266';
+const BUILD = '1786295515';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -993,6 +993,45 @@ function renderIngredientExcerpt(ingredientsText, detail, verdictClassName) {
   captionEl.textContent = caption;
 }
 
+// ===========================================================================
+// PROPOSITION D'INSTALLATION (PWA)
+//
+// Trois conditions, toutes nécessaires :
+//   1. `beforeinstallprompt` s'est déclenché. C'est une PREUVE, pas une
+//      supposition : l'événement n'existe que si le navigateur juge l'app
+//      installable ET qu'elle ne l'est pas déjà. Il ne se déclenche jamais
+//      dans les navigateurs intégrés de WhatsApp/Messenger/Signal, par où
+//      arrive la plupart des gens - ils sont donc exclus sans renifler le
+//      user-agent, ce que le projet s'interdit.
+//   2. La personne a déjà consulté une fiche produit. Proposer d'installer
+//      avant d'avoir montré quoi que ce soit, c'est une bannière de pub.
+//   3. Elle n'a pas déjà installé (`appinstalled`, ou lancement en standalone).
+//
+// iOS n'expose AUCUNE API d'installation : rien ne s'affiche là-bas pour
+// l'instant, c'est une décision, pas un oubli.
+let promptInstallation = null;
+
+function estDejaInstallee() {
+  return window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+}
+
+function marquerProduitVu() {
+  try { localStorage.setItem('ev-produit-vu', '1'); } catch (e) { /* mode privé */ }
+  majPropositionInstallation();
+}
+
+function aDejaVuUnProduit() {
+  try { return localStorage.getItem('ev-produit-vu') === '1'; } catch (e) { return false; }
+}
+
+function majPropositionInstallation() {
+  const ligne = document.getElementById('install-hint');
+  if (!ligne) return; // ancien index.html encore en cache : on ne fait rien
+  const montrer = !!promptInstallation && aDejaVuUnProduit() && !estDejaInstallee();
+  ligne.classList.toggle('hidden', !montrer);
+}
+
 // QUEL TEXTE D'INGRÉDIENTS ANALYSER.
 //
 // Le dictionnaire du moteur ne connaît que le français et l'anglais. Or l'app
@@ -1310,6 +1349,9 @@ function showResultContent() {
   document.getElementById('result-loading').classList.add('hidden');
   document.getElementById('result-error').classList.add('hidden');
   document.getElementById('result-content').classList.remove('hidden');
+  // Une fiche affichée = la personne a vu ce que l'app sait faire. C'est le
+  // seul moment où proposer l'installation a du sens.
+  marquerProduitVu();
 }
 
 // `title` : le titre était figé sur "Produit non trouvé", y compris quand la
@@ -1729,6 +1771,37 @@ if (genericBtn && genericModal) {
   });
   document.getElementById('generic-modal-close').addEventListener('click', fermer);
   genericModal.querySelector('.modal-backdrop').addEventListener('click', fermer);
+}
+
+// Installation : l'événement arrive tôt, souvent avant tout clic. On l'empêche
+// d'ouvrir la bannière native du navigateur pour la proposer nous-mêmes, au bon
+// moment. Ces écouteurs sont sur `window`, donc sans risque pour les suivants.
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  promptInstallation = event;
+  majPropositionInstallation();
+});
+window.addEventListener('appinstalled', () => {
+  promptInstallation = null;
+  const ligne = document.getElementById('install-hint');
+  if (ligne) ligne.classList.add('hidden');
+});
+
+// Élément NOUVEAU : garde obligatoire (ancien index.html servi en cache).
+const installButton = document.getElementById('install-button');
+if (installButton) {
+  installButton.addEventListener('click', async () => {
+    if (!promptInstallation) return;
+    const evenement = promptInstallation;
+    promptInstallation = null; // un prompt ne peut servir qu'une fois
+    majPropositionInstallation();
+    try {
+      await evenement.prompt();
+      await evenement.userChoice;
+    } catch (err) {
+      dbg('[Install] prompt refusé par le navigateur:', err && err.message);
+    }
+  });
 }
 
 // Popup "forme du chocolat". Élément NOUVEAU : gardes obligatoires, sinon une
