@@ -404,19 +404,8 @@ const FOOD_PAIRS = [
 //            Dans un nom, c'est COMPOUND_TRAPS qui les reconnaît, en une seule
 //            expression régulière capable du pluriel français ("pommeS de
 //            terre"), que nameFormPattern ne sait pas produire.
-//   'lotte' : nom d'une marque coréenne de confiseries (Choco Pie, Pepero).
-//            L'app cherchait le POISSON dans un gâteau au chocolat et le
-//            déclarait trompeur. Mesuré le 2026-08-09 : le seul vrai produit
-//            à la lotte trouvé dans OFF n'a pas de liste d'ingrédients, donc
-//            l'app ne le vérifiait de toute façon pas. Le mot reste cherché
-//            dans les INGRÉDIENTS : "Monkfish fillet" composé de "lotte" est
-//            toujours confirmé.
-//            La solution générale - retirer la marque du nom - a été mesurée
-//            puis écartée : sur 135 produits populaires, 0 accusation
-//            supprimée, 1 régression ("Fromage à tartiner Madame Loïk", dont
-//            la marque contient "Fromage", perdait sa vérification).
 const NAME_DETECTION_BLOCKLIST = new Set([
-  'ail', 'mais', 'pomme de terre', 'pommes de terre', 'lotte',
+  'ail', 'mais', 'pomme de terre', 'pommes de terre',
 ]);
 
 // Fusion : chaque forme rejoint FOOD_WORDS et pointe vers toutes ses soeurs.
