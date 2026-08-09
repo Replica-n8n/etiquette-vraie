@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.46';
+const APP_VERSION = 'v1.47';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786247794';
+const BUILD = '1786249469';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1050,13 +1050,58 @@ function shareSuffix(part) {
   return frag;
 }
 
-function renderCompareValue(el, text, shares) {
+// "chocolat : présent" ne dit pas si c'est du VRAI chocolat ou du cacao
+// dégraissé. La sous-ligne répond à la question que l'acheteuse se pose, en
+// trois mots ; le "i" porte l'explication et la forme exacte. Afficher la
+// forme brute ("cacao maigre en poudre") n'apprendrait rien à qui ignore le
+// rôle du beurre de cacao - c'est ce qui a fait écarter cette variante.
+function formeSuffix(forme) {
+  const frag = document.createDocumentFragment();
+  // Le bouton n'apparaît QUE si son popup existe déjà dans le HTML : au
+  // déploiement, le nouveau app.js tourne un ou deux chargements avec l'ancien
+  // index.html, et un "i" qui n'ouvre rien serait pire que pas de "i".
+  if (document.getElementById('choco-modal')) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'info-inline';
+    btn.textContent = 'i';
+    btn.setAttribute('aria-label', 'Pourquoi cette forme compte, ou non, comme du chocolat');
+    btn.addEventListener('click', () => ouvrirFormeModal(forme));
+    frag.appendChild(btn);
+  }
+  const sub = document.createElement('span');
+  sub.className = `compare-forme ${forme.vrai ? 'ok' : 'ko'}`;
+  sub.textContent = forme.vrai ? 'vrai chocolat' : 'cacao en poudre, pas du chocolat';
+  frag.appendChild(sub);
+  return frag;
+}
+
+function ouvrirFormeModal(forme) {
+  const modal = document.getElementById('choco-modal');
+  if (!modal) return;
+  const found = document.getElementById('choco-modal-found');
+  if (found) {
+    found.innerHTML = '';
+    const b = document.createElement('b');
+    b.textContent = 'Dans ce produit : ';
+    found.appendChild(b);
+    found.appendChild(document.createTextNode(forme.formes.join(', ') + '.'));
+  }
+  modal.classList.remove('hidden');
+}
+
+function renderCompareValue(el, text, shares, formes) {
   el.innerHTML = '';
   const parts = String(text || '').split(',').map((s) => s.trim()).filter(Boolean);
   const shareAt = (i) => (Array.isArray(shares) && shares[i]) || null;
+  const formeAt = (i) => (Array.isArray(formes) && formes[i]) || null;
+  const garnir = (cible, i) => {
+    if (shareAt(i)) cible.appendChild(shareSuffix(shareAt(i)));
+    if (formeAt(i)) cible.appendChild(formeSuffix(formeAt(i)));
+  };
   if (parts.length <= 1) {
     el.textContent = parts[0] || '';
-    if (parts.length === 1 && shareAt(0)) el.appendChild(shareSuffix(shareAt(0)));
+    if (parts.length === 1) garnir(el, 0);
     return;
   }
   const ul = document.createElement('ul');
@@ -1064,7 +1109,7 @@ function renderCompareValue(el, text, shares) {
   parts.forEach((part, i) => {
     const li = document.createElement('li');
     li.textContent = part;
-    if (shareAt(i)) li.appendChild(shareSuffix(shareAt(i)));
+    garnir(li, i);
     ul.appendChild(li);
   });
   el.appendChild(ul);
@@ -1178,7 +1223,7 @@ function renderResult(product) {
     renderCompareValue(suggestEl, detail.compareSuggest);
     // "homard" devient "homard 3,8 %" : présence et proportion ne sont pas la
     // même promesse. Voir 2026-08-04-proportion-reelle-design.md
-    renderCompareValue(realEl, detail.compareReal, realShares(detail, product));
+    renderCompareValue(realEl, detail.compareReal, realShares(detail, product), detail.formes);
   } else {
     compareEl.classList.add('hidden');
   }
@@ -1685,6 +1730,18 @@ if (genericBtn && genericModal) {
   });
   document.getElementById('generic-modal-close').addEventListener('click', fermer);
   genericModal.querySelector('.modal-backdrop').addEventListener('click', fermer);
+}
+
+// Popup "forme du chocolat". Élément NOUVEAU : gardes obligatoires, sinon une
+// exception ici tuerait tous les écouteurs enregistrés en dessous pendant le
+// cycle où l'ancien index.html est encore servi (ce qui a cassé la v1.28).
+const chocoModal = document.getElementById('choco-modal');
+if (chocoModal) {
+  const fermer = () => chocoModal.classList.add('hidden');
+  const btnFermer = document.getElementById('choco-modal-close');
+  if (btnFermer) btnFermer.addEventListener('click', fermer);
+  const fond = chocoModal.querySelector('.modal-backdrop');
+  if (fond) fond.addEventListener('click', fermer);
 }
 
 // Additives modal

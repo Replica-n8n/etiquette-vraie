@@ -512,6 +512,10 @@ button, .back, .result-item, .history-item{ -webkit-tap-highlight-color:transpar
    Facts d'une déclaration du fabricant. */
 .compare-pct{ font-family:'IBM Plex Mono', monospace; font-weight:600; }
 .compare-est{ display:block; font-size:8.5px; color:var(--ink-soft); font-weight:400; line-height:1.3; margin-top:-1px; }
+/* Forme du chocolat : la réponse en trois mots, sous le nom de l'aliment. */
+.compare-forme{ display:block; font-size:9px; font-weight:600; line-height:1.3; margin-top:1px; }
+.compare-forme.ok{ color:var(--green); }
+.compare-forme.ko{ color:var(--amber); }
 
 /* Pastille "i" : UN SEUL repère visuel dans toute la fiche - dénomination
    officielle et liste des additifs. Deux "i" d'aspect différent, c'est deux

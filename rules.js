@@ -768,6 +768,54 @@ function enumerer(mots) {
 
 const FAMILLE_CHOCOLAT = new Set(['chocolat', 'chocolate', 'chocolatey', 'choco', 'cacao', 'cocoa']);
 
+// SOUS QUELLE FORME LE CHOCOLAT EST-IL LÀ ?
+//
+// Le moteur range chocolat et cacao dans la même famille, ce qui est bon pour
+// répondre "présent ou absent". Mais ce ne sont pas la même chose : le
+// chocolat, c'est la fève ENTIÈRE - la pâte et son beurre (directive
+// 2000/36/CE). Le cacao en poudre est cette même fève dont on a retiré le
+// beurre, la fraction la moins chère : il donne le goût, pas la matière.
+//
+// On n'en fait PAS une accusation : mesuré le 2026-08-08, cela ne concernerait
+// que 3 produits sur 40, et la première version de la règle accusait "Taza
+// Super Dark" (ingrédients : fèves de cacao, sucre) - le chocolat le plus
+// honnête qui soit. On informe, l'acheteuse juge.
+//
+// ⚠️ La FÈVE compte comme du vrai chocolat. C'est la matière première, pas un
+// succédané : l'oublier revient à accuser les chocolats bean-to-bar.
+const CHOCO_FORMES_VRAIES = [
+  ['chocolat', /\bchocolats?\b|\bchocolates?\b/],
+  ['pâte de cacao', /pate de cacao|masse de cacao|cocoa mass|cocoa liquor|cacao liquor/],
+  ['fèves de cacao', /feves? de cacao|cacao beans?|cocoa beans?|cocoa nibs?|grue de cacao/],
+  ['beurre de cacao', /beurre de cacao|cocoa butter/],
+];
+// Du plus précis au plus vague : on retient le premier qui correspond.
+const CHOCO_FORMES_POUDRE = [
+  ['cacao maigre en poudre', /cacao maigre|fat.?reduced cocoa/],
+  ['cacao alcalinisé', /alcalinise|processed with alkali/],
+  ['cacao en poudre', /cacao en poudre|poudre de cacao|cocoa powder|cocoa solids/],
+  ['cacao', /\bcacaos?\b|\bcocoa\b/],
+];
+
+// Annotation d'un aliment affiché. Seul le chocolat en a une pour l'instant :
+// c'est le seul dont la loi tranche explicitement la forme, et le seul où la
+// substitution par la fraction bon marché est un commerce à part entière.
+// La structure accepte d'autres aliments sans changer d'affichage.
+function formeTrouvee(mot, ingredientsNorm) {
+  if (!FAMILLE_CHOCOLAT.has(mot)) return null;
+  const forme = chocolateForm(ingredientsNorm);
+  return forme ? { aliment: 'chocolat', ...forme } : null;
+}
+
+function chocolateForm(ingredientsText) {
+  const n = normalize(ingredientsText);
+  const vraies = CHOCO_FORMES_VRAIES.filter(([, re]) => re.test(n)).map(([nom]) => nom);
+  if (vraies.length > 0) return { vrai: true, formes: vraies };
+  const poudre = CHOCO_FORMES_POUDRE.find(([, re]) => re.test(n));
+  if (poudre) return { vrai: false, formes: [poudre[0]] };
+  return null;
+}
+
 function legalNoteHedge(motsManquants) {
   const noms = motsManquants.map(displayFlavor);
   const premier = noms[0];
@@ -929,6 +977,13 @@ function detectVerdict(productName, ingredientsText) {
             ...missingFlavors.map((f) => `${displayFlavor(f)} : saveur seule`),
             ...presentFlavors.map((f) => `${displayFlavor(f)} : présent`),
           ].join(', '),
+          // Aligné sur compareReal, part par part. C'est le producteur du
+          // libellé qui produit ses annotations : aucune ré-association
+          // fragile côté affichage. Rien à dire sur un aliment absent.
+          formes: [
+            ...missingFlavors.map(() => null),
+            ...presentFlavors.map((f) => formeTrouvee(f, ingredientsNorm)),
+          ],
         };
         const liste = missingFlavors.map(displayFlavor).join(', ');
 
@@ -991,6 +1046,7 @@ function detectVerdict(productName, ingredientsText) {
           matched: checkedFlavors.join(', '), // mot brut pour le surlignage
           compareSuggest: shown,
           compareReal: shown,
+          formes: checkedFlavors.map((f) => formeTrouvee(f, ingredientsNorm)),
           ...(firstFlavorPos && { index: firstFlavorPos.index, total: firstFlavorPos.total, ratio: firstFlavorPos.ratio }),
         },
       };
@@ -1101,6 +1157,6 @@ if (typeof module !== 'undefined') {
   module.exports = {
     detectVerdict, normalize, findFlavorMention, onlyAppearsAsArome,
     findIngredientPosition, ingredientShare, isMentionedInIngredients,
-    splitIngredientList,
+    splitIngredientList, chocolateForm,
   };
 }
