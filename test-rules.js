@@ -192,6 +192,11 @@ const T = [
  ['corn = maize','Corn Flakes','maize, barley malt extract, sugar, salt','clean'],
  ['corn = mais FR','Corn Flakes','mais, extrait de malt d orge, sucre, sel','clean'],
  ['corn vraiment absent','Corn Flakes','rice, sugar, salt, barley malt','misleading'],
+ // "choco" est l'abréviation la plus courante sur les emballages, et elle
+ // n'était pas au dictionnaire : sur "Moelleux goût choco-noisette", l'app ne
+ // voyait que la noisette et ne disait rien du chocolat.
+ ['choco = chocolat present','Moelleux gout choco-noisette','cereales, sucre, cacao maigre 2,4%, noisettes 5%','clean'],
+ ['choco absent','Barre choco-noisette','farine, sucre, noisettes 10%, aromes','misleading'],
  // ---- FAMILLE 8 : substitution d'un aliment cher par un moins cher ----
  // Le coeur du sujet : payer le prix du noble, manger le bon marché.
  ['cabillaud -> pangasius','Filet de cabillaud','pangasius, eau, sel','misleading'],

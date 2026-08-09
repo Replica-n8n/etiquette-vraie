@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.44';
+const APP_VERSION = 'v1.45';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786245020';
+const BUILD = '1786246057';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -900,36 +900,59 @@ function renderScoreTile(iconId, valueId, meta, fallbackLabel) {
   }
 }
 
+// Coupe la PROSE que les fabricants collent après leur liste : "*Ingrédient
+// issu de l'agriculture biologique.", "Origine : ...", "Peut contenir...".
+// Elle s'agglutine au dernier ingrédient et se fait surligner : sur "Soupe de
+// poireaux", la phrase d'origine contient le mot "poireaux", donc c'est la
+// ligne "poivre blanc" qui s'allumait.
+//
+// Trois points ne terminent PAS une phrase, et les trois se rencontrent :
+//   - "0.5%"                  -> décimale anglaise (le point suit un chiffre)
+//   - "(S. thermophilus)"     -> initiale d'un nom d'espèce, dans un ferment
+//   - tout point entre parenthèses, qui appartient à une précision technique
+function couperProse(item) {
+  let profondeur = 0;
+  for (let i = 0; i < item.length; i++) {
+    const c = item[i];
+    if (c === '(' || c === '[') profondeur++;
+    else if (c === ')' || c === ']') profondeur = Math.max(0, profondeur - 1);
+    if (c !== '.' || profondeur > 0) continue;
+    const apres = item[i + 1];
+    if (apres !== undefined && !/\s/.test(apres)) continue; // 0.5%
+    const avant = item[i - 1] || '';
+    const avantAvant = item[i - 2] || '';
+    const initiale = /[A-ZÀ-Þ]/.test(avant) && !/[A-Za-zÀ-ÿ]/.test(avantAvant);
+    if (initiale) continue;                                  // S. thermophilus
+    return item.slice(0, i).trim();
+  }
+  return item.trim();
+}
+
 // Extrait centré sur l'ingrédient signalé (évite d'afficher une liste entière
 // quand elle fait plusieurs dizaines d'ingrédients).
 function buildIngredientExcerpt(ingredientsText, detail) {
-  const items = (ingredientsText || '')
-    .split(',')
-    .map((s) => s.trim())
-    // Couper la PROSE que les fabricants collent après la liste : "*Ingrédient
-    // issu de l'agriculture biologique.", "Origine : ...", "Peut contenir...".
-    // Elle se retrouve agglutinée au dernier ingrédient et se fait surligner :
-    // sur "Soupe de poireaux", la phrase d'origine contient le mot "poireaux",
-    // donc c'est la ligne "poivre blanc" qui s'allumait. Le point doit être
-    // suivi d'une espace ou de la fin, sinon on couperait un "0.5%" anglais.
-    .map((s) => s.split(/\.(?:\s|$)/)[0].trim())
-    .map(s => s.replace(/^\d+[\s%(\-]*/, '').replace(/\s*\d+[\s%]*$/, '').trim()) // Nettoyer pourcentages début/fin
+  // MÊME découpage que le moteur (rules.js) : c'est ce qui garantit que la
+  // ligne surlignée est celle qu'il a repérée. Découper ici sur toutes les
+  // virgules faisait disparaître les morceaux de décimales ("4%" de "59,4%")
+  // et décalait toutes les lignes suivantes.
+  const items = splitIngredientList(ingredientsText || '')
+    .map(couperProse)
+    // Retirer le pourcentage, décimales comprises : "59,4 %" comme "0.5%".
+    .map((s) => s.replace(/^\d+(?:[.,]\d+)?\s*%\s*/, '').replace(/\s*\d+(?:[.,]\d+)?\s*%\s*$/, '').trim())
     .filter(Boolean);
   if (items.length === 0) return { rows: [], caption: '' };
 
-  if (!detail || detail.index === undefined) {
-    const shown = items;
-    const caption = items.length > 0 ? `${items.length} ingrédient(s) au total.` : '';
-    return {
-      rows: shown.map((text, i) => ({ num: i + 1, text, flagged: false })),
-      caption,
-    };
-  }
-
-  // Extraire les ingrédients à mettre en évidence depuis detail.matched (ex: "boeuf, aubergines, menthe")
-  const matchedIngredients = detail.matched
-    ? detail.matched.split(',').map(s => s.trim().toLowerCase())
+  // Mots à mettre en évidence, venus de detail.matched ("boeuf, aubergines").
+  // ⚠️ Ne PAS abandonner quand detail.index est absent : il ne l'est que sur
+  // les verdicts "l'aliment est confirmé". Tous les verdicts "il manque
+  // quelque chose" n'ont pas d'index, et l'ancienne sortie anticipée éteignait
+  // alors TOUT le surlignage - y compris celui des aliments bien présents.
+  // Sur "Moelleux goût choco-noisette", le cacao était reconnu mais sa ligne
+  // restait éteinte.
+  const matchedIngredients = detail && detail.matched
+    ? detail.matched.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
     : [];
+  const indexRepere = detail && typeof detail.index === 'number' ? detail.index : -1;
 
   // TOUTE la liste, toujours. Avant, un ingrédient unique n'affichait qu'une
   // fenêtre de 5 lignes autour de lui : sur une bisque de 23 ingrédients on en
@@ -946,7 +969,7 @@ function buildIngredientExcerpt(ingredientsText, detail) {
     num: i + 1,
     text,
     flagged: matchedIngredients.some((m) => isMentionedInIngredients(m, normalize(text)))
-      || i === detail.index,
+      || i === indexRepere,
   }));
   return { rows, caption: `${items.length} ingrédient(s) au total.` };
 }
@@ -1636,7 +1659,15 @@ document.getElementById('ingredients-accordion').addEventListener('toggle', (eve
   const listEl = document.getElementById('ingredients-list');
   const cible = listEl.querySelector('[data-flagged]');
   if (!cible) { listEl.scrollTop = 0; return; }
-  listEl.scrollTop = Math.max(0, cible.offsetTop - listEl.clientHeight / 2 + cible.offsetHeight / 2);
+  // offsetTop se mesure depuis le premier ancêtre POSITIONNÉ, qui n'est pas
+  // cette liste : sur les Corn Flakes il valait 476 pour une liste haute de
+  // 254, donc le calcul demandait un défilement supérieur au maximum et la
+  // liste s'ouvrait tout en bas - l'ingrédient repéré, lui, était en haut.
+  // La différence de rectangles est relative à la liste, quelle que soit la
+  // mise en page autour.
+  const ecart = cible.getBoundingClientRect().top - listEl.getBoundingClientRect().top;
+  const position = listEl.scrollTop + ecart;
+  listEl.scrollTop = Math.max(0, position - listEl.clientHeight / 2 + cible.offsetHeight / 2);
 });
 
 // GARDES OBLIGATOIRES : ces éléments sont NOUVEAUX. Au déploiement, un appareil

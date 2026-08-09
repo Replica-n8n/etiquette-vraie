@@ -106,7 +106,9 @@ const FLAVOR_PATTERN = new RegExp(
 // ambigus (fruits, arômes classiques) - pas les noms de marque ("Nutella").
 const FOOD_WORDS = [
   'myrtille', 'blueberry', 'fraise', 'strawberry', 'framboise', 'raspberry',
-  'vanille', 'vanilla', 'chocolat', 'chocolate', 'chocolatey', 'cacao', 'cocoa', 'noisette', 'hazelnut',
+  // "choco" : l'abréviation la plus courante sur les emballages ("choco-noisette",
+  // "goût choco"). Sans elle, l'app ne voyait qu'une moitié de la promesse.
+  'vanille', 'vanilla', 'chocolat', 'chocolate', 'chocolatey', 'choco', 'cacao', 'cocoa', 'noisette', 'hazelnut',
   'citron', 'lemon', 'orange', 'banane', 'banana', 'pomme', 'apple',
   'cerise', 'cherry', 'coco', 'coconut', 'caramel', 'cafe', 'coffee',
   'cannelle', 'cinnamon', 'mangue', 'mango', 'peche', 'peach',
@@ -154,6 +156,9 @@ const INGREDIENT_VARIANTS = {
   // "chocolatey" (EN) = mot de réserve : on le rattache à la famille chocolat
   // pour aller chercher s'il y a du vrai chocolat dans les ingrédients.
   'chocolatey': ['chocolat', 'chocolats', 'chocolate', 'chocolates', 'cacao', 'cacaos', 'cocoa'],
+  // "choco" ne doit PAS être cherché tel quel dans les ingrédients (aucune
+  // liste n'écrit "choco") : il pointe vers la vraie famille du chocolat.
+  'choco': ['chocolat', 'chocolats', 'chocolate', 'chocolates', 'cacao', 'cacaos', 'cocoa'],
   'vanille': ['vanille', 'vanilla'],
   'vanilla': ['vanille', 'vanilla'],
   'noisette': ['noisette', 'noisettes', 'hazelnut', 'hazelnuts'],
@@ -432,7 +437,7 @@ const COMPOUND_TRAPS = [
 // donc "chocolaté" devient "chocolate", qui a l'air anglais à l'écran. On
 // réaffiche le mot français attendu par l'utilisateur.
 const DISPLAY_FR = {
-  chocolate: 'chocolat', chocolatey: 'chocolat', chocolates: 'chocolat', cocoa: 'cacao',
+  chocolate: 'chocolat', chocolatey: 'chocolat', chocolates: 'chocolat', choco: 'chocolat', cocoa: 'cacao',
   strawberry: 'fraise', raspberry: 'framboise', blueberry: 'myrtille',
   blackberry: 'mûre', cranberry: 'canneberge', cherry: 'cerise', apple: 'pomme',
   banana: 'banane', lemon: 'citron', peach: 'pêche', pear: 'poire',
@@ -689,8 +694,41 @@ function findIngredientPercent(word, ingredientsNorm) {
 // davantage de l'aromatisation que de la recette.
 const LOW_PERCENT_THRESHOLD = 5;
 
+// DÉCOUPAGE D'UNE LISTE D'INGRÉDIENTS.
+//
+// Une virgule ne sépare pas toujours deux ingrédients. Découper bêtement sur
+// chacune d'elles cassait deux choses, vues sur de vrais produits :
+//   - les DÉCIMALES : "Farine de blé 59,4%" devenait "farine de ble 59" et
+//     "4%". Ce second morceau, vidé par le nettoyage, disparaissait de la
+//     liste affichée : toutes les lignes suivantes se décalaient d'un cran et
+//     le surlignage désignait "farine de soja" au lieu des raisins.
+//   - les PARENTHÈSES : "vanille en poudre (0,03%)" s'affichait sur deux
+//     lignes, "vanille en poudre (" puis ")".
+// Cette fonction sert à la fois au moteur et à l'affichage : c'est ce qui
+// garantit que la ligne surlignée est bien celle que le moteur a repérée.
+function splitIngredientList(text) {
+  const items = [];
+  const chaine = String(text || '');
+  let courant = '';
+  let profondeur = 0;
+  for (let i = 0; i < chaine.length; i++) {
+    const c = chaine[i];
+    if (c === '(' || c === '[') profondeur++;
+    else if (c === ')' || c === ']') profondeur = Math.max(0, profondeur - 1);
+    const decimale = /\d/.test(chaine[i - 1] || '') && /\d/.test(chaine[i + 1] || '');
+    if (c === ',' && profondeur === 0 && !decimale) {
+      items.push(courant);
+      courant = '';
+      continue;
+    }
+    courant += c;
+  }
+  items.push(courant);
+  return items.map((s) => s.trim()).filter(Boolean);
+}
+
 function findIngredientPosition(word, ingredientsNorm) {
-  const items = ingredientsNorm.split(',').map((s) => s.trim()).filter(Boolean);
+  const items = splitIngredientList(ingredientsNorm);
   const allVariants = INGREDIENT_VARIANTS[word] || [word];
   const variants = allVariants.map(v => pluralPattern(v)).join('|');
   const wordRe = new RegExp(`\\b(?:${variants})\\b`);
@@ -1026,5 +1064,6 @@ if (typeof module !== 'undefined') {
   module.exports = {
     detectVerdict, normalize, findFlavorMention, onlyAppearsAsArome,
     findIngredientPosition, ingredientShare, isMentionedInIngredients,
+    splitIngredientList,
   };
 }
