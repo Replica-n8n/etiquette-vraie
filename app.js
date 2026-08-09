@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v1.50';
+const APP_VERSION = 'v2.0';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786295515';
+const BUILD = '1786314146';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1128,6 +1128,86 @@ function ouvrirFormeModal(forme) {
   modal.classList.remove('hidden');
 }
 
+// LA SOUS-LIGNE DU BANDEAU remplace le panneau « Le nom suggère / Il y a
+// vraiment », supprimé le 2026-08-09. Sur les verdicts qui nomment déjà
+// l'aliment manquant, ce panneau répétait le bandeau mot pour mot ; sur les
+// autres, il n'apportait qu'un chiffre ou une forme, qui tiennent ici.
+// On n'y met QUE ce que la phrase ne dit pas.
+function verdictSubLine(detail, product, texteIngredients, headline) {
+  if (!detail || !detail.compareReal) return '';
+  const libelles = String(detail.compareReal).split(',').map((s) => s.trim()).filter(Boolean);
+  const shares = realShares(detail, product) || [];
+  const formes = detail.formes || [];
+  const morceaux = [];
+  libelles.forEach((libelle, i) => {
+    const forme = formes[i];
+    if (forme) {
+      // Le préfixe ne sert que si la phrase ne parle pas déjà de cacao : sans
+      // lui, « "cacao" confirmé » était suivi de « chocolat : du vrai chocolat ».
+      const dejaDit = /cacao|chocolat/i.test(headline || '');
+      const pc = chocolatePercent(product.product_name, texteIngredients);
+      const dit = forme.vrai ? 'du vrai chocolat' : 'du cacao en poudre, pas du chocolat';
+      morceaux.push((dejaDit ? '' : 'le chocolat : ') + dit
+        + (pc ? ` (${formatPart(pc.valeur)} déclarés)` : ''));
+      return;
+    }
+    if (/saveur seule/.test(libelle)) return;      // déjà dans la phrase
+    const part = shares[i];
+    if (!part) return;                             // sans chiffre, rien à ajouter
+    const nom = libelle.replace(/ : présent$/, '');
+    morceaux.push(`${nom} ${formatPart(part.valeur)}${part.source === 'estime' ? ' estimé' : ''}`);
+  });
+  return morceaux.join(' · ');
+}
+
+function montrerTuile(id, visible) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('hidden', !visible);
+}
+
+function formatPart(v) {
+  return (v >= 10 ? Math.round(v) : Math.round(v * 10) / 10).toString().replace('.', ',') + ' %';
+}
+
+// BARÈME LÉGAL. Des MARCHES de hauteur croissante sur une rampe de couleur
+// FIXE : le sens de l'échelle se lit avant qu'on ait trouvé le curseur. Avec
+// un simple surlignage, un produit classé tout en haut ne laissait rien voir
+// de la hiérarchie.
+const BAREME_RAMPE = ['var(--amber)', 'var(--amber)', 'var(--green-dark)', 'var(--green)'];
+function renderBareme(tier) {
+  const boite = document.getElementById('bareme-box');
+  if (!boite) return;                              // ancien index.html en cache
+  if (!tier) { boite.classList.add('hidden'); return; }
+  const n = tier.rangs.length;
+  const cols = `repeat(${n}, 1fr)`;
+  document.getElementById('bareme-famille').textContent = `Ce que c'est, légalement · ${tier.famille}`;
+
+  const marches = document.getElementById('bareme-marches');
+  marches.innerHTML = '';
+  marches.style.gridTemplateColumns = cols;
+  const rangsEl = document.getElementById('bareme-rangs');
+  rangsEl.innerHTML = '';
+  rangsEl.style.gridTemplateColumns = cols;
+
+  tier.rangs.forEach((nom, i) => {
+    const marche = document.createElement('i');
+    marche.style.height = `${8 + i * (18 / (n - 1))}px`;
+    marche.style.background = BAREME_RAMPE[Math.round(i * (BAREME_RAMPE.length - 1) / (n - 1))];
+    if (i === tier.ici) marche.className = 'ici';
+    marches.appendChild(marche);
+
+    const etiquette = document.createElement('span');
+    etiquette.textContent = nom;
+    if (i === tier.ici) etiquette.className = 'ici';
+    rangsEl.appendChild(etiquette);
+  });
+
+  const expl = document.getElementById('bareme-expl');
+  expl.textContent = tier.expl;
+  expl.className = `bareme-expl${tier.sommet ? ' sommet' : ''}`;
+  boite.classList.remove('hidden');
+}
+
 function renderCompareValue(el, text, shares, formes) {
   el.innerHTML = '';
   const parts = String(text || '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -1206,9 +1286,23 @@ function renderResult(product) {
   if (codeEl) codeEl.textContent = product.code ? ` · ${product.code}` : '';
 
   const verdictEl = document.getElementById('verdict-box');
-  verdictEl.className = `alert ${meta.className}`;
+  // « Rien à vérifier » : un tampon seul dans un cadre vide n'est ni informatif
+  // ni décoratif. Les tuiles, elles, parlent sur chaque produit : on leur laisse
+  // la tête de fiche. Les autres états muets gardent leur bandeau, parce qu'ils
+  // expliquent une limite réelle (langue non lue, composition absente).
+  verdictEl.className = `alert ${meta.className}${verdict === 'noclaim' ? ' hidden' : ''}`;
   document.getElementById('stamp').textContent = meta.label;
   document.getElementById('verdict-text').textContent = headline;
+
+  // Sous-ligne : ce que l'ancien panneau « Il y a vraiment » portait d'utile.
+  const sousEl = document.getElementById('verdict-sub');
+  if (sousEl) {
+    const sous = verdictSubLine(detail, product, ingr.texte, headline);
+    sousEl.textContent = sous;
+    sousEl.classList.toggle('hidden', !sous);
+  }
+
+  renderBareme(legalTier(product.product_name, ingr.texte, product.categories_tags));
 
   // Verdict "unknown" = OFF n'a pas les ingrédients. C'est le seul cas où on
   // propose une photo : l'utilisateur peut débloquer la vérification.
@@ -1249,31 +1343,28 @@ function renderResult(product) {
     additiveAlertEl.classList.add('hidden');
   }
 
+  // Le panneau « Le nom suggère / Il y a vraiment » est RETIRÉ depuis le
+  // 2026-08-09 : sur les verdicts qui nomment l'aliment manquant il répétait le
+  // bandeau mot pour mot, et ce qu'il portait d'utile ailleurs - proportion,
+  // forme du chocolat - tient dans la sous-ligne. Le bloc reste dans le HTML
+  // le temps d'un cycle de déploiement, masqué : le supprimer tout de suite
+  // ferait planter un app.js encore en cache qui le cherche.
   const compareEl = document.getElementById('compare-section');
-  const compareRealCol = document.getElementById('compare-real-col');
-  compareRealCol.className = `compare-col real ${meta.className}`;
-  if (detail && detail.compareSuggest) {
-    compareEl.classList.remove('hidden');
-    // Affiche en liste si contient des virgules
-    const suggestEl = document.getElementById('compare-suggest');
-    const realEl = document.getElementById('compare-real');
-
-    renderCompareValue(suggestEl, detail.compareSuggest);
-    // "homard" devient "homard 3,8 %" : présence et proportion ne sont pas la
-    // même promesse. Voir 2026-08-04-proportion-reelle-design.md
-    renderCompareValue(realEl, detail.compareReal, realShares(detail, product), detail.formes);
-  } else {
-    compareEl.classList.add('hidden');
-  }
+  if (compareEl) compareEl.classList.add('hidden');
 
   const nutriMeta = product.nutriscore_grade && NUTRISCORE_META[product.nutriscore_grade]
     ? { ...NUTRISCORE_META[product.nutriscore_grade], icon: product.nutriscore_grade.toUpperCase() }
     : null;
+  // TUILES CONDITIONNELLES. Une tuile « Non renseigné » occupe la place d'une
+  // information et n'en porte aucune : le Peanut Butter affichait une case NOVA
+  // vide, le Hello Panda quatre. On ne montre que ce qui existe.
+  montrerTuile('tile-nutriscore', !!nutriMeta);
   renderScoreTile('nutriscore-icon', 'nutriscore-value', nutriMeta, 'Non renseigné');
 
   const novaMeta = product.nova_group && NOVA_META[product.nova_group]
     ? { ...NOVA_META[product.nova_group], icon: String(product.nova_group) }
     : null;
+  montrerTuile('tile-nova', !!novaMeta);
   renderScoreTile('nova-icon', 'nova-value', novaMeta, 'Non renseigné');
 
   // Couleur de la tuile additifs = niveau le plus dangereux présent (pas le nombre)
@@ -1291,7 +1382,11 @@ function renderResult(product) {
   const additivesInfoBtn = document.getElementById('additives-info-btn');
   if (additivesInfoBtn) additivesInfoBtn.classList.toggle('hidden', additivesCount === 0);
   renderScoreTile('additives-icon', 'additives-value', additivesMeta(additivesCount, worstAdditiveCat), 'Non renseigné');
-  renderScoreTile('bio-icon', 'bio-value', bioMeta(product.labels_tags, product.ingredients_text), 'Non certifié');
+  // Les additifs restent toujours affichés : « aucun » est une information.
+  // Le bio, non : « Non certifié » sur neuf produits sur dix n'apprend rien.
+  const bio = bioMeta(product.labels_tags, product.ingredients_text);
+  montrerTuile('tile-bio', !!bio);
+  renderScoreTile('bio-icon', 'bio-value', bio, 'Non certifié');
 
   const legalAccordion = document.getElementById('legal-accordion');
   // Vaut aussi pour "À vérifier" : c'est précisément là que l'explication

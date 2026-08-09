@@ -807,6 +807,120 @@ function formeTrouvee(mot, ingredientsNorm) {
   return forme ? { aliment: 'chocolat', ...forme } : null;
 }
 
+// ===========================================================================
+// BARÈME LÉGAL : situer un produit dans SA famille
+//
+// Certaines dénominations sont réglementées et hiérarchisées : un jus, un
+// nectar et une boisson aux fruits sont trois catégories juridiques distinctes,
+// avec des seuils chiffrés. L'app ne juge pas, elle situe.
+//
+// ⚠️ RÈGLE DURE : le barème ne s'applique QUE si le produit appartient à la
+// famille, d'après sa catégorie Open Food Facts - jamais parce que le mot
+// apparaît quelque part. Un biscuit fourré au chocolat n'est pas un chocolat :
+// le comparer à du chocolat de couverture n'a aucun sens. Pour les produits
+// composés, c'est `chocolateForm` qui parle, pas le barème.
+//
+// ⚠️ SECONDE RÈGLE : on ne place le curseur que si le rang est CERTAIN. Un
+// rang deviné rouvrirait la porte aux fausses accusations refermée le
+// 2026-08-08. Dans le doute, `legalTier` renvoie null et rien ne s'affiche.
+//
+// Seuils européens, volontairement NON cités à l'écran : l'utilisatrice veut
+// situer le produit, pas réciter une directive à quelqu'un qui fait ses courses.
+const FAMILLES_LEGALES = [
+  {
+    nom: 'Jus de fruits',
+    categorie: /(^|-)(juices?|nectars?|jus)$/,
+    rangs: ['boisson aux fruits', 'nectar', 'à base de concentré', 'pur jus'],
+    expl: [
+      "De l'eau en tête de liste : un jus n'a droit ni à l'eau ni au sucre ajoutés. Cette catégorie-là n'a aucun minimum de fruit à respecter.",
+      "Un nectar est un jus dilué et sucré : de 25 à 50 % de fruit selon l'espèce. C'est écrit sur l'étiquette, mais le mot ne dit pas ce qu'il cache.",
+      "Du vrai jus, reconstitué à partir de concentré : on a retiré l'eau, puis on l'a remise. Ni sucre ni eau au-delà.",
+      "Du fruit pressé, rien d'autre. Ni eau, ni sucre ajouté.",
+    ],
+    rang(nomNorm, ingrNorm, items) {
+      const concentre = /a base de concentre|from concentrate|de concentre/.test(nomNorm + ' ' + ingrNorm);
+      const pasDeConcentre = /not from concentrate|sans concentre|pur jus|100% pur/.test(nomNorm + ' ' + ingrNorm);
+      if (/\bnectars?\b/.test(nomNorm)) return 1;
+      if (concentre && !pasDeConcentre) return 2;
+      if (/^eaux?$|^water$/.test(items[0] || '')) return 0;
+      if (pasDeConcentre) return 3;
+      return null;                                  // dans le doute, on se tait
+    },
+  },
+  {
+    nom: "Huile d'olive",
+    categorie: /(^|-)(olive-oils?|huiles?-d-olive)$/,
+    rangs: ['huile de grignons', "huile d'olive", 'vierge', 'vierge extra'],
+    expl: [
+      "Issue des résidus de pressage, raffinée. Le dernier rang de la famille.",
+      "Un mélange d'huile raffinée et d'huile vierge. Le mot « vierge » manque, et ce n'est pas un oubli.",
+      "Pressée mécaniquement, acidité au plus 2 %.",
+      "Pressée mécaniquement, acidité au plus 0,8 % et aucun défaut de goût. Le rang le plus exigeant.",
+    ],
+    rang(nomNorm) {
+      if (/vierge extra|extra vierge|extra.?virgin/.test(nomNorm)) return 3;
+      if (/\bvierges?\b|\bvirgin\b/.test(nomNorm)) return 2;
+      if (/grignons?|pomace/.test(nomNorm)) return 0;
+      return 1;
+    },
+  },
+];
+
+// ⚠️ La catégorie se teste TAG PAR TAG, ancrée à la fin, et jamais sur la
+// concaténation : `en:sardines-in-olive-oil` contient « olive-oil », et une
+// boîte de sardines se retrouvait notée sur l'échelle des huiles. Les tags de
+// la forme « X dans Y » sont écartés d'emblée - ils décrivent un produit X.
+function estDeLaFamille(tags, motif) {
+  return tags.some((tag) => {
+    const nom = tag.replace(/^[a-z]{2}:/, '');
+    if (/-(in|with|au|aux|a-la|and|et)-/.test(nom)) return false;
+    return motif.test(nom);
+  });
+}
+
+function legalTier(productName, ingredientsText, categoriesTags) {
+  const tags = (categoriesTags || []).map((t) => normalize(t));
+  if (!tags.length) return null;
+  const nomNorm = normalize(productName);
+  const ingrNorm = normalize(ingredientsText);
+  const items = splitIngredientList(ingrNorm);
+  for (const f of FAMILLES_LEGALES) {
+    if (!estDeLaFamille(tags, f.categorie)) continue;
+    const ici = f.rang(nomNorm, ingrNorm, items);
+    if (ici === null || ici === undefined) return null;
+    return { famille: f.nom, rangs: f.rangs, ici, expl: f.expl[ici], sommet: ici === f.rangs.length - 1 };
+  }
+  return null;
+}
+
+// LE POURCENTAGE DE CACAO NE SE LIT PAS COMME LES AUTRES.
+//
+// Sur une tablette, « 70 % de cacao » désigne le cacao sec TOTAL - pâte, beurre
+// et poudre réunis. La part d'un seul ingrédient ne mesure donc pas la même
+// chose, et l'estimation d'Open Food Facts encore moins : sur le Lindt
+// Excellence, l'étiquette déclare 70 %, OFF n'a pas su lire ce chiffre et a
+// estimé 30,58 % pour la pâte de cacao. L'app affichait 31 % en face d'un
+// emballage qui dit 70, et avait l'air de contredire le fabricant.
+//
+// On ne retient donc QUE la déclaration du fabricant, et seulement quand le NOM
+// et la LISTE portent le même chiffre. Deux sources d'accord valent mieux
+// qu'une estimation ; et quand elles manquent, on n'affiche rien.
+// Le pourcentage de cacao est une déclaration réglementée (directive
+// 2000/36/CE), donc digne de confiance quand elle est là.
+function chocolatePercent(productName, ingredientsText) {
+  const dansNom = /(\d+(?:[.,]\d+)?)\s*%/.exec(String(productName || ''));
+  if (!dansNom) return null;
+  const n = normalize(ingredientsText);
+  let dansListe = null;
+  for (const mot of ['cacao', 'chocolat', 'cocoa', 'chocolate']) {
+    const m = new RegExp(`\\b${mot}\\b[^,;()]{0,20}?(\\d+(?:[.,]\\d+)?)\\s*%`).exec(n);
+    if (m) { dansListe = parseFloat(m[1].replace(',', '.')); break; }
+  }
+  if (dansListe === null) return null;
+  const duNom = parseFloat(dansNom[1].replace(',', '.'));
+  return Math.abs(duNom - dansListe) < 0.5 ? { valeur: dansListe, source: 'declare' } : null;
+}
+
 function chocolateForm(ingredientsText) {
   const n = normalize(ingredientsText);
   const vraies = CHOCO_FORMES_VRAIES.filter(([, re]) => re.test(n)).map(([nom]) => nom);
@@ -1113,6 +1227,9 @@ function ingredientShare(word, ingredients) {
   // Un mot de catégorie ne figure jamais dans sa propre liste : le chiffrer
   // n'aurait pas de sens ("beurre" dans un beurre d'amandes).
   if (SHARE_BLOCKED_WORDS.has(word)) return null;
+  // Le cacao a son propre lecteur, `chocolatePercent` : la part d'un ingrédient
+  // ne mesure pas ce que l'emballage appelle « % de cacao ».
+  if (FAMILLE_CHOCOLAT.has(word)) return null;
 
   const targets = new Set((INGREDIENT_VARIANTS[word] || [word]).map((v) => normalize(v)));
   const flat = flattenIngredients(ingredients);
@@ -1157,6 +1274,6 @@ if (typeof module !== 'undefined') {
   module.exports = {
     detectVerdict, normalize, findFlavorMention, onlyAppearsAsArome,
     findIngredientPosition, ingredientShare, isMentionedInIngredients,
-    splitIngredientList, chocolateForm,
+    splitIngredientList, chocolateForm, chocolatePercent, legalTier,
   };
 }

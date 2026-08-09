@@ -285,3 +285,64 @@ note('plusieurs aliments : énumérés',
   'Barre fraise framboise', 'avoine, sucre, arome de fraise, arome de framboise',
   ['fraise et framboise'], []);
 console.log(kn ? `${kn} ÉCHEC(S) sur les textes légaux` : 'Textes légaux : tout passe');
+
+// ---------------------------------------------------------------------------
+// BARÈME LÉGAL : situer un produit dans SA famille.
+// Deux garde-fous à ne jamais perdre : le barème ne s'applique qu'aux produits
+// DE la famille (un biscuit fourré n'est pas un chocolat), et le rang doit être
+// certain, sinon rien ne s'affiche.
+// ---------------------------------------------------------------------------
+const { legalTier, chocolatePercent } = require('./rules.js');
+console.log('\n--- Barème légal ---');
+let kb = 0;
+function bareme(label, nom, ingredients, categories, attendu) {
+  const t = legalTier(nom, ingredients, categories);
+  const vu = t ? `${t.famille}/${t.rangs[t.ici]}` : null;
+  const ok = vu === attendu;
+  if (!ok) kb++;
+  console.log(`${ok ? '✅' : '❌'} ${label}${ok ? '' : `\n     obtenu ${vu} / attendu ${attendu}`}`);
+}
+bareme('eau en tête : une boisson, pas un jus',
+  'No Pulp Lower Sugar Orange Juice', 'Water, orange juice, stevia extract',
+  ['en:fruit-juices'], 'Jus de fruits/boisson aux fruits');
+bareme('nectar annoncé', 'Nectar abricot', 'eau, puree abricot 50%, sucre',
+  ['en:nectars'], 'Jus de fruits/nectar');
+bareme('à base de concentré', 'Jus orange a base de concentre', 'eau, jus concentre',
+  ['en:fruit-juices'], 'Jus de fruits/à base de concentré');
+bareme('pur jus', 'Pur jus orange', 'jus d orange', ['en:fruit-juices'], 'Jus de fruits/pur jus');
+bareme('vierge extra', 'Huile d Olive Vierge Extra', 'huile d olive vierge extra',
+  ['en:olive-oils'], "Huile d'olive/vierge extra");
+bareme('huile d olive sans mention', 'Huile d olive', 'huile d olive',
+  ['en:olive-oils'], "Huile d'olive/huile d'olive");
+// ⚠️ Les deux garde-fous
+bareme('un biscuit fourré N EST PAS un chocolat',
+  'Moelleux gout choco-noisette', 'cereales, sucre, cacao maigre en poudre',
+  ['en:biscuits', 'en:sweet-snacks'], null);
+bareme('jus non classable : on se tait',
+  'Boisson orange', 'jus d orange, arome', ['en:fruit-juices'], null);
+bareme('hors famille : aucun barème', 'Coca-Cola', 'eau gazeifiee, sucre',
+  ['en:sodas', 'en:beverages'], null);
+// ⚠️ « X dans Y » : une boîte de sardines à l'huile d'olive était notée sur
+// l'échelle des huiles, parce que sa catégorie contient « olive-oil ».
+bareme('sardines À L HUILE : pas une huile',
+  "Sardines Huile d'Olive Vierge Extra", '_sardines_, huile d olive vierge extra, sel',
+  ['en:fishes', 'en:sardines', 'en:sardines-in-olive-oil'], null);
+bareme('poulet AU jus : pas un jus', 'Poulet au jus', 'poulet, sel',
+  ['en:meats', 'en:chicken-in-juice'], null);
+console.log(kb ? `${kb} ÉCHEC(S) sur le barème` : 'Barème : tout passe');
+
+// Le pourcentage de cacao : la déclaration du fabricant, ou rien.
+console.log('\n--- Pourcentage de cacao ---');
+let kc = 0;
+function cacao(label, nom, ingredients, attendu) {
+  const r = chocolatePercent(nom, ingredients);
+  const vu = r ? r.valeur : null;
+  const ok = vu === attendu;
+  if (!ok) kc++;
+  console.log(`${ok ? '✅' : '❌'} ${label}${ok ? '' : `\n     obtenu ${vu} / attendu ${attendu}`}`);
+}
+cacao('nom et liste d accord : on affiche', 'Excellence Noir 70% Cacao',
+  'Pate de cacao 70%, sucre, beurre de cacao', 70);
+cacao('rien dans le nom : on se tait', 'Chocolat noir', 'pate de cacao 70%, sucre', null);
+cacao('nom et liste en désaccord : on se tait', 'Chocolat 85%', 'pate de cacao 70%, sucre', null);
+console.log(kc ? `${kc} ÉCHEC(S) sur le cacao` : 'Cacao : tout passe');

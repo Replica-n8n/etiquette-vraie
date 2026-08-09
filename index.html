@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1786295515">
+<link rel="stylesheet" href="./style.css?v=1786314146">
 </head>
 <body>
 
@@ -134,6 +134,20 @@
       <div class="alert" id="verdict-box">
         <span class="stamp" id="stamp"><span class="dot"></span></span>
         <div class="alert-text" id="verdict-text"></div>
+        <!-- Ce que l'ancien panneau "Il y a vraiment" portait d'utile : une
+             proportion, la forme du chocolat, un second aliment. Même graisse
+             que la phrase au-dessus, taille inférieure. -->
+        <div class="alert-sub hidden" id="verdict-sub"></div>
+      </div>
+
+      <!-- Barème légal : situe le produit dans SA famille (jus, huile d'olive).
+           Masqué tant que le rang n'est pas certain. -->
+      <div class="bareme hidden" id="bareme-box">
+        <div class="bareme-label" id="bareme-famille"></div>
+        <div class="bareme-sens"><span>le moins exigeant</span><span>le plus exigeant</span></div>
+        <div class="bareme-marches" id="bareme-marches"></div>
+        <div class="bareme-rangs" id="bareme-rangs"></div>
+        <div class="bareme-expl" id="bareme-expl"></div>
       </div>
 
       <div class="alert compact v-misleading hidden" id="additive-alert">
@@ -153,21 +167,21 @@
       </div>
 
       <div class="score-grid">
-        <div class="score-tile">
+        <div class="score-tile" id="tile-nutriscore">
           <div class="icon" id="nutriscore-icon"></div>
           <div>
             <div class="score-label">Nutri-Score</div>
             <div class="score-value" id="nutriscore-value"></div>
           </div>
         </div>
-        <div class="score-tile">
+        <div class="score-tile" id="tile-nova">
           <div class="icon" id="nova-icon"></div>
           <div>
             <div class="score-label">NOVA</div>
             <div class="score-value" id="nova-value"></div>
           </div>
         </div>
-        <div class="score-tile additives-tile">
+        <div class="score-tile additives-tile" id="tile-additives">
           <div class="icon" id="additives-icon"></div>
           <div>
             <div class="score-label">Additifs</div>
@@ -175,7 +189,7 @@
           </div>
           <button id="additives-info-btn" class="info-btn" title="Voir la liste complète des additifs">i</button>
         </div>
-        <div class="score-tile">
+        <div class="score-tile" id="tile-bio">
           <div class="icon" id="bio-icon"></div>
           <div>
             <div class="score-label">Bio</div>
@@ -297,7 +311,7 @@
   </div>
 </div>
 
-<script src="./rules.js?v=1786295515" defer></script>
-<script src="./app.js?v=1786295515" defer></script>
+<script src="./rules.js?v=1786314146" defer></script>
+<script src="./app.js?v=1786314146" defer></script>
 </body>
 </html>

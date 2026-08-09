@@ -262,6 +262,47 @@ body{
 .v-noclaim .alert-text{ color:var(--ink-2); }
 .v-unknown .alert-text{ color:var(--ink-soft); }
 
+/* Sous-ligne du bandeau : même graisse que la phrase, taille inférieure.
+   Deux graisses différentes suggéraient une hiérarchie que personne ne lisait. */
+.alert-sub{
+  font-family:'Space Grotesk', sans-serif; font-weight:700;
+  font-size:11.5px; line-height:1.4; margin-top:5px; position:relative;
+}
+.v-misleading .alert-sub{ color:var(--red-ink); }
+.v-warning .alert-sub{ color:var(--amber-ink); }
+.v-clean .alert-sub{ color:var(--green-ink); }
+.v-noclaim .alert-sub{ color:var(--ink-2); }
+.v-unknown .alert-sub{ color:var(--ink-soft); }
+
+/* BARÈME LÉGAL. Des marches croissantes sur une rampe FIXE : le sens de
+   l'échelle se lit avant qu'on ait trouvé le curseur. La boîte reste neutre -
+   la couleur d'alerte appartient au verdict, pas à une position sur une échelle. */
+.bareme{
+  margin:8px 16px 0; padding:11px 13px;
+  background:var(--card); border:1.5px solid var(--line); border-radius:18px;
+}
+.bareme.hidden{ display:none; }
+.bareme-label{
+  font-family:'Space Grotesk', sans-serif; font-weight:700;
+  font-size:9px; letter-spacing:0.05em; text-transform:uppercase;
+  color:var(--ink-soft); margin-bottom:9px;
+}
+.bareme-sens{
+  display:flex; justify-content:space-between;
+  font-size:8.5px; letter-spacing:0.03em; text-transform:uppercase;
+  color:var(--ink-soft); margin-bottom:5px;
+}
+.bareme-marches{ display:grid; gap:3px; align-items:end; height:26px; }
+.bareme-marches i{ display:block; border-radius:3px 3px 0 0; opacity:0.32; }
+.bareme-marches i.ici{ opacity:1; }
+.bareme-rangs{ display:grid; gap:3px; margin-top:4px; font-size:9px; line-height:1.25; color:var(--ink-soft); text-align:center; }
+.bareme-rangs span.ici{ color:var(--ink); font-weight:700; }
+.bareme-expl{
+  margin-top:10px; padding:9px 10px; border-radius:10px;
+  background:var(--paper); border:1px solid var(--line);
+  font-size:11.5px; line-height:1.45; color:var(--ink-2);
+}
+
 /* Comparaison : hauteur naturelle */
 .compare{ margin:10px 16px 0; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 .compare-col{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 11px; }

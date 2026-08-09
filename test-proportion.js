@@ -7,7 +7,7 @@
 //
 // Voir docs/superpowers/specs/2026-08-04-proportion-reelle-design.md
 
-const { ingredientShare, detectVerdict } = require('./rules.js');
+const { ingredientShare, detectVerdict, chocolatePercent } = require('./rules.js');
 const F = require('./test-fixtures/off-ingredients.json');
 
 let pass = 0;
@@ -41,14 +41,25 @@ const noisette = ingredientShare('noisette', F.biscuitsNutella.ingredients);
 check('noisette ≠ 54 % (poids de la pâte à tartiner)', noisette && noisette.valeur > 50, false);
 part('noisette = sa part réelle', 'noisette', 'biscuitsNutella', { v: 1.5, s: 'estime' });
 
-console.log('\n--- Déclaré non corroboré : on ne le présente pas comme une déclaration ---');
-// Étiquette réelle : "Pâte à tartiner aux NOISETTES et au cacao 40% (...)".
-// Les 40 % sont ceux de la PÂTE À TARTINER, mais l'analyseur d'OFF les rattache
-// à "cacao", dont il estime par ailleurs la part à 16 %. Les deux sources se
-// contredisent : on retombe sur l'estimation plutôt que d'annoncer 40 % déclarés.
-const cacao = ingredientShare('cacao', F.biscuitsNutella.ingredients);
-check('cacao : pas 40 % déclarés', cacao && cacao.source, 'estime');
-check('cacao : la valeur estimée', cacao && Math.round(cacao.valeur), 16);
+console.log('\n--- Le cacao ne se chiffre plus comme un ingrédient ordinaire ---');
+// Ces deux cas encodaient l'ancien comportement : sur "Pâte à tartiner aux
+// NOISETTES et au cacao 40 %", OFF rattache les 40 % de la PÂTE au cacao, dont
+// il estime par ailleurs la part à 16 % ; on retombait sur l'estimation.
+//
+// Décision du 2026-08-09 : plus aucun pourcentage de cacao par ce chemin. Un
+// « % de cacao » sur un emballage désigne le cacao sec TOTAL - pâte, beurre et
+// poudre - pas la part d'un ingrédient. Les deux nombres ne mesurent pas la
+// même chose et ne seront jamais d'accord. Sur le Lindt Excellence, l'app
+// affichait 31 % en face d'une étiquette qui déclare 70 %.
+// Le seul chiffre retenu vient désormais de `chocolatePercent`, et seulement
+// quand le nom et la liste portent le même.
+check('cacao : aucune part d ingrédient', ingredientShare('cacao', F.biscuitsNutella.ingredients), null);
+check('cacao : aucun chiffre non plus ici (rien dans le nom)',
+  chocolatePercent('Biscuits NUTELLA Noisettes et Cacao x22 - 304g', 'pate a tartiner aux noisettes et au cacao 40%'),
+  null);
+check('cacao : le chiffre déclaré ET confirmé par le nom',
+  (chocolatePercent('Excellence Noir 70% Cacao', 'Pate de cacao 70%, sucre, beurre de cacao') || {}).valeur,
+  70);
 
 console.log('\n--- Absence de chiffre : ne rien inventer ---');
 // L'ingrédient "_Select roasted peanuts_" n'est pas rattaché à la taxonomie.
