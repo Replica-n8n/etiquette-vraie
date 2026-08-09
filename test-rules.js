@@ -197,6 +197,12 @@ const T = [
  // voyait que la noisette et ne disait rien du chocolat.
  ['choco = chocolat present','Moelleux gout choco-noisette','cereales, sucre, cacao maigre 2,4%, noisettes 5%','clean'],
  ['choco absent','Barre choco-noisette','farine, sucre, noisettes 10%, aromes','misleading'],
+ // "Lotte" est une marque coréenne de confiseries. L'app cherchait le POISSON
+ // dans un gâteau au chocolat et le déclarait trompeur. Le mot est écarté de
+ // la détection dans les NOMS, mais reste traduit dans les ingrédients.
+ ['marque Lotte, pas le poisson','Lotte Choco Pie','sugar, palm fat, cocoa solids, milk solids','clean'],
+ ['la lotte reste un poisson vérifiable','Monkfish fillet','lotte, sel, eau','clean'],
+ ['lotte annoncée mais absente','Monkfish fillet','pangasius, eau, sel','misleading'],
  // ---- FAMILLE 8 : substitution d'un aliment cher par un moins cher ----
  // Le coeur du sujet : payer le prix du noble, manger le bon marché.
  ['cabillaud -> pangasius','Filet de cabillaud','pangasius, eau, sel','misleading'],
