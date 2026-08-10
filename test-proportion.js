@@ -7,7 +7,7 @@
 //
 // Voir docs/superpowers/specs/2026-08-04-proportion-reelle-design.md
 
-const { ingredientShare, detectVerdict, chocolatePercent } = require('./rules.js');
+const { ingredientShare, detectVerdict, chocolatePercent, partLabel } = require('./rules.js');
 const F = require('./test-fixtures/off-ingredients.json');
 
 let pass = 0;
@@ -23,6 +23,12 @@ function part(label, word, fixture, attendu) {
   const r = ingredientShare(word, F[fixture].ingredients);
   const vu = r ? { v: Math.round(r.valeur * 10) / 10, s: r.source } : null;
   check(label, vu, attendu);
+}
+
+// Ce que l'acheteuse LIT : c'est la seule chose qui compte pour une borne.
+function borne(label, word, fixture, attendu) {
+  const r = ingredientShare(word, F[fixture].ingredients);
+  check(label, r && r.source === 'borne' ? partLabel(r) : String(r && r.source), attendu);
 }
 
 console.log('--- Pourcentage déclaré par le fabricant (QUID) ---');
@@ -108,10 +114,10 @@ const document = {
 };
 
 const { renderCompareValue, realShares } = new Function(
-  'document', 'ingredientShare',
+  'document', 'ingredientShare', 'partLabel',
   `${extract('shareSuffix')}\n${extract('renderCompareValue')}\n${extract('realShares')}\n` +
   'return { renderCompareValue, realShares };'
-)(document, ingredientShare);
+)(document, ingredientShare, partLabel);
 
 function rendu(detail, produit) {
   const el = makeNode('div');
@@ -144,18 +150,61 @@ check('libellé contenant déjà un % : pas de doublon',
   'homard : 3.8% seulement');
 
 console.log('\n--- Catégorie : conclure, ou chiffrer ? Deux questions distinctes ---');
-// La patate est une CATÉGORIE pour la conclusion (muette si absente de la
-// liste), mais son pourcentage est parfaitement lisible. Confondre les deux
-// faisait disparaître le chiffre du velouté poireau-pomme de terre, alors
-// qu'Open Food Facts l'estime à 10 %.
-part('pomme de terre chiffrée malgré son statut de catégorie', 'patate', 'veloutePommeDeTerre', { v: 10, s: 'estime' });
-part('poireau chiffré dans le même produit', 'poireau', 'veloutePommeDeTerre', { v: 60, s: 'estime' });
+// La patate reste une CATÉGORIE pour la conclusion (muette si absente de la
+// liste) sans l'être pour le chiffre : c'est la distinction que ces deux tests
+// protégeaient, et elle tient toujours - le mot n'est plus bloqué par
+// SHARE_BLOCKED_WORDS.
+//
+// ⚠️ RENVERSEMENT DU 2026-08-10, sur mesure. Ces deux lignes attendaient
+// « poireau 60 % » et « pomme de terre 10 % ». Ces nombres n'existent pas :
+// la fiche 3760325480433 ne déclare AUCUN pourcentage, et 60/20/10/5/5 est la
+// suite qu'Open Food Facts produit mécaniquement pour cinq ingrédients - 19
+// autres produits de l'échantillon portent exactement la même. Le chiffre ne
+// disait pas « 60 % de poireau », il disait « premier de cinq ».
+// L'app se tait donc, comme elle se tait déjà sur le cacao pour la même raison.
+// À la place du faux chiffre : la BORNE, qui n'est pas un calcul d'OFF mais une
+// conséquence de l'ordre légal. Poireau premier de cinq ⇒ au moins un cinquième.
+// Pomme de terre troisième ⇒ au plus un tiers.
+borne('poireau : au moins un cinquième', 'poireau', 'veloutePommeDeTerre', 'au moins 20 %');
+borne('pomme de terre : au plus un tiers', 'patate', 'veloutePommeDeTerre', 'au plus 33 %');
+// La distinction catégorie/chiffre reste vivante : dès qu'un pourcentage est
+// DÉCLARÉ dans la fiche, la patate est chiffrable là où le beurre ne l'est pas.
+const veloutéDéclaré = {
+  ingredients: F.veloutePommeDeTerre.ingredients.map((i, n) => (
+    n === 0 ? { ...i, percent: 45 } : i
+  )),
+};
+check('une déclaration quelque part rouvre l\'estimation',
+  JSON.stringify(ingredientShare('patate', veloutéDéclaré.ingredients)),
+  JSON.stringify({ valeur: 10, source: 'estime' }));
 // En face : "beurre" reste muet, sinon il attraperait le beurre de cacao.
 part('beurre reste sans chiffre', 'beurre', 'biscuitsNutella', null);
 
 check('libellé en phrase : aucun chiffre',
   rendu({ matched: 'miel', compareReal: 'Très faible taux de miel réel' }, { ingredients: F.bisqueDeclaree.ingredients }),
   'Très faible taux de miel réel');
+
+
+console.log('\n--- Bornes : ce que l\'ordre légal garantit, et rien de plus ---');
+// Une borne basse à 0 et une borne haute à 100 sont les valeurs par défaut :
+// elles n'excluent rien, donc elles ne s'affichent pas.
+check('borne inutile (0 à 100) : rien',
+  ingredientShare('homard', [{ id: 'en:lobster', percent_min: 0, percent_max: 100 }]),
+  null);
+check('borne basse seule',
+  partLabel(ingredientShare('homard', [{ id: 'en:lobster', percent_min: 25, percent_max: 100 }])),
+  'au moins 25 %');
+check('borne haute seule',
+  partLabel(ingredientShare('homard', [{ id: 'en:lobster', percent_min: 0, percent_max: 50 }])),
+  'au plus 50 %');
+check('les deux bornes',
+  partLabel(ingredientShare('homard', [{ id: 'en:lobster', percent_min: 20, percent_max: 33.333 }])),
+  'entre 20 et 33 %');
+// Le déclaré reste prioritaire sur la borne.
+check('déclaré l emporte sur la borne',
+  ingredientShare('homard', [{ id: 'en:lobster', percent: 12, percent_estimate: 12, percent_min: 5, percent_max: 40 }]).source,
+  'declare');
+
 
 console.log(`\n${pass}/${pass + fail} passent${fail ? ` — ${fail} ÉCHEC(S)` : ' — TOUT PASSE'}`);
 process.exit(fail ? 1 : 0);

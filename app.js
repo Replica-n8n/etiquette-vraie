@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.3';
+const APP_VERSION = 'v2.4';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786389810';
+const BUILD = '1786396066';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1080,6 +1080,13 @@ function shareSuffix(part) {
   const frag = document.createDocumentFragment();
   const pct = document.createElement('b');
   pct.className = 'compare-pct';
+  // Une BORNE n'a pas de valeur unique : « au moins 20 % » se lit d'un bloc.
+  // Sans ce cas, part.valeur valait undefined et la fiche affichait « NaN % ».
+  if (part.source === 'borne') {
+    pct.textContent = ' ' + partLabel(part);
+    frag.appendChild(pct);
+    return frag;
+  }
   const v = part.valeur;
   pct.textContent = ' ' + (v >= 10 ? Math.round(v) : Math.round(v * 10) / 10)
     .toString().replace('.', ',') + ' %';
@@ -1169,7 +1176,9 @@ function verdictSubLine(detail, product, texteIngredients, headline) {
     const part = shares[i];
     if (!part) return;                             // sans chiffre, rien à ajouter
     const nom = libelle.replace(/ : présent$/, '');
-    morceaux.push(`${nom} ${formatPart(part.valeur)}${part.source === 'estime' ? ' estimé' : ''}`);
+    // Le libellé vient de rules.js : trois sources possibles (déclaré, estimé,
+    // borne) et une seule décision sur la façon de les lire.
+    morceaux.push(`${nom} ${partLabel(part)}`);
   });
   return morceaux.join(' · ');
 }
@@ -1187,8 +1196,15 @@ function equilibrerTuiles() {
   if (!grille) return;
   const visibles = [...grille.querySelectorAll('.score-tile')]
     .filter((t) => !t.classList.contains('hidden'));
+  // Trois tuiles : elles tiennent sur une ligne, corps réduits (voir style.css).
+  // La dernière n'a plus à s'étaler en dessous, ce qui la faisait lire comme
+  // une case oubliée plutôt que comme la troisième d'un rang.
+  grille.classList.toggle('trois', visibles.length === 3);
   visibles.forEach((t, i) => {
-    t.classList.toggle('pleine-largeur', visibles.length % 2 === 1 && i === visibles.length - 1);
+    t.classList.toggle(
+      'pleine-largeur',
+      visibles.length !== 3 && visibles.length % 2 === 1 && i === visibles.length - 1,
+    );
   });
 }
 
@@ -1280,7 +1296,7 @@ function realShares(detail, product) {
 
 function renderResult(product) {
   const ingr = ingredientsForAnalysis(product);
-  const { verdict, headline, legalNote, detail } = ingr.lisible || !ingr.texte
+  const { verdict, headline, legalNote, legalTitle, detail } = ingr.lisible || !ingr.texte
     ? detectVerdict(product.product_name, ingr.texte, { additivesTags: product.additives_tags })
     : {
       verdict: 'foreign',
@@ -1425,6 +1441,13 @@ function renderResult(product) {
   if (legalNote && (verdict === 'misleading' || verdict === 'warning')) {
     legalAccordion.classList.remove('hidden');
     document.getElementById('legal-note').textContent = legalNote;
+    // Le titre était figé dans le HTML : sous un « nem au crabe » sans crabe,
+    // l'app affichait « Trompeur » puis « Pourquoi c'est autorisé ». Rien n'est
+    // autorisé dans ce cas. C'est la règle qui écrit la note qui donne le titre.
+    // ⚠️ `if (el)` obligatoire : l'élément est nouveau, et un appareil peut
+    // servir le nouvel app.js avec l'ancien index.html pendant un cycle.
+    const titreEl = document.getElementById('legal-title');
+    if (titreEl && legalTitle) titreEl.textContent = legalTitle;
   } else {
     legalAccordion.classList.add('hidden');
   }

@@ -676,14 +676,34 @@ function isMentionedInIngredients(word, ingredientsNorm) {
 // Vrai si le mot n'apparaît dans les ingrédients que comme saveur/arôme,
 // jamais comme ingrédient réel. On raisonne par ingrédient (séparés par des
 // virgules) : le marqueur peut précéder OU suivre le mot selon la langue.
+// Petits mots qui peuvent s'intercaler entre le marqueur et l'aliment :
+// « arôme naturel DE fraise », « à saveur DE chocolat », « simili-crabe ».
+const LIEN_SAVEUR =
+  "(?:[\\s'-]+(?:de|d|du|des|a|au|aux|la|le|les|l|et|type|naturels?|naturelles?|artificiels?|artificielles?)\\b)*[\\s'-]*";
+
+// ⚠️ LE MARQUEUR QUALIFIE UN MOT, PAS TOUT L'INGRÉDIENT.
+// On testait la simple PRÉSENCE d'un marqueur dans l'ingrédient. Résultat, sur
+// « surimi de chair de poisson saveur crabe 20 % », le « saveur » qui qualifie
+// le crabe disqualifiait aussi le surimi, pourtant bien présent : la salade
+// Casino (3222477059665) était accusée de ne contenir qu'un arôme de surimi.
+// On exige donc que le marqueur TOUCHE le mot - juste avant (« arôme fraise »,
+// « à saveur de chocolat ») ou juste après (« chocolate flavoured chunks »).
 function onlyAppearsAsArome(word, ingredientsNorm) {
   const allVariants = INGREDIENT_VARIANTS[word] || [word];
   const variants = allVariants.map(v => pluralPattern(v)).join('|');
-  const wordRe = new RegExp(`\\b(?:${variants})\\b`);
-  const items = ingredientsNorm.split(',').map(s => s.trim()).filter(Boolean);
+  const mot = `\\b(?:${variants})\\b`;
+  const wordRe = new RegExp(mot);
+  const marqueur = FLAVOUR_MARKER.source;
+  const avant = new RegExp(`(?:${marqueur})${LIEN_SAVEUR}${mot}`);
+  const apres = new RegExp(`${mot}[\\s'-]*(?:${marqueur})`);
+  // splitIngredientList et non split(',') : c'est la même découpe que le reste
+  // du moteur et que l'affichage. Avec la découpe naïve, une virgule à
+  // l'intérieur d'une parenthèse coupait au mauvais endroit et collait
+  // l'aliment d'un ingrédient au marqueur d'un autre.
+  const items = splitIngredientList(ingredientsNorm);
   const mentions = items.filter(item => wordRe.test(item));
   if (mentions.length === 0) return true; // absent = pareil qu'arôme seul
-  return mentions.every(item => FLAVOUR_MARKER.test(item));
+  return mentions.every(item => avant.test(item) || apres.test(item));
 }
 
 // ===========================================================================
@@ -851,6 +871,29 @@ function splitIngredientList(text) {
     else if (c === ')' || c === ']') profondeur = Math.max(0, profondeur - 1);
     const decimale = /\d/.test(chaine[i - 1] || '') && /\d/.test(chaine[i + 1] || '');
     if (c === ',' && profondeur === 0 && !decimale) {
+      items.push(courant);
+      courant = '';
+      continue;
+    }
+    // ⚠️ LA VIRGULE N'EST PAS LE SEUL SÉPARATEUR. Casino sépare au tiret,
+    // Jafun au point-virgule. Faute de les connaître, toute la liste ne formait
+    // qu'UN SEUL ingrédient - et un « saveur » ou un « arôme » n'importe où
+    // dedans disqualifiait alors tous les mots à la fois. « Salade pâtes et
+    // surimi » (3222477059665) était accusé de ne contenir qu'un arôme de
+    // surimi à cause du « saveur crabe » situé quatre mots plus loin ; le jus
+    // Jafun (3564706668751) était accusé sur l'abricot que sa liste déclare
+    // pourtant à 2 %.
+    if (c === ';' && profondeur === 0) {
+      items.push(courant);
+      courant = '';
+      continue;
+    }
+    // Le tiret ne sépare QUE s'il est entouré d'espaces : « Nord-Est »,
+    // « sous-produits » et « demi-écrémé » n'en ont pas, et doivent rester
+    // entiers. Les trois formes de tiret se croisent dans la base.
+    const tiretSepare = /[-–—]/.test(c) && profondeur === 0
+      && /\s/.test(chaine[i - 1] || '') && /\s/.test(chaine[i + 1] || '');
+    if (tiretSepare) {
       items.push(courant);
       courant = '';
       continue;
@@ -1107,6 +1150,13 @@ function chocolateForm(ingredientsText) {
   return null;
 }
 
+// TITRES DE L'ACCORDÉON. Ils étaient figés à « Pourquoi c'est autorisé » dans
+// index.html, ce qui donnait, sous un « Nem au crabe » sans crabe : Trompeur,
+// puis « Pourquoi c'est autorisé ». Or rien n'est autorisé dans ce cas-là. Le
+// titre appartient donc à la règle qui écrit la note, comme le libellé.
+const TITRE_AUTORISE = "Pourquoi c'est autorisé";
+const TITRE_LOI = 'Ce que dit la loi';
+
 function legalNoteHedge(motsManquants) {
   const noms = motsManquants.map(displayFlavor);
   const premier = noms[0];
@@ -1123,6 +1173,14 @@ function legalNoteHedge(motsManquants) {
 // ⚠️ Le texte sur l'arôme n'est vrai QUE s'il y a un arôme. Servi devant une
 // liste qui n'en contient aucun, il expliquait une règle sans rapport avec le
 // produit affiché - la même invention que le libellé qu'il accompagnait.
+// Le titre suit la même bascule que la note : la ruse de l'arôme EST permise
+// (le règlement n'exige que le mot « arôme »), un substitut ne l'est pas.
+function legalTitleFlavor(motsManquants, contexte = {}) {
+  const { substitut = {}, tousAromes = true } = contexte;
+  if (motsManquants.some((f) => substitut[f])) return TITRE_LOI;
+  return tousAromes ? TITRE_AUTORISE : TITRE_LOI;
+}
+
 function legalNoteFlavor(motsManquants, contexte = {}) {
   const noms = enumerer(motsManquants.map(displayFlavor));
   const { substitut = {}, tousAromes = true } = contexte;
@@ -1369,6 +1427,7 @@ function detectVerdict(productName, ingredientsText, contexte) {
     verdict: 'misleading',
     headline: headlineAllegation(conflit),
     legalNote: LEGAL_NOTE_ALLEGATION,
+    legalTitle: TITRE_LOI,
     detail: { rule: 'allegation-contredite', claim: conflit },
   };
 }
@@ -1406,6 +1465,7 @@ function detectVerdictBase(productName, ingredientsText) {
         verdict: 'misleading',
         headline: rule.headline(rule.label),
         legalNote: rule.legalNote,
+        legalTitle: TITRE_LOI,
         detail: {
           rule: 'denomination-non-conforme',
           matched: rule.label,
@@ -1513,6 +1573,7 @@ function detectVerdictBase(productName, ingredientsText) {
               ? `"${liste}" est une saveur, pas l'ingrédient`
               : `${liste} : des saveurs, pas les ingrédients`,
             legalNote: legalNoteHedge(missingFlavors),
+            legalTitle: TITRE_AUTORISE,
             detail: { ...detail, rule: 'saveur-annoncee' },
           };
         }
@@ -1538,6 +1599,7 @@ function detectVerdictBase(productName, ingredientsText) {
           verdict: 'misleading',
           headline,
           legalNote: legalNoteFlavor(missingFlavors, { substitut, tousAromes }),
+          legalTitle: legalTitleFlavor(missingFlavors, { substitut, tousAromes }),
           detail: { ...detail, rule: 'saveur-sans-ingredient', substituts: substitut },
         };
       }
@@ -1682,8 +1744,66 @@ function ingredientShare(word, ingredients) {
       || (declare <= estime * 2 && estime <= declare * 2);
     if (coherent) return { valeur: declare, source: 'declare' };
   }
-  if (estime !== null) return { valeur: estime, source: 'estime' };
+  // ⚠️ SANS AUCUNE DÉCLARATION DANS LA FICHE, L'ESTIMATION NE MESURE RIEN.
+  // Open Food Facts n'a alors rien pour s'accrocher : il divise par rang, et
+  // le résultat ne dépend QUE du nombre d'ingrédients. Mesuré le 2026-08-10 sur
+  // 125 confitures, dont 66 sans le moindre pourcentage déclaré : 19 partagent
+  // la suite 60/20/10/5, 14 partagent 62,5/18,75/9,375, 8 partagent
+  // 66,7/16,7/16,7. Deux produits différents, la même « estimation ».
+  // « Confiture extra framboises » d'Andros affichait ainsi « framboise 19 % »,
+  // ce qui veut seulement dire « deuxième de quatre » - et faisait croire que
+  // le produit violait les 45 % de la mention extra. On se tait.
+  if (estime !== null && aUnPourcentageDeclare(ingredients)) {
+    return { valeur: estime, source: 'estime' };
+  }
+
+  // À défaut de chiffre, les BORNES. Elles ne sont pas un calcul d'Open Food
+  // Facts mais une conséquence de la loi : la liste est ordonnée par quantité
+  // décroissante (art. 18), donc un ingrédient placé premier sur cinq pèse au
+  // moins un cinquième, et un ingrédient placé troisième pèse au plus un tiers.
+  // C'est vrai, vérifiable, et ça ne dépend d'aucune estimation.
+  const min = typeof hit.item.percent_min === 'number' ? hit.item.percent_min : null;
+  const max = typeof hit.item.percent_max === 'number' ? cap(hit.item.percent_max) : null;
+  // Une borne basse à 0 et une borne haute à 100 n'apprennent rien : ce sont
+  // les valeurs par défaut, pas une information. Aucun seuil arbitraire ici -
+  // seulement le refus des bornes qui n'excluent rien.
+  const basseUtile = min !== null && min > 0;
+  const hauteUtile = max !== null && max < 100;
+  if (basseUtile || hauteUtile) {
+    return {
+      source: 'borne',
+      min: basseUtile ? min : null,
+      max: hauteUtile ? max : null,
+    };
+  }
   return null;
+}
+
+// « 3,8 % » · « 3,8 % estimé » · « au moins 20 % » · « entre 20 et 33 % »
+// Le formatage vit ici, avec la valeur : c'est ce qui garantit qu'une nouvelle
+// source ne peut pas être ajoutée sans décider comment elle se lit.
+function formatPourcentage(v) {
+  return (v >= 10 ? Math.round(v) : Math.round(v * 10) / 10).toString().replace('.', ',') + ' %';
+}
+
+function partLabel(part) {
+  if (!part) return '';
+  if (part.source === 'borne') {
+    if (part.min !== null && part.max !== null) {
+      return `entre ${formatPourcentage(part.min).replace(' %', '')} et ${formatPourcentage(part.max)}`;
+    }
+    if (part.min !== null) return `au moins ${formatPourcentage(part.min)}`;
+    return `au plus ${formatPourcentage(part.max)}`;
+  }
+  return formatPourcentage(part.valeur) + (part.source === 'estime' ? ' estimé' : '');
+}
+
+// Le fabricant a-t-il déclaré au moins UN pourcentage quelque part ? C'est la
+// seule chose qui donne un point d'ancrage au calcul d'OFF. Sous-ingrédients
+// compris : un « chocolat 32 % » imbriqué contraint déjà tout le reste.
+function aUnPourcentageDeclare(ingredients) {
+  return flattenIngredients(ingredients)
+    .some(({ item }) => typeof item.percent === 'number' && item.percent > 0);
 }
 
 if (typeof module !== 'undefined') {
@@ -1691,6 +1811,6 @@ if (typeof module !== 'undefined') {
     detectVerdict, normalize, findFlavorMention, onlyAppearsAsArome,
     findIngredientPosition, ingredientShare, isMentionedInIngredients,
     splitIngredientList, chocolateForm, chocolatePercent, legalTier,
-    claimConflict, additiveLabel, findSubstitute,
+    claimConflict, additiveLabel, findSubstitute, partLabel,
   };
 }

@@ -325,6 +325,18 @@ body{
    ⚠️ La classe est posée par app.js, pas par un `:nth-of-type` : le CSS
    compterait aussi les tuiles masquées, qui sont toujours dans le DOM. */
 .score-tile.pleine-largeur{ grid-column:1 / -1; }
+/* TROIS TUILES : une seule ligne plutôt qu'une orpheline en dessous.
+   À 375 px de large il reste ~109 px par tuile : l'icône passe AU-DESSUS du
+   texte, sinon « Ultra-transformé » n'a plus que 44 px pour s'écrire. Le texte
+   récupère ainsi toute la largeur de la tuile, et les corps baissent juste
+   assez pour que les trois libellés tiennent. */
+.score-grid.trois{ grid-template-columns:repeat(3, 1fr); gap:6px; }
+.score-grid.trois .score-tile{ flex-direction:column; align-items:flex-start; gap:6px; padding:9px 9px; }
+.score-grid.trois .score-tile .icon{ width:26px; height:26px; border-radius:8px; font-size:12px; }
+.score-grid.trois .score-label{ font-size:8px; }
+.score-grid.trois .score-value{ font-size:10.5px; line-height:1.2; }
+/* La pleine largeur n'a plus lieu d'être quand les trois tiennent sur la ligne. */
+.score-grid.trois .score-tile.pleine-largeur{ grid-column:auto; }
 .score-tile{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:11px 12px; display:flex; align-items:center; gap:9px; }
 .score-tile .icon{
   width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center;
