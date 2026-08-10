@@ -12,7 +12,7 @@
 // Version du code déployé. Le Worker se colle à la main dans Cloudflare : sans
 // marqueur, impossible de savoir si la version en ligne est à jour. Un simple
 // GET sur la racine l'affiche. À bumper à chaque modification de ce fichier.
-const WORKER_VERSION = 'w2-brands';
+const WORKER_VERSION = 'w3-add-brands-ua';
 
 const OFF_SEARCH = 'https://search.openfoodfacts.org/search';
 const FIELDS = 'code,product_name,brands,image_front_small_url,lang,languages_tags,countries_tags';
@@ -40,6 +40,13 @@ function json(obj, status = 200) {
 const APP_NAME = 'EtiquetteVraie';
 const APP_VERSION = '1.0';
 const MAX_IMAGE_BYTES = 6 * 1024 * 1024; // ~4,5 Mo de photo réelle
+
+// OFF attend un User-Agent de la forme `AppName/Version (ContactEmail)` : c'est
+// par là qu'ils préviennent avant de bloquer un client qui se comporte mal.
+// Un libellé sans adresse ne leur laisse aucun moyen de nous joindre.
+// Alias masquant volontaire (le handle est déjà public dans l'URL du Worker).
+const CONTACT = 'jfrxdi0zz@mozmail.com';
+const USER_AGENT = `${APP_NAME}/${APP_VERSION} (${CONTACT})`;
 
 function offBase(env) {
   // Par défaut : serveur de TEST d'OFF. Passer OFF_BASE à l'URL de prod
@@ -70,7 +77,7 @@ async function handleAuthCheck(env) {
   try {
     const res = await fetch(`${base}/cgi/session.pl`, {
       method: 'POST', body: form,
-      headers: { 'User-Agent': `${APP_NAME}/${APP_VERSION} (etiquette-vraie)` },
+      headers: { 'User-Agent': USER_AGENT },
     });
     return json({
       version: WORKER_VERSION,
@@ -102,6 +109,7 @@ async function handleContribute(request, env) {
   const name = String(body.product_name || '').trim().slice(0, 200);
   // La marque est un champ à part chez OFF : sans elle, la fiche reste
   // incomplète et le produit est difficile à retrouver par la recherche.
+  // ⚠️ Envoyée en `add_brands`, jamais en `brands` — voir plus bas.
   const brands = String(body.brands || '').trim().slice(0, 120);
   const lang = /^[a-z]{2}$/.test(body.lang || '') ? body.lang : 'fr';
   // uuid anonyme fourni par l'app (aucune donnée perso)
@@ -117,11 +125,15 @@ async function handleContribute(request, env) {
     const form = new FormData();
     for (const [k, v] of Object.entries({ ...auth, ...identity, code, lang })) form.append(k, v);
     if (name) form.append('product_name', name);
-    if (brands) form.append('brands', brands);
+    // ⚠️ `brands` est un champ LISTE chez OFF : l'envoyer sans préfixe REMPLACE
+    // toute la liste existante (« Ferrero, Nutella » -> « Nutella »). `add_brands`
+    // ajoute à la liste. Sans ça, chaque contribution sur une fiche déjà remplie
+    // détruisait des données publiques. Ne jamais revenir à `brands`.
+    if (brands) form.append('add_brands', brands);
     try {
       const res = await fetch(`${base}/cgi/product_jqm2.pl`, {
         method: 'POST', body: form,
-        headers: { 'User-Agent': `${APP_NAME}/${APP_VERSION} (etiquette-vraie)` },
+        headers: { 'User-Agent': USER_AGENT },
       });
       const txt = await res.text();
       let parsed; try { parsed = JSON.parse(txt); } catch (e) { parsed = { raw: txt.slice(0, 200) }; }
@@ -144,7 +156,7 @@ async function handleContribute(request, env) {
     try {
       const res = await fetch(`${base}/cgi/product_image_upload.pl`, {
         method: 'POST', body: form,
-        headers: { 'User-Agent': `${APP_NAME}/${APP_VERSION} (etiquette-vraie)` },
+        headers: { 'User-Agent': USER_AGENT },
       });
       const txt = await res.text();
       let parsed; try { parsed = JSON.parse(txt); } catch (e) { parsed = { raw: txt.slice(0, 200) }; }
@@ -178,7 +190,7 @@ export default {
 
     try {
       const res = await fetch(offUrl, {
-        headers: { 'User-Agent': 'EtiquetteVraie/1.0 (Cloudflare search proxy)' },
+        headers: { 'User-Agent': `${USER_AGENT} search-proxy` },
         cf: { cacheTtl: CACHE_TTL, cacheEverything: true }, // cache à la périphérie
       });
       if (!res.ok) return json({ products: [], error: 'off-error', status: res.status });
