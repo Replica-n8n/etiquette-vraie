@@ -7,7 +7,7 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 const APP_VERSION = 'v2.0';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786314146';
+const BUILD = '1786362073';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1165,6 +1165,19 @@ function montrerTuile(id, visible) {
   if (el) el.classList.toggle('hidden', !visible);
 }
 
+// Le CSS ne sait pas compter les seuls éléments VISIBLES : `:nth-of-type`
+// compte aussi les tuiles masquées, toujours présentes dans le DOM. D'où ce
+// calcul en JavaScript, où le compte est exact.
+function equilibrerTuiles() {
+  const grille = document.querySelector('.score-grid');
+  if (!grille) return;
+  const visibles = [...grille.querySelectorAll('.score-tile')]
+    .filter((t) => !t.classList.contains('hidden'));
+  visibles.forEach((t, i) => {
+    t.classList.toggle('pleine-largeur', visibles.length % 2 === 1 && i === visibles.length - 1);
+  });
+}
+
 function formatPart(v) {
   return (v >= 10 ? Math.round(v) : Math.round(v * 10) / 10).toString().replace('.', ',') + ' %';
 }
@@ -1387,6 +1400,10 @@ function renderResult(product) {
   const bio = bioMeta(product.labels_tags, product.ingredients_text);
   montrerTuile('tile-bio', !!bio);
   renderScoreTile('bio-icon', 'bio-value', bio, 'Non certifié');
+
+  // La grille est à deux colonnes : un nombre impair de tuiles laisse la
+  // dernière seule, à moitié large. Elle prend alors toute la ligne.
+  equilibrerTuiles();
 
   const legalAccordion = document.getElementById('legal-accordion');
   // Vaut aussi pour "À vérifier" : c'est précisément là que l'explication

@@ -832,7 +832,11 @@ const FAMILLES_LEGALES = [
     categorie: /(^|-)(juices?|nectars?|jus)$/,
     rangs: ['boisson aux fruits', 'nectar', 'à base de concentré', 'pur jus'],
     expl: [
-      "De l'eau en tête de liste : un jus n'a droit ni à l'eau ni au sucre ajoutés. Cette catégorie-là n'a aucun minimum de fruit à respecter.",
+      // ⚠️ Ce texte doit désamorcer la question du concentré : la liste en
+      // contient souvent, et on cherche alors pourquoi le produit n'est pas
+      // classé « à base de concentré ». La réponse est que la question ne se
+      // pose plus une fois l'eau ajoutée.
+      "De l'eau en tête de liste, et un édulcorant. Peu importe alors que le jus vienne d'un concentré ou non : dès qu'on ajoute de l'eau ou un édulcorant, ce n'est plus un jus. Cette catégorie-là n'a aucun minimum de fruit à respecter.",
       "Un nectar est un jus dilué et sucré : de 25 à 50 % de fruit selon l'espèce. C'est écrit sur l'étiquette, mais le mot ne dit pas ce qu'il cache.",
       "Du vrai jus, reconstitué à partir de concentré : on a retiré l'eau, puis on l'a remise. Ni sucre ni eau au-delà.",
       "Du fruit pressé, rien d'autre. Ni eau, ni sucre ajouté.",

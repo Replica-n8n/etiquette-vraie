@@ -319,6 +319,12 @@ body{
 
 /* Scores : chaque tuile garde sa hauteur naturelle */
 .score-grid{ margin:10px 16px 0; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+/* Les tuiles sont conditionnelles depuis la v2 : quand le bio manque, il en
+   reste trois, et la dernière restait seule sur sa ligne, à moitié large -
+   une case oubliée plutôt qu'un choix. Elle occupe alors la ligne entière.
+   ⚠️ La classe est posée par app.js, pas par un `:nth-of-type` : le CSS
+   compterait aussi les tuiles masquées, qui sont toujours dans le DOM. */
+.score-tile.pleine-largeur{ grid-column:1 / -1; }
 .score-tile{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:11px 12px; display:flex; align-items:center; gap:9px; }
 .score-tile .icon{
   width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center;
