@@ -89,6 +89,14 @@ silence('sans colorant artificiel + colorant naturel', 'Bonbon sans colorant art
 silence('no artificial colours + naturel', 'Candy no artificial colours', ['en:e160a']);
 conflit('sans colorant artificiel + colorant de synthèse', 'Bonbon sans colorant artificiel', ['en:e129'], 'colorant', ['en:e129']);
 
+// Codes imprécis d'Open Food Facts : « en:e14xx » veut dire « un amidon
+// modifié, on ne sait pas lequel ». Lu comme « E14 », il tombait dans des
+// plages qui ne sont pas les siennes.
+console.log('--- FAMILLE 2 bis : codes imprécis ---');
+silence('e14xx ne contredit pas « sans colorant »', 'Glace sans colorant', ['en:e14xx']);
+silence('e14xx ne contredit pas « sans conservateur »', 'Glace sans conservateur', ['en:e14xx']);
+conflit('e14xx reste un additif', 'Glace sans additif', ['en:e14xx'], 'additif', ['en:e14xx']);
+
 console.log('--- FAMILLE 3 : plusieurs allégations dans un même nom ---');
 conflit('sans conservateur NI colorant -> le colorant', 'Gazpacho sans colorant ni conservateur', ['en:e160a'], 'colorant', ['en:e160a']);
 conflit('sans conservateur NI colorant -> le conservateur', 'Gazpacho sans colorant ni conservateur', ['en:e202'], 'conservateur', ['en:e202']);

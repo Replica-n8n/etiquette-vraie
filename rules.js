@@ -451,6 +451,17 @@ const DISPLAY_FR = {
   // Le moteur raisonne sur "patate", mais c'est "pomme de terre" qui est écrit
   // sur l'emballage : on affiche le mot que l'acheteuse a sous les yeux.
   patate: 'pomme de terre', potato: 'pomme de terre',
+  // Le dictionnaire est écrit SANS ACCENTS, parce que normalize() en retire
+  // pour comparer. À l'affichage il en faut : on écrivait "cacahuete", "peche",
+  // "chevre". Invisible tant que l'app ne nommait que l'aliment promis, criant
+  // depuis qu'elle nomme aussi le remplaçant.
+  cacahuete: 'cacahuète', eglefin: 'églefin', fletan: 'flétan', merou: 'mérou',
+  chevre: 'chèvre', ecrevisse: 'écrevisse', huitre: 'huître', pecan: 'pécan',
+  peche: 'pêche', cepe: 'cèpe', feve: 'fève', celeri: 'céleri', peches: 'pêche',
+  epeautre: 'épeautre', sesame: 'sésame', reglisse: 'réglisse', melasse: 'mélasse',
+  chataigne: 'châtaigne', gruyere: 'gruyère', comte: 'comté', pasteque: 'pastèque',
+  genievre: 'genièvre', echalote: 'échalote', asperge: 'asperge', mure: 'mûre',
+  oeuf: 'œuf', ble: 'blé', cafe: 'café', erable: 'érable', pate: 'pâte',
 };
 
 function displayFlavor(word) {
@@ -630,6 +641,77 @@ function onlyAppearsAsArome(word, ingredientsNorm) {
   const mentions = items.filter(item => wordRe.test(item));
   if (mentions.length === 0) return true; // absent = pareil qu'arôme seul
   return mentions.every(item => FLAVOUR_MARKER.test(item));
+}
+
+// ===========================================================================
+// NOMMER LE SUBSTITUT
+//
+// « Filet de cabillaud » composé de pangasius affichait « "cabillaud" absent -
+// seulement un arôme ». Il n'y a AUCUN arôme dans cette liste : le substitut
+// est en première position, l'app l'a sous les yeux, et elle raconte une
+// histoire d'arôme. Même chose pour « Lasagnes au bœuf » / viande de cheval et
+// « Salade de crabe » / surimi. Le moteur savait dire ce qui MANQUE, jamais ce
+// qu'on a mis à la place - c'est pourtant la question de l'acheteuse.
+//
+// La cause : `onlyAppearsAsArome` répond vrai dans DEUX situations très
+// différentes - le mot est absent, ou il n'apparaît que dans un arôme - et le
+// libellé ne connaissait que la seconde.
+//
+// ⚠️ On ne nomme un remplaçant que s'il est de la MÊME FAMILLE. C'est ce qui
+// rend la phrase vraie : personne ne remplace du cabillaud par de la farine.
+// Sans cette contrainte, « Biscuit fraise » sans fraise annoncerait « remplacé
+// par farine de blé », ce qui n'a aucun sens.
+const FAMILLES_SUBSTITUT = [
+  ['poisson', [
+    'cabillaud', 'morue', 'cod', 'colin', 'merlu', 'hake', 'merlan', 'whiting',
+    'eglefin', 'haddock', 'fletan', 'halibut', 'sole', 'turbot', 'dorade',
+    'seabream', 'merou', 'grouper', 'espadon', 'swordfish', 'lotte', 'monkfish',
+    'saumon', 'salmon', 'truite', 'trout', 'thon', 'tuna', 'sardine',
+    'maquereau', 'mackerel', 'anchois', 'anchovy', 'hareng', 'herring',
+    'tilapia', 'pangasius',
+  ]],
+  ['viande', [
+    'boeuf', 'beef', 'veau', 'veal', 'porc', 'pork', 'cheval', 'horse',
+    'agneau', 'lamb', 'mouton', 'sheep', 'poulet', 'chicken', 'dinde', 'turkey',
+    'canard', 'duck', 'lapin', 'rabbit', 'oie', 'goose', 'caille', 'quail',
+    'chevre', 'goat', 'biche', 'venison', 'sanglier', 'boar', 'jambon', 'ham',
+    'bacon', 'lardon',
+  ]],
+  ['fruits de mer', [
+    'crabe', 'crab', 'crevette', 'shrimp', 'homard', 'lobster', 'surimi',
+    'moule', 'mussel', 'huitre', 'oyster', 'calmar', 'squid', 'seiche',
+    'cuttlefish', 'poulpe', 'octopus', 'palourde', 'clam', 'ecrevisse',
+    'crayfish', 'ormeau', 'abalone',
+  ]],
+  // NUT_FAMILY moins ses termes GÉNÉRIQUES ('noix', 'nut') : ils désignent
+  // n'importe quel fruit à coque, donc « amande remplacée par noix » quand le
+  // sachet contient des noix de cajou. On nomme l'espèce ou on se tait.
+  ['fruits à coque', [
+    'noisette', 'hazelnut', 'amande', 'almond', 'cacahuete', 'peanut',
+    'arachide', 'cajou', 'cashew', 'pistache', 'pistachio', 'pecan',
+    'macadamia', 'pignon',
+  ]],
+];
+
+// Un ingrédient TIRÉ de l'animal n'est pas l'animal. « Gélatine de porc » dans
+// un plat au bœuf n'est pas du porc servi à la place du bœuf, c'est un liant :
+// l'annoncer comme remplaçant serait une accusation fausse.
+const DERIVE_MARKER = /\b(?:gelatine|bouillon|extrait|extract|graisse|fat|collagene|collagen|plasma|gelatin)\b/;
+
+// L'aliment promis est absent : quel aliment de sa famille occupe la place ?
+// On renvoie le PREMIER trouvé dans l'ordre de la liste - donc le plus lourd,
+// puisque la liste est ordonnée par quantité décroissante (art. 18).
+function findSubstitute(word, ingredientsNorm) {
+  const famille = FAMILLES_SUBSTITUT.find(([, mots]) => mots.includes(word));
+  if (!famille) return null;
+  const candidats = famille[1].filter((m) => m !== word);
+  for (const item of splitIngredientList(ingredientsNorm)) {
+    if (FLAVOUR_MARKER.test(item) || DERIVE_MARKER.test(item)) continue;
+    for (const c of candidats) {
+      if (isMentionedInIngredients(c, item)) return c;
+    }
+  }
+  return null;
 }
 
 // ===========================================================================
@@ -947,8 +1029,22 @@ function legalNoteHedge(motsManquants) {
   return phrases.join(' ');
 }
 
-function legalNoteFlavor(motsManquants) {
+// ⚠️ Le texte sur l'arôme n'est vrai QUE s'il y a un arôme. Servi devant une
+// liste qui n'en contient aucun, il expliquait une règle sans rapport avec le
+// produit affiché - la même invention que le libellé qu'il accompagnait.
+function legalNoteFlavor(motsManquants, contexte = {}) {
   const noms = enumerer(motsManquants.map(displayFlavor));
+  const { substitut = {}, tousAromes = true } = contexte;
+  const remplaces = motsManquants.filter((f) => substitut[f]);
+
+  if (remplaces.length) {
+    const paires = remplaces
+      .map((f) => `${displayFlavor(f)} annoncé, ${displayFlavor(substitut[f])} dans la liste`);
+    return `Le nom met en avant ${noms}. La liste d'ingrédients donne autre chose de la même famille : ${enumerer(paires)}. La dénomination d'un aliment doit désigner ce qu'il est réellement, et l'information ne doit pas induire l'acheteur en erreur sur sa nature ou sa composition (règlement (UE) n°1169/2011, art. 7 et 17).`;
+  }
+  if (!tousAromes) {
+    return `Le nom met en avant ${noms}, mais la liste d'ingrédients n'en fait aucune mention - pas même sous forme d'arôme. La dénomination d'un aliment doit désigner ce qu'il est réellement (règlement (UE) n°1169/2011, art. 7 et 17).`;
+  }
   return `Le nom met en avant ${noms}, mais la liste d'ingrédients n'en contient que l'arôme. Un nom qui évoque un aliment décrit une saveur perçue, pas un ingrédient garanti : le règlement (UE) n°1169/2011 exige seulement que le mot "arôme" figure dans la liste, pas qu'il en précise la source.`;
 }
 
@@ -1022,8 +1118,16 @@ function isNutritionFactsInsteadOfIngredients(ingredientsText) {
 //     on n'a pas de partage naturel/synthèse défendable : on se tait.
 // ===========================================================================
 
+// Tout tag d'additif d'Open Food Facts, y compris les codes IMPRÉCIS que la
+// base contient réellement (`en:e14xx` = « un amidon modifié, on ne sait pas
+// lequel »). Ils comptent comme additifs, mais leur numéro est illisible.
+const estAdditif = (tag) => /^[a-z]{2}:e\d/.test(String(tag || '').toLowerCase());
+
+// ⚠️ Le numéro n'est retenu que s'il est COMPLET : trois ou quatre chiffres,
+// suivis au plus d'une lettre de sous-forme. Sans cette exigence, `en:e14xx`
+// se lisait « E14 » et tombait dans des plages auxquelles il n'appartient pas.
 const num_e = (tag) => {
-  const m = /^[a-z]{2}:e(\d+)/.exec(String(tag || '').toLowerCase());
+  const m = /^[a-z]{2}:e(\d{3,4})[a-z]*$/.exec(String(tag || '').toLowerCase());
   return m ? parseInt(m[1], 10) : null;
 };
 
@@ -1050,6 +1154,11 @@ const FAMILLES_ADDITIFS = {
     // propionates. Sont volontairement EXCLUS : E260-E263 (acétates),
     // E270 (acide lactique), E290 (CO2), E296/E297 (acidifiants) - ce sont des
     // régulateurs d'acidité, pas des conservateurs.
+    // MESURÉ le 2026-08-10 sur 120 produits portant l'allégation : la plage
+    // 200-299 prise en bloc accusait 11 produits, cette liste en accuse 4. Les
+    // 7 écarts venaient tous de E262, E296 et E270 - dont les chips Lay's
+    // « saveur barbecue » et un fromage à effilocher. Sept fausses accusations
+    // sur cent vingt fiches, pour quatre vraies.
     membre: (n) => (n >= 200 && n <= 242) || (n >= 249 && n <= 252) || (n >= 280 && n <= 285),
     mot: /conservateurs?|preservatives?/,
   },
@@ -1089,7 +1198,10 @@ const QUALIFIE_ARTIFICIEL = (mot) => new RegExp(
 // Renvoie le conflit le plus PRÉCIS trouvé, ou null.
 // `additivesTags` vient tel quel d'Open Food Facts (`['en:e160a', ...]`).
 function claimConflict(productName, additivesTags) {
-  const tags = (additivesTags || []).filter((t) => num_e(t) !== null);
+  // On garde les codes imprécis : ils ne peuvent contredire aucune famille
+  // nommée (leur numéro est illisible, donc hors de toutes les plages), mais
+  // ils comptent bel et bien pour un « sans additif ».
+  const tags = (additivesTags || []).filter(estAdditif);
   if (!tags.length) return null;
   const nom = normalize(productName);
   if (!nom.includes('sans') && !/\bno\b|free\b|without/.test(nom)) return null;
@@ -1259,6 +1371,23 @@ function detectVerdictBase(productName, ingredientsText) {
       // Si des saveurs sont manquantes : deux cas très différents.
       if (missingFlavors.length > 0) {
         const presentFlavors = flavors.filter((f) => !missingFlavors.includes(f));
+
+        // « Manquant » recouvrait deux situations que le libellé confondait :
+        // le mot n'apparaît QUE dans un arôme, ou il n'apparaît pas du tout.
+        // Dans le second cas, parler d'arôme est une invention pure - et c'est
+        // le cas le plus grave, celui du substitut.
+        const estArome = {};
+        const substitut = {};
+        for (const f of missingFlavors) {
+          estArome[f] = isMentionedInIngredients(f, ingredientsNorm);
+          if (!estArome[f]) substitut[f] = findSubstitute(f, ingredientsNorm);
+        }
+        const remplaces = missingFlavors.filter((f) => substitut[f]);
+        const tousAromes = missingFlavors.every((f) => estArome[f]);
+        // « pangasius », « pangasius et surimi » - dédoublonné : deux aliments
+        // promis peuvent avoir été remplacés par le même.
+        const nomsSubstituts = enumerer([...new Set(remplaces.map((f) => displayFlavor(substitut[f])))]);
+
         const detail = {
           // Surligner ce qui est réellement là (mot BRUT : il doit correspondre
           // au texte des ingrédients, pas à sa traduction d'affichage)
@@ -1266,7 +1395,11 @@ function detectVerdictBase(productName, ingredientsText) {
           // "Le nom suggère" = TOUT ce que le nom annonce, pas juste ce qui manque
           compareSuggest: flavors.map(displayFlavor).join(', '),
           compareReal: [
-            ...missingFlavors.map((f) => `${displayFlavor(f)} : saveur seule`),
+            ...missingFlavors.map((f) => {
+              if (estArome[f]) return `${displayFlavor(f)} : saveur seule`;
+              if (substitut[f]) return `${displayFlavor(f)} : remplacé par ${displayFlavor(substitut[f])}`;
+              return `${displayFlavor(f)} : absent`;
+            }),
             ...presentFlavors.map((f) => `${displayFlavor(f)} : présent`),
           ].join(', '),
           // Aligné sur compareReal, part par part. C'est le producteur du
@@ -1294,13 +1427,27 @@ function detectVerdictBase(productName, ingredientsText) {
         }
 
         // CAS 2 - Le nom AFFIRME l'ingrédient sans réserve, et il est absent.
+        // Trois phrases, parce qu'il y a trois situations. L'ancienne version
+        // n'en avait qu'une et parlait d'arôme même quand il n'y en avait pas.
+        let headline;
+        if (remplaces.length) {
+          headline = missingFlavors.length === 1
+            ? `"${liste}" absent - remplacé par ${nomsSubstituts}`
+            : `${missingFlavors.length} aliments annoncés absents - remplacés par ${nomsSubstituts}`;
+        } else if (tousAromes) {
+          headline = missingFlavors.length === 1
+            ? `"${liste}" absent - seulement un arôme`
+            : `${missingFlavors.length} saveurs absentes - seulement des arômes`;
+        } else {
+          headline = missingFlavors.length === 1
+            ? `"${liste}" absent de la liste`
+            : `${missingFlavors.length} aliments annoncés absents de la liste`;
+        }
         return {
           verdict: 'misleading',
-          headline: missingFlavors.length === 1
-            ? `"${liste}" absent - seulement un arôme`
-            : `${missingFlavors.length} saveurs absentes - seulement des arômes`,
-          legalNote: legalNoteFlavor(missingFlavors),
-          detail: { ...detail, rule: 'saveur-sans-ingredient' },
+          headline,
+          legalNote: legalNoteFlavor(missingFlavors, { substitut, tousAromes }),
+          detail: { ...detail, rule: 'saveur-sans-ingredient', substituts: substitut },
         };
       }
 
@@ -1453,6 +1600,6 @@ if (typeof module !== 'undefined') {
     detectVerdict, normalize, findFlavorMention, onlyAppearsAsArome,
     findIngredientPosition, ingredientShare, isMentionedInIngredients,
     splitIngredientList, chocolateForm, chocolatePercent, legalTier,
-    claimConflict, additiveLabel,
+    claimConflict, additiveLabel, findSubstitute,
   };
 }
