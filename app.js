@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.0';
+const APP_VERSION = 'v2.1';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786362073';
+const BUILD = '1786376056';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -794,7 +794,13 @@ async function findAlternative(product) {
     for (const candidate of candidates) {
       if (!candidate.code || candidate.code === product.code) continue;
       if (!candidate.ingredients_text || !candidate.product_name) continue;
-      const candidateVerdict = detectVerdict(candidate.product_name, candidate.ingredients_text);
+      // Les additifs du candidat sont de toute façon lus deux lignes plus bas :
+      // les passer au moteur écarte aussi celui qui annonce « sans colorant »
+      // et en contient un. Proposer un menteur en remplacement d'un menteur
+      // serait la pire sortie possible.
+      const candidateVerdict = detectVerdict(candidate.product_name, candidate.ingredients_text, {
+        additivesTags: candidate.additives_tags,
+      });
       // "noclaim" est aussi une alternative valable : son nom ne promet aucun
       // aliment, donc il ne peut pas tromper. L'exclure amputait le vivier de
       // 57 % des fiches (mesure du 2026-08-07) - la plupart des produits.
@@ -1134,7 +1140,15 @@ function ouvrirFormeModal(forme) {
 // autres, il n'apportait qu'un chiffre ou une forme, qui tiennent ici.
 // On n'y met QUE ce que la phrase ne dit pas.
 function verdictSubLine(detail, product, texteIngredients, headline) {
-  if (!detail || !detail.compareReal) return '';
+  if (!detail) return '';
+  // Allégation contredite alors que le bandeau parle déjà d'autre chose : le
+  // moteur a gardé le libellé le plus parlant (« "fraise" absent ») et rangé le
+  // conflit ici. Sans cette ligne, l'information serait calculée puis perdue.
+  if (detail.claim && detail.rule !== 'allegation-contredite') {
+    const codes = detail.claim.fautifs.map(additiveLabel).join(', ');
+    return `« ${detail.claim.libelle} » annoncé, mais la liste contient ${codes}`;
+  }
+  if (!detail.compareReal) return '';
   const libelles = String(detail.compareReal).split(',').map((s) => s.trim()).filter(Boolean);
   const shares = realShares(detail, product) || [];
   const formes = detail.formes || [];
@@ -1267,7 +1281,7 @@ function realShares(detail, product) {
 function renderResult(product) {
   const ingr = ingredientsForAnalysis(product);
   const { verdict, headline, legalNote, detail } = ingr.lisible || !ingr.texte
-    ? detectVerdict(product.product_name, ingr.texte)
+    ? detectVerdict(product.product_name, ingr.texte, { additivesTags: product.additives_tags })
     : {
       verdict: 'foreign',
       headline: "Composition écrite dans une langue que l'app ne lit pas encore",

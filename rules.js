@@ -996,7 +996,181 @@ function isNutritionFactsInsteadOfIngredients(ingredientsText) {
  * @param {string} ingredientsText
  * @returns {{ verdict: 'clean'|'warning'|'misleading'|'unknown', headline: string, legalNote?: string, detail?: object }}
  */
-function detectVerdict(productName, ingredientsText) {
+// ===========================================================================
+// ALLÉGATIONS « SANS X » CONTREDITES PAR LA LISTE D'ADDITIFS
+//
+// « Sans colorant » sur la face avant, E160a dans la liste. C'est une astuce de
+// terminologie au sens strict - le cœur de la mission - et l'app répondait
+// « Rien à vérifier », parce qu'elle ne regardait que les mots d'ALIMENTS.
+// Les additifs, eux, étaient déjà chargés pour la tuile : la donnée était là,
+// personne ne la croisait avec le nom.
+//
+// ⚠️ LE RISQUE N'EST PAS DE RATER UN MENTEUR, C'EST D'ACCUSER UN HONNÊTE.
+// Deux garde-fous, tous deux payés par de vraies fausses accusations évitées :
+//
+//  1. Les familles sont définies par LISTE DE PLAGES, jamais par « la centaine ».
+//     Les E200 ne sont pas tous des conservateurs : E290 est du gaz carbonique,
+//     E296 et E297 des acidifiants, E270 de l'acide lactique. Prendre 200-299
+//     en bloc accusait toute eau pétillante et tout yaourt vendus « sans
+//     conservateur ». Une famille trop étroite fait manquer un menteur ; une
+//     famille trop large invente un coupable. On préfère manquer.
+//
+//  2. « Sans colorant ARTIFICIEL » n'est pas « sans colorant ». E160a (carotène)
+//     est un colorant naturel : l'allégation tient, et c'est de loin la
+//     formulation la plus courante sur les emballages. On ne conclut alors que
+//     sur les colorants de synthèse, nommément listés. Pour les autres familles,
+//     on n'a pas de partage naturel/synthèse défendable : on se tait.
+// ===========================================================================
+
+const num_e = (tag) => {
+  const m = /^[a-z]{2}:e(\d+)/.exec(String(tag || '').toLowerCase());
+  return m ? parseInt(m[1], 10) : null;
+};
+
+// Colorants de synthèse (azoïques et apparentés). Seule liste qui permette de
+// juger un « sans colorant artificiel » sans deviner.
+const COLORANTS_SYNTHESE = new Set([
+  102, 104, 110, 122, 123, 124, 127, 128, 129, 131, 132, 133, 142, 151, 154, 155, 180,
+]);
+
+const FAMILLES_ADDITIFS = {
+  colorant: {
+    libelle: 'sans colorant',
+    // E100 à E199 : la plage des colorants est, elle, homogène.
+    membre: (n) => n >= 100 && n <= 199,
+    synthese: (n) => COLORANTS_SYNTHESE.has(n),
+    // « colour », « colours », « colouring », « coloring », « colorant ». Le
+    // suffixe doit être FACULTATIF : sans ça, « no artificial colours » - la
+    // formulation anglaise la plus courante - passait à travers.
+    mot: /colorants?|colou?r(?:ing|ant)?s?/,
+  },
+  conservateur: {
+    libelle: 'sans conservateur',
+    // Sorbates, benzoates, sulfites, nisine/natamycine, nitrites/nitrates,
+    // propionates. Sont volontairement EXCLUS : E260-E263 (acétates),
+    // E270 (acide lactique), E290 (CO2), E296/E297 (acidifiants) - ce sont des
+    // régulateurs d'acidité, pas des conservateurs.
+    membre: (n) => (n >= 200 && n <= 242) || (n >= 249 && n <= 252) || (n >= 280 && n <= 285),
+    mot: /conservateurs?|preservatives?/,
+  },
+  edulcorant: {
+    libelle: 'sans édulcorant',
+    // Polyols (E420, E421) et édulcorants intenses (E950-E969).
+    membre: (n) => n === 420 || n === 421 || (n >= 950 && n <= 969),
+    mot: /edulcorants?|sweeteners?/,
+  },
+  exhausteur: {
+    libelle: 'sans exhausteur de goût',
+    // Glutamates, ribonucléotides, glycine.
+    membre: (n) => n >= 620 && n <= 650,
+    mot: /exhausteurs?(?: de gout)?|flavou?r enhancers?|msg/,
+  },
+  // En dernier : le plus large, il n'a de sens que si aucun autre n'a parlé.
+  additif: {
+    libelle: 'sans additif',
+    membre: () => true,
+    mot: /additifs?|additives?/,
+  },
+};
+
+// « sans colorant ni conservateur » : le second mot est hors de portée d'un
+// simple /sans\s+conservateur/. On autorise une chaîne d'énumération entre
+// « sans » et le mot cherché - au plus trois maillons, pour que la portée ne
+// s'étende pas à tout le nom (« sans sucre, aux éclats de chocolat coloré »).
+const CHAINE_SANS = "(?:[a-z'-]+(?:\\s+[a-z'-]+){0,2}\\s*(?:,|\\bni\\b|\\bet\\b)\\s*){0,3}";
+
+// « artificiel » collé au mot de famille, dans les deux ordres et deux langues.
+const QUALIFIE_ARTIFICIEL = (mot) => new RegExp(
+  `(?:artificiels?|synthetiques?|de synthese)\\s+(?:${mot.source})`
+  + `|(?:${mot.source})\\s+(?:artificiels?|synthetiques?|de synthese)`
+  + `|artificial\\s+(?:${mot.source})`,
+);
+
+// Renvoie le conflit le plus PRÉCIS trouvé, ou null.
+// `additivesTags` vient tel quel d'Open Food Facts (`['en:e160a', ...]`).
+function claimConflict(productName, additivesTags) {
+  const tags = (additivesTags || []).filter((t) => num_e(t) !== null);
+  if (!tags.length) return null;
+  const nom = normalize(productName);
+  if (!nom.includes('sans') && !/\bno\b|free\b|without/.test(nom)) return null;
+
+  for (const [famille, f] of Object.entries(FAMILLES_ADDITIFS)) {
+    const m = f.mot.source;
+    const annonce = new RegExp(
+      `\\bsans\\s+${CHAINE_SANS}(?:${m})`          // sans colorant [ni conservateur]
+      + `|\\b(?:no|without)\\s+(?:artificial\\s+)?(?:${m})` // no (artificial) colouring
+      + `|(?:${m})[- ]free`,                        // preservative-free
+    );
+    if (!annonce.test(nom)) continue;
+
+    // Allégation restreinte à l'artificiel : hors colorants, on n'a aucun
+    // partage naturel/synthèse défendable, donc on ne conclut pas.
+    let membre = f.membre;
+    if (QUALIFIE_ARTIFICIEL(f.mot).test(nom)) {
+      if (!f.synthese) continue;
+      membre = f.synthese;
+    }
+
+    const fautifs = tags.filter((t) => membre(num_e(t)));
+    if (fautifs.length) return { famille, libelle: f.libelle, fautifs };
+  }
+  return null;
+}
+
+// « E160a », « E202 et E211 » - le code brut, jamais un nom inventé : c'est ce
+// qui est écrit sur l'emballage, et l'acheteur peut le retrouver à l'œil.
+// ⚠️ Seul le E se met en capitale. Le suffixe de lettre est minuscule dans la
+// nomenclature (E160a, E150d) : « E160A » ne correspond à rien d'imprimé.
+function additiveLabel(tag) {
+  return String(tag || '').replace(/^[a-z]{2}:/, '').replace(/^e/, 'E');
+}
+
+function nommerAdditifs(tags) {
+  return enumerer(tags.map(additiveLabel));
+}
+
+const LEGAL_NOTE_ALLEGATION =
+  "Une mention « sans… » est une allégation : elle n'est autorisée que si elle est exacte, et l'information ne doit pas induire l'acheteur en erreur sur les caractéristiques du produit (règlement (UE) n°1169/2011, art. 7). Les additifs listés ici sont ceux déclarés par le fabricant lui-même.";
+
+function headlineAllegation(conflit) {
+  const noms = nommerAdditifs(conflit.fautifs);
+  return `« ${conflit.libelle} » annoncé, mais la liste contient ${noms}`;
+}
+
+// Enveloppe le moteur : l'analyse du nom et des ingrédients ne change pas d'une
+// ligne, on lui ajoute une couche. Sans `contexte` (deux arguments), le résultat
+// est identique à celui d'avant - c'est ce qui garde valables les tests
+// existants, et ce qui rend la nouvelle règle sûre à retirer.
+function detectVerdict(productName, ingredientsText, contexte) {
+  const base = detectVerdictBase(productName, ingredientsText);
+  if (!contexte) return base;
+
+  const conflit = claimConflict(productName, contexte.additivesTags);
+  if (!conflit) return base;
+
+  // Composition illisible ou absente : on ne sait rien de la liste, donc rien
+  // de l'allégation non plus. Ces états expliquent une limite, ne pas la nier.
+  if (base.verdict === 'unknown' || base.verdict === 'foreign') return base;
+
+  // Le verdict accuse déjà : son libellé est plus parlant qu'un code d'additif
+  // (« "fraise" absent » vaut mieux que « la liste contient E129 »). On le
+  // garde et on joint le conflit, pour l'affichage et pour la mesure.
+  if (base.verdict === 'misleading') {
+    return { ...base, detail: { ...(base.detail || {}), claim: conflit } };
+  }
+
+  // « À vérifier », « Conforme », « Rien à vérifier » : le fabricant a peut-être
+  // prévenu sur la saveur, il n'a pas prévenu sur l'additif. Une allégation
+  // fausse l'emporte sur une réserve honnête.
+  return {
+    verdict: 'misleading',
+    headline: headlineAllegation(conflit),
+    legalNote: LEGAL_NOTE_ALLEGATION,
+    detail: { rule: 'allegation-contredite', claim: conflit },
+  };
+}
+
+function detectVerdictBase(productName, ingredientsText) {
   // Vérifier si OFF a capturé du texte nutritionnel au lieu d'ingrédients
   if (isNutritionFactsInsteadOfIngredients(ingredientsText)) {
     return {
@@ -1279,5 +1453,6 @@ if (typeof module !== 'undefined') {
     detectVerdict, normalize, findFlavorMention, onlyAppearsAsArome,
     findIngredientPosition, ingredientShare, isMentionedInIngredients,
     splitIngredientList, chocolateForm, chocolatePercent, legalTier,
+    claimConflict, additiveLabel,
   };
 }
