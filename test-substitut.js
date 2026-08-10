@@ -47,6 +47,29 @@ ok('le mot lui-même n\'est pas son substitut', sub('cabillaud', 'cabillaud, eau
 ok('pas de mélange entre familles', sub('noisette', 'colin, eau, sel') === null, sub('noisette', 'colin, eau, sel'));
 ok('liste vide', sub('cabillaud', '') === null);
 
+console.log('--- Le même poisson sous deux noms de vente ---');
+// TROUVÉ EN VRAI le 2026-08-10, sur trois produits de marque. « Cabillaud » et
+// « morue » sont le MÊME poisson : frais d'un côté, salé ou séché de l'autre.
+// Déclarés séparément, ils devenaient substituts l'un de l'autre, et l'app
+// accusait « Filets de morue salée » dont la liste dit « Cabillaud » - la vérité.
+const m1 = detectVerdict('Filets de morue salee', 'cabillaud (gadus morhua), sel');
+ok('morue composée de cabillaud : honnête', m1.verdict === 'clean', `${m1.verdict} — ${m1.headline}`);
+const m2 = detectVerdict('Filet de cabillaud', 'morue salee, eau');
+ok('cabillaud composé de morue : honnête', m2.verdict === 'clean', `${m2.verdict} — ${m2.headline}`);
+ok('cabillaud ne remplace pas la morue', sub('morue', 'cabillaud, eau, sel') === null, sub('morue', 'cabillaud, eau, sel'));
+// ... et la vraie substitution reste attrapée.
+const m3 = detectVerdict('Filet de morue', 'pangasius, eau, sel');
+ok('morue composée de pangasius : attrapée', /remplacé par pangasius/.test(m3.headline), m3.headline);
+
+console.log('--- Un nom propre n\'est pas un aliment ---');
+// « Solène » (marque de céréales) était lu comme « sole » : nameFormPattern
+// collait les terminaisons -ne/-nee à TOUS les mots, y compris ceux qui
+// finissent déjà par une voyelle. Le doublement de consonne n'a de sens
+// qu'après une consonne (citron -> citronné).
+const s1 = detectVerdict('Solene cereales poulet a l italienne', 'ble, poulet, tomate, sel');
+ok('Solène n\'est pas de la sole', !/sole/i.test(s1.headline || ''), s1.headline);
+ok('Solène : le poulet est bien vu', s1.verdict === 'clean', `${s1.verdict} — ${s1.headline}`);
+
 console.log('--- Le verdict dit enfin ce qu\'il y a à la place ---');
 const v1 = detectVerdict('Filet de cabillaud', 'pangasius, eau, sel, stabilisant');
 ok('cabillaud/pangasius : trompeur', v1.verdict === 'misleading', `verdict=${v1.verdict}`);

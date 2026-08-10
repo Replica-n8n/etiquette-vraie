@@ -294,7 +294,13 @@ const FOOD_PAIRS = [
 
   // -- Poissons et fruits de mer
   ['sardine'], ['anchois', 'anchovy'], ['maquereau', 'mackerel'],
-  ['morue', 'cod'], ['truite', 'trout'], ['hareng', 'herring'],
+  // ⚠️ MORUE ET CABILLAUD SONT LE MÊME POISSON (Gadus morhua) : « cabillaud »
+  // quand il est frais, « morue » quand il est salé ou séché. Déclarés
+  // séparément, ils devenaient substituts l'un de l'autre et l'app accusait
+  // « Filets de morue salée » de Delpierre, dont la liste dit « Cabillaud » -
+  // c'est-à-dire la vérité. Trois produits honnêtes accusés, tous du rayon
+  // poisson salé. Vu en vrai le 2026-08-10.
+  ['morue', 'cod', 'cabillaud'], ['truite', 'trout'], ['hareng', 'herring'],
   ['moule', 'mussel'], ['huitre', 'oyster'], ['calmar', 'squid'],
 
   // -- Viandes
@@ -344,7 +350,8 @@ const FOOD_PAIRS = [
   ['merou', 'grouper'], ['turbot'], ['sole'], ['lotte', 'monkfish'],
   ['seiche', 'cuttlefish'], ['poulpe', 'octopus'], ['palourde', 'clam'],
   ['ecrevisse', 'crayfish'], ['ormeau', 'abalone'],
-  ['cabillaud'], ['colin'], ['tilapia'], ['pangasius'], ['surimi'],
+  // « cabillaud » est déclaré plus haut, avec « morue » : même poisson.
+  ['colin'], ['tilapia'], ['pangasius'], ['surimi'],
 
   // -- Viandes (le scandale de la viande de cheval reste le cas d'école)
   ['lapin', 'rabbit'], ['caille', 'quail'], ['oie', 'goose'],
@@ -555,8 +562,14 @@ function pluralPattern(word) {
 function nameFormPattern(word) {
   const forms = new Set([word, `${word}s`, `${word}x`]);
   if (word.endsWith('y')) forms.add(`${word.slice(0, -1)}ies`);
-  for (const suffix of ['e', 'ee', 'es', 'ees', 'ne', 'nee', 'nes', 'nees']) {
-    forms.add(word + suffix);
+  for (const suffix of ['e', 'ee', 'es', 'ees']) forms.add(word + suffix);
+  // ⚠️ Les terminaisons en -n- doublent la consonne finale : « citron » donne
+  // « citronné », « citronnée ». Collées à un mot qui finit déjà par une
+  // VOYELLE, elles fabriquent des mots qui existent ailleurs : « sole » donnait
+  // « solene », et la marque de céréales « Solène » était accusée de ne pas
+  // contenir de sole. Le doublement n'a de sens qu'après une consonne.
+  if (!/[aeiouy]$/.test(word)) {
+    for (const suffix of ['ne', 'nee', 'nes', 'nees']) forms.add(word + suffix);
   }
   return [...forms].join('|');
 }
@@ -701,10 +714,19 @@ const DERIVE_MARKER = /\b(?:gelatine|bouillon|extrait|extract|graisse|fat|collag
 // L'aliment promis est absent : quel aliment de sa famille occupe la place ?
 // On renvoie le PREMIER trouvé dans l'ordre de la liste - donc le plus lourd,
 // puisque la liste est ordonnée par quantité décroissante (art. 18).
+// Deux mots qui partagent une variante désignent le MÊME aliment (morue et
+// cabillaud, crevette et shrimp). L'un ne remplace donc pas l'autre - c'est le
+// même poisson sous son nom de vente. Le test porte sur le dictionnaire plutôt
+// que sur une liste de paires : toute fusion future est couverte d'office.
+function memeAliment(a, b) {
+  const va = new Set(INGREDIENT_VARIANTS[a] || [a]);
+  return (INGREDIENT_VARIANTS[b] || [b]).some((v) => va.has(v));
+}
+
 function findSubstitute(word, ingredientsNorm) {
   const famille = FAMILLES_SUBSTITUT.find(([, mots]) => mots.includes(word));
   if (!famille) return null;
-  const candidats = famille[1].filter((m) => m !== word);
+  const candidats = famille[1].filter((m) => m !== word && !memeAliment(word, m));
   for (const item of splitIngredientList(ingredientsNorm)) {
     if (FLAVOUR_MARKER.test(item) || DERIVE_MARKER.test(item)) continue;
     for (const c of candidats) {
