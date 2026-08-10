@@ -934,6 +934,45 @@ const FAMILLES_LEGALES = [
     },
   },
   {
+    nom: 'Confiture',
+    // Les tags réels d'Open Food Facts : en:jams, en:strawberry-jams,
+    // en:citrus-jams, en:marmalades, en:bigarade-orange-marmelades. On ne prend
+    // PAS en:fruit-and-vegetable-preserves ni en:sweet-spreads : bien plus
+    // larges, ils contiennent compotes, miels et pâtes à tartiner.
+    categorie: /(^|-)(jams?|marmalades?|marmelades?)$/,
+    rangs: ['préparation de fruits', 'marmelade', 'confiture', 'extra'],
+    expl: [
+      "Le mot « confiture » est protégé : quand un produit ne peut pas y prétendre, il se vend en « préparation » ou en « spécialité » de fruits. Cette catégorie-là n'a aucun minimum de fruit à respecter.",
+      "Réservée aux agrumes, et c'est le minimum le plus bas de la famille : 20 % d'agrumes. Le mot évoque pourtant exactement la même chose qu'une confiture.",
+      "Au moins 35 % de fruits, cuits avec du sucre. La dénomination est protégée : en dessous, le fabricant n'a plus le droit de l'employer.",
+      "Au moins 45 % de fruits, et de la pulpe qui n'a pas été concentrée. Le rang le plus exigeant de la famille.",
+    ],
+    // ⚠️ « Confiture d'oignons » et « confiture de lait » portent le mot sans
+    // être la chose : ce sont des condiments et des caramels, que la loi ne
+    // juge pas sur un minimum de FRUITS. Les noter sur cette échelle
+    // reviendrait à leur reprocher de ne pas être ce qu'elles n'ont jamais
+    // prétendu être. Vues en vrai dans OFF, l'oignon des Cévennes en tête.
+    rang(nomNorm, ingrNorm, items, tags) {
+      if (/\b(?:oignons?|onions?|echalotes?|shallots?|tomates? vertes?|piments?|poivrons?|bacon)\b/.test(nomNorm)) return null;
+      if (/confiture de lait|dulce de leche|milk jam/.test(nomNorm)) return null;
+      if (/\bextra\b/.test(nomNorm) && /\bconfitures?\b|\bjams?\b/.test(nomNorm)) return 3;
+      if (/\bconfitures?\b|\bjams?\b/.test(nomNorm)) return 2;
+      // ⚠️ « Marmelade » ne se lit pas pareil selon la langue. En droit
+      // français et européen le mot est RÉSERVÉ AUX AGRUMES, avec son propre
+      // minimum ; en allemand, « Marmelade » désigne n'importe quelle
+      // confiture. « Marmelade Erdbeere » (fraise) existe pour de vrai dans la
+      // base, et lui annoncer le seuil des agrumes serait un contresens. On
+      // exige donc de VOIR l'agrume, dans le nom ou dans la catégorie.
+      if (/\bmarmelades?\b|\bmarmalades?\b/.test(nomNorm)) {
+        const agrumeNom = /\bagrumes?\b|\bcitrus\b|\borange|\bcitron|\blemon|\blime\b|\bpamplemousse|\bgrapefruit|\bmandarine|\bclementine|\bbergamote|\bbigarade|\bseville\b|\byuzu\b|\bkumquat/.test(nomNorm);
+        const agrumeTag = estDeLaFamille(tags || [], /(^|-)(citrus-jams?|orange-jams?|lemon-jams?|bigarade-orange-marmelades?)$/);
+        return agrumeNom || agrumeTag ? 1 : null;
+      }
+      if (/preparation (?:de |aux )?fruits?|specialite (?:de |aux )?fruits?|fruit spread/.test(nomNorm)) return 0;
+      return null;                                  // dans le doute, on se tait
+    },
+  },
+  {
     nom: "Huile d'olive",
     categorie: /(^|-)(olive-oils?|huiles?-d-olive)$/,
     rangs: ['huile de grignons', "huile d'olive", 'vierge', 'vierge extra'],
@@ -972,7 +1011,7 @@ function legalTier(productName, ingredientsText, categoriesTags) {
   const items = splitIngredientList(ingrNorm);
   for (const f of FAMILLES_LEGALES) {
     if (!estDeLaFamille(tags, f.categorie)) continue;
-    const ici = f.rang(nomNorm, ingrNorm, items);
+    const ici = f.rang(nomNorm, ingrNorm, items, tags);
     if (ici === null || ici === undefined) return null;
     return { famille: f.nom, rangs: f.rangs, ici, expl: f.expl[ici], sommet: ici === f.rangs.length - 1 };
   }
