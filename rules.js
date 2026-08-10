@@ -353,6 +353,13 @@ const FOOD_PAIRS = [
   // « cabillaud » est déclaré plus haut, avec « morue » : même poisson.
   ['colin'], ['tilapia'], ['pangasius'], ['surimi'],
 
+  // ⚠️ « VIANDE BOVINE » est ce que portent la plupart des étiquettes
+  // françaises ; le mot « bœuf » n'y figure presque jamais. « Boulettes au
+  // bœuf » de Thiriet (3292590864101) était accusé alors que sa liste ouvre
+  // sur « viande bovine hachée, origine française ». La forme féminine
+  // « bovine » doit être déclarée : pluralPattern ne la dérive pas de « bovin ».
+  ['boeuf', 'beef', 'bovin', 'bovine'],
+
   // -- Viandes (le scandale de la viande de cheval reste le cas d'école)
   ['lapin', 'rabbit'], ['caille', 'quail'], ['oie', 'goose'],
   ['mouton', 'sheep'], ['chevre', 'goat'], ['cheval', 'horse'],
@@ -411,8 +418,14 @@ const FOOD_PAIRS = [
 //            Dans un nom, c'est COMPOUND_TRAPS qui les reconnaît, en une seule
 //            expression régulière capable du pluriel français ("pommeS de
 //            terre"), que nameFormPattern ne sait pas produire.
+//   'bovin', 'bovine' : dans une LISTE, « viande bovine » veut bien dire bœuf.
+//            Dans un NOM, c'est un adjectif d'ORIGINE et pas une promesse de
+//            viande : « gélatine bovine », « collagène bovin », « présure
+//            bovine » se sont mis à être accusés de ne pas contenir de bovin
+//            dès que le mot est entré au dictionnaire. Un ingrédient TIRÉ de
+//            l'animal n'est pas l'animal - même règle que DERIVE_MARKER.
 const NAME_DETECTION_BLOCKLIST = new Set([
-  'ail', 'mais', 'pomme de terre', 'pommes de terre',
+  'ail', 'mais', 'pomme de terre', 'pommes de terre', 'bovin', 'bovine',
 ]);
 
 // Fusion : chaque forme rejoint FOOD_WORDS et pointe vers toutes ses soeurs.
@@ -438,6 +451,16 @@ const COMPOUND_TRAPS = [
   { pattern: /\bpommes? de terre\b/, drop: 'pomme', add: 'patate' },
   { pattern: /\bpommes? d'amour\b/, drop: 'pomme' },
   { pattern: /\bbeurre de pomme\b/, drop: 'beurre' },
+  // ⚠️ « PÊCHÉ » EST UN VERBE. « Sardines pêchées par des bateaux français »
+  // (0014352990933) était accusé de ne pas contenir de pêche - le fruit.
+  // Le partage est net : un fruit ne se conjugue pas. « pêchée » et « pêchées »
+  // sont forcément le participe ; « pêchés » et « pêche » sont ambigus, on ne
+  // les écarte donc que devant un complément d'agent ou de moyen, jamais devant
+  // « au » (« pêche au sirop » est bien le fruit).
+  {
+    pattern: /\bpechees?\b|\bpeches?\s+(?:par|a la ligne|a la canne|au chalut|a la senne|a l hamecon)\b/,
+    drop: 'peche',
+  },
 ];
 
 // Affichage en français des mots détectés : normalize() enlève les accents,
@@ -616,6 +639,13 @@ const CATEGORY_WORDS = new Set([
   'parmesan', 'mozzarella', 'feta', 'ricotta', 'mascarpone', 'emmental',
   'comte', 'brie', 'gorgonzola', 'roquefort', 'halloumi', 'provolone',
   'pecorino', 'cheddar', 'gruyere',
+  // Le SURIMI, même piège que le fromage : c'est une catégorie de produit, et
+  // sa liste dit de quoi il est fait - « chair de poisson, amidon, blanc
+  // d'œuf » - jamais son propre nom. « Bâtonnet de surimi » (3760048441636)
+  // était accusé de ne pas contenir de surimi. Il reste nommable comme
+  // REMPLAÇANT (« crabe absent, remplacé par surimi ») : findSubstitute le
+  // cherche dans les ingrédients, pas dans le nom, et ne passe pas par ici.
+  'surimi',
   // La PATATE, pour une autre raison que les fromages : personne ne la truque.
   // C'est un féculent bon marché, jamais un ingrédient noble qu'on imite. En
   // face, le risque d'accuser à tort est réel : un sac de pommes de terre belge
