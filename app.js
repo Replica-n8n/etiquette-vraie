@@ -1146,7 +1146,7 @@ function ouvrirFormeModal(forme) {
 // l'aliment manquant, ce panneau répétait le bandeau mot pour mot ; sur les
 // autres, il n'apportait qu'un chiffre ou une forme, qui tiennent ici.
 // On n'y met QUE ce que la phrase ne dit pas.
-function verdictSubLine(detail, product, texteIngredients, headline) {
+function verdictSubLine(detail, product, texteIngredients, headline, tier) {
   if (!detail) return '';
   // Allégation contredite alors que le bandeau parle déjà d'autre chose : le
   // moteur a gardé le libellé le plus parlant (« "fraise" absent ») et rangé le
@@ -1175,6 +1175,14 @@ function verdictSubLine(detail, product, texteIngredients, headline) {
     if (/saveur seule/.test(libelle)) return;      // déjà dans la phrase
     const part = shares[i];
     if (!part) return;                             // sans chiffre, rien à ajouter
+    // ⚠️ Une BORNE plus faible que le minimum légal déjà affiché par le barème
+    // ne dit rien de plus, et se lit comme une contradiction : « pomme au moins
+    // 20 % » sous « confiture : au moins 35 % de fruits » donnait l'impression
+    // que le produit était hors la loi. Les deux nombres ne mesurent d'ailleurs
+    // pas la même chose - un ingrédient d'un côté, le total des fruits de
+    // l'autre. On garde le plus fort des deux énoncés vrais.
+    if (part.source === 'borne' && tier && typeof tier.seuil === 'number'
+        && part.min !== null && part.min <= tier.seuil) return;
     const nom = libelle.replace(/ : présent$/, '');
     // Le libellé vient de rules.js : trois sources possibles (déclaré, estimé,
     // borne) et une seule décision sur la façon de les lire.
@@ -1337,15 +1345,20 @@ function renderResult(product) {
   document.getElementById('stamp').textContent = meta.label;
   document.getElementById('verdict-text').textContent = headline;
 
+  // Le barème est calculé AVANT la sous-ligne : celle-ci doit savoir quel
+  // minimum légal est déjà affiché, pour ne pas lui opposer une borne plus
+  // faible (voir verdictSubLine).
+  const tier = legalTier(product.product_name, ingr.texte, product.categories_tags);
+
   // Sous-ligne : ce que l'ancien panneau « Il y a vraiment » portait d'utile.
   const sousEl = document.getElementById('verdict-sub');
   if (sousEl) {
-    const sous = verdictSubLine(detail, product, ingr.texte, headline);
+    const sous = verdictSubLine(detail, product, ingr.texte, headline, tier);
     sousEl.textContent = sous;
     sousEl.classList.toggle('hidden', !sous);
   }
 
-  renderBareme(legalTier(product.product_name, ingr.texte, product.categories_tags));
+  renderBareme(tier);
 
   // Verdict "unknown" = OFF n'a pas les ingrédients. C'est le seul cas où on
   // propose une photo : l'utilisateur peut débloquer la vérification.

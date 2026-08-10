@@ -1036,6 +1036,11 @@ const FAMILLES_LEGALES = [
     // larges, ils contiennent compotes, miels et pâtes à tartiner.
     categorie: /(^|-)(jams?|marmalades?|marmelades?)$/,
     rangs: ['préparation de fruits', 'marmelade', 'confiture', 'extra'],
+    // Minimum de fruits GARANTI par la dénomination, en % du produit fini.
+    // Sert à faire taire une borne d'ingrédient plus faible : « pomme au moins
+    // 20 % » affiché sous « confiture : au moins 35 % de fruits » se lit comme
+    // une contradiction, alors que c'est seulement une information plus pauvre.
+    seuils: [null, 20, 35, 45],
     expl: [
       "Le mot « confiture » est protégé : quand un produit ne peut pas y prétendre, il se vend en « préparation » ou en « spécialité » de fruits. Cette catégorie-là n'a aucun minimum de fruit à respecter.",
       "Réservée aux agrumes, et c'est le minimum le plus bas de la famille : 20 % d'agrumes. Le mot évoque pourtant exactement la même chose qu'une confiture.",
@@ -1108,7 +1113,12 @@ function legalTier(productName, ingredientsText, categoriesTags) {
     if (!estDeLaFamille(tags, f.categorie)) continue;
     const ici = f.rang(nomNorm, ingrNorm, items, tags);
     if (ici === null || ici === undefined) return null;
-    return { famille: f.nom, rangs: f.rangs, ici, expl: f.expl[ici], sommet: ici === f.rangs.length - 1 };
+    return {
+      famille: f.nom, rangs: f.rangs, ici, expl: f.expl[ici],
+      sommet: ici === f.rangs.length - 1,
+      // Minimum garanti par la dénomination, quand la famille en a un.
+      seuil: (f.seuils && f.seuils[ici] !== undefined) ? f.seuils[ici] : null,
+    };
   }
   return null;
 }
