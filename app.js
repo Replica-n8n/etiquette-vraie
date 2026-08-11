@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.9';
+const APP_VERSION = 'v3.0';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786480113';
+const BUILD = '1786481308';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -47,7 +47,9 @@ const VERDICT_META = {
   // "Rien à vérifier" = le nom ne promet aucun aliment (57 % des scans).
   // À NE PAS confondre avec "Impossible de vérifier", qui est un échec : là,
   // OFF n'a pas la composition. Ici tout va bien, il n'y avait rien à comparer.
-  noclaim: { label: 'Rien à vérifier', className: 'v-noclaim' },
+  // « Rien à vérifier » disait ce que l'app n'avait PAS fait, sur 58 % des
+  // fiches. Le tampon dit désormais ce qu'elle a fait : elle a lu l'étiquette.
+  noclaim: { label: 'Étiquette lue', className: 'v-noclaim' },
   unknown: { label: 'Impossible de vérifier', className: 'v-unknown' },
   // La liste existe, mais dans une langue hors du dictionnaire. Distinct de
   // "unknown" : proposer une photo ne servirait à rien, la liste est déjà là.
@@ -1042,6 +1044,44 @@ function buildIngredientExcerpt(ingredientsText, detail) {
   return { rows, caption: `${items.length} ingrédient(s) au total.` };
 }
 
+// ===========================================================================
+// « ÉTIQUETTE LUE » — ce que l'app a fait, quand elle n'a rien à confronter
+//
+// Sur 58 % des fiches le nom ne promet aucun aliment : il n'y a rien à
+// comparer, et l'app se taisait. Le bandeau était même masqué. Or elle VIENT
+// de lire la liste - ce silence disait « je n'ai rien trouvé » là où la vérité
+// est « il n'y avait rien à chercher, et voici ce que j'ai lu ».
+//
+// ⚠️ Le compte vient de `buildIngredientExcerpt`, celui de l'accordéon : deux
+// comptages différents sur la même fiche se contrediraient à trois lignes
+// d'écart.
+function ligneDecodage(ingredientsText, additifs, risques) {
+  const { rows } = buildIngredientExcerpt(ingredientsText, null);
+  const morceaux = [];
+  if (rows.length) morceaux.push(`${rows.length} ingrédient${rows.length > 1 ? 's' : ''}`);
+  // Le premier de la liste est le plus lourd (art. 18) : c'est l'information
+  // la plus utile qu'on puisse tirer d'une liste sans rien interpréter.
+  // ⚠️ Les tirets bas dont OFF encadre les allergènes (`_lait_`) doivent
+  // partir : ils sont un balisage de la base, pas un mot de l'étiquette.
+  // ⚠️ « en tête » n'a de sens que s'il y a une file : sur un ingrédient
+  // unique on le nomme, sans le proclamer premier.
+  if (rows.length) {
+    const tete = rows[0].text
+      .replace(/\s*\([^)]*\)/g, '')
+      .replace(/_/g, '')
+      .trim()
+      .toLowerCase();
+    if (tete && tete.length <= 28) morceaux.push(rows.length > 1 ? `${tete} en tête` : tete);
+  }
+  const n = (additifs || []).length;
+  if (n === 0) morceaux.push('aucun additif');
+  else {
+    const r = (risques || []).length;
+    morceaux.push(`${n} additif${n > 1 ? 's' : ''}${r ? ` dont ${r} à risque` : ''}`);
+  }
+  return morceaux.join(' · ');
+}
+
 function renderIngredientExcerpt(ingredientsText, detail, verdictClassName) {
   const listEl = document.getElementById('ingredients-list');
   const captionEl = document.getElementById('ingredients-caption');
@@ -1416,13 +1456,21 @@ function renderResult(product) {
   if (codeEl) codeEl.textContent = product.code ? ` · ${product.code}` : '';
 
   const verdictEl = document.getElementById('verdict-box');
-  // « Rien à vérifier » : un tampon seul dans un cadre vide n'est ni informatif
-  // ni décoratif. Les tuiles, elles, parlent sur chaque produit : on leur laisse
-  // la tête de fiche. Les autres états muets gardent leur bandeau, parce qu'ils
-  // expliquent une limite réelle (langue non lue, composition absente).
-  verdictEl.className = `alert ${meta.className}${verdict === 'noclaim' ? ' hidden' : ''}`;
+  // Le bandeau `noclaim` était MASQUÉ : un tampon seul dans un cadre vide
+  // n'était ni informatif ni décoratif. Il l'est redevenu le jour où il a eu
+  // quelque chose à dire — ce que l'app a LU, plutôt que ce qu'elle n'a pas
+  // trouvé. Voir ligneDecodage. Les autres états muets gardent leur bandeau :
+  // ils expliquent une limite réelle (langue non lue, composition absente).
+  verdictEl.className = `alert ${meta.className}`;
   document.getElementById('stamp').textContent = meta.label;
-  document.getElementById('verdict-text').textContent = headline;
+
+  // Sur `noclaim`, le libellé du moteur (« Ce nom ne met en avant aucun
+  // aliment ») devient la SECONDE ligne : il explique pourquoi il n'y a rien à
+  // confronter. La première dit ce qui a été lu.
+  const decodage = verdict === 'noclaim'
+    ? ligneDecodage(ingr.texte, product.additives_tags, findFlaggedAdditives(product.additives_tags).risky)
+    : '';
+  document.getElementById('verdict-text').textContent = decodage || headline;
 
   // Le barème est calculé AVANT la sous-ligne : celle-ci doit savoir quel
   // minimum légal est déjà affiché, pour ne pas lui opposer une borne plus
@@ -1432,7 +1480,9 @@ function renderResult(product) {
   // Sous-ligne : ce que l'ancien panneau « Il y a vraiment » portait d'utile.
   const sousEl = document.getElementById('verdict-sub');
   if (sousEl) {
-    const sous = verdictSubLine(detail, product, ingr.texte, headline, tier);
+    const sous = decodage
+      ? headline                                   // « aucun aliment mis en avant »
+      : verdictSubLine(detail, product, ingr.texte, headline, tier);
     sousEl.textContent = sous;
     sousEl.classList.toggle('hidden', !sous);
   }

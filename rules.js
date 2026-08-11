@@ -1802,7 +1802,7 @@ function detectVerdictBase(productName, ingredientsText) {
       if (checkedFlavors.length === 0) {
         return {
           verdict: 'noclaim',
-          headline: 'Ce nom ne met en avant aucun aliment vérifiable',
+          headline: 'Les aliments du nom sont des catégories : rien à confronter.',
         };
       }
 
@@ -1838,7 +1838,7 @@ function detectVerdictBase(productName, ingredientsText) {
   // aliment : rien à démasquer, mais rien de vérifié non plus.
   return {
     verdict: 'noclaim',
-    headline: 'Ce nom ne met en avant aucun aliment',
+    headline: 'Aucun aliment mis en avant par le nom : rien à confronter.',
   };
 }
 
