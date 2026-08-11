@@ -1207,6 +1207,97 @@ function legalNoteFlavor(motsManquants, contexte = {}) {
   return `Le nom met en avant ${noms}, mais la liste d'ingrédients n'en contient que l'arôme. Un nom qui évoque un aliment décrit une saveur perçue, pas un ingrédient garanti : le règlement (UE) n°1169/2011 exige seulement que le mot "arôme" figure dans la liste, pas qu'il en précise la source.`;
 }
 
+// ===========================================================================
+// LA LANGUE SE LIT DANS LE TEXTE, PAS DANS LE NOM DU CHAMP
+//
+// Le garde-fou `foreign` de la v1.44 fait confiance à Open Food Facts : si le
+// texte est rangé dans `ingredients_text_fr`, il est français. La base dit
+// autrement. « Filet de cabillaud » de Lidl (4056489840848) a « 65 % merluzzo
+// nordico » dans un champ que l'app accepte, et se fait accuser de ne pas
+// contenir de cabillaud. Idem pour un nectar turc rangé en français.
+//
+// On compare donc des MOTS TÉMOINS. Pas de seuil : la langue qui gagne est
+// celle qui a le plus de témoins, et il en faut strictement plus que le
+// français et l'anglais réunis pour qu'on renonce à juger. À égalité, on
+// continue de lire - le doute profite à l'analyse, pas au silence.
+//
+// Les mots choisis sont ceux qui reviennent dans TOUTES les listes d'un pays
+// (eau, sucre, sel, farine, lait) plus l'en-tête « Ingrédients ». Volontairement
+// écartés : les mots courts et les faux amis (« sal », « di », « e »), et tout
+// ce qui existe aussi en français.
+const TEMOINS_LANGUE = {
+  'fr-en': [
+    'ingredients', 'sucre', 'sugar', 'farine', 'flour', 'eau', 'water', 'sel',
+    'salt', 'lait', 'milk', 'huile', 'oil', 'arome', 'flavour', 'flavor',
+    'ble', 'wheat', 'oeuf', 'egg', 'beurre', 'butter', 'amidon', 'starch',
+    'colorant', 'conservateur', 'emulsifiant', 'emulsifier', 'epaississant',
+  ],
+  italien: [
+    'ingredienti', 'zucchero', 'acqua', 'farina', 'latte', 'sale', 'olio',
+    'uova', 'burro', 'amido', 'lievito', 'aromi', 'frumento', 'cacao magro',
+    'conservante', 'addensante', 'senza',
+  ],
+  espagnol: [
+    'ingredientes', 'azucar', 'agua', 'harina', 'leche', 'aceite', 'huevo',
+    'mantequilla', 'almidon', 'levadura', 'aroma natural', 'trigo', 'jarabe',
+    'conservador', 'espesante', 'colorante alimentario',
+  ],
+  allemand: [
+    'zutaten', 'zucker', 'wasser', 'weizenmehl', 'milch', 'salz', 'butter',
+    'staerke', 'starke', 'pflanzliche', 'aroma', 'kakao', 'vollmilch',
+    'speisesalz', 'emulgator', 'verdickungsmittel',
+  ],
+  neerlandais: [
+    'ingredienten', 'suiker', 'tarwebloem', 'zout', 'melk', 'plantaardige',
+    'voedingswaarden', 'boter', 'gemodificeerd', 'bevat', 'volkoren',
+  ],
+  portugais: [
+    'ingredientes', 'acucar', 'agua', 'farinha', 'leite', 'oleo', 'manteiga',
+    'amido', 'fermento', 'trigo', 'conservante', 'espessante',
+  ],
+  turc: [
+    'icindekiler', 'seker', 'bugday', 'nisasta', 'tuz', 'yagi', 'sut',
+    'konsantresi', 'asitlik', 'duzenleyici', 'aroma verici',
+  ],
+  polonais: [
+    'skladniki', 'cukier', 'maka', 'woda', 'mleko', 'sol', 'olej',
+    'pszenna', 'substancja', 'zageszczajaca',
+  ],
+};
+
+// Construites une fois : chaque témoin devient un motif à limites de mot.
+const MOTIFS_LANGUE = Object.entries(TEMOINS_LANGUE).map(([langue, mots]) => [
+  langue,
+  new RegExp(`\\b(?:${mots.map((m) => m.replace(/\s+/g, '\\s+')).join('|')})\\b`, 'g'),
+]);
+
+// Renvoie { langue, temoins, temoinsFrEn } ou null si le texte est trop court
+// pour qu'on en dise quoi que ce soit.
+function langueDuTexte(ingredientsText) {
+  const n = normalize(ingredientsText);
+  if (!n || n.split(/\s+/).length < 3) return null;
+  const comptes = {};
+  for (const [langue, motif] of MOTIFS_LANGUE) {
+    comptes[langue] = (n.match(motif) || []).length;
+  }
+  const frEn = comptes['fr-en'];
+  let meilleure = null;
+  let score = 0;
+  for (const [langue, n2] of Object.entries(comptes)) {
+    if (langue === 'fr-en') continue;
+    if (n2 > score) { score = n2; meilleure = langue; }
+  }
+  if (!meilleure || score === 0) return null;
+  return { langue: meilleure, temoins: score, temoinsFrEn: frEn };
+}
+
+// Le texte est-il lisible par le moteur ? Faux seulement quand une AUTRE langue
+// l'emporte franchement sur le français et l'anglais réunis.
+function texteLisible(ingredientsText) {
+  const l = langueDuTexte(ingredientsText);
+  return !l || l.temoins <= l.temoinsFrEn;
+}
+
 // Détecte si le champ "ingrédients" d'OFF contient en fait un TABLEAU NUTRITIONNEL
 // (donnée corrompue) au lieu d'une vraie liste. On n'utilise QUE des marqueurs forts
 // qui n'apparaissent jamais dans une liste d'ingrédients (unités d'énergie, "pour
@@ -1822,5 +1913,6 @@ if (typeof module !== 'undefined') {
     findIngredientPosition, ingredientShare, isMentionedInIngredients,
     splitIngredientList, chocolateForm, chocolatePercent, legalTier,
     claimConflict, additiveLabel, findSubstitute, partLabel,
+    langueDuTexte, texteLisible,
   };
 }

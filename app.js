@@ -1116,14 +1116,31 @@ function majPropositionInstallation() {
 // Repli sur `ingredients_text` quand la fiche se déclare fr/en sans remplir le
 // champ traduit - cas réel ("Kilishi", lang=en, ingredients_text_en vide).
 // Si rien n'est lisible, on ne conclut PAS : mieux vaut se taire qu'accuser.
+// ⚠️ LE NOM DU CHAMP NE PROUVE PAS LA LANGUE. La v1.44 faisait confiance à
+// Open Food Facts : un texte rangé dans `ingredients_text_fr` était réputé
+// français. La base dit autrement - « Filet de cabillaud » de Lidl y range
+// « 65 % merluzzo nordico », et un « Tomate frito » espagnol s'y trouve aussi.
+// L'app cherchait alors du cabillaud dans de l'italien et concluait qu'il
+// manquait. On vérifie donc la langue sur le CONTENU (`texteLisible`), et on
+// prend le premier champ qui soit à la fois rempli ET lisible : une fiche peut
+// très bien avoir de l'espagnol en français et du vrai anglais en anglais.
+// Mesuré sur 326 fiches populaires : 2 écartées (0,6 %), espagnoles toutes
+// les deux. Aucune fiche française ou anglaise perdue.
 function ingredientsForAnalysis(product) {
-  const fr = cleanText(product.ingredients_text_fr);
-  if (fr) return { texte: fr, lisible: true };
-  const en = cleanText(product.ingredients_text_en);
-  if (en) return { texte: en, lisible: true };
-  const brut = cleanText(product.ingredients_text);
   const langueConnue = product.lang === 'fr' || product.lang === 'en';
-  return { texte: brut, lisible: !brut || langueConnue };
+  const candidats = [
+    cleanText(product.ingredients_text_fr),
+    cleanText(product.ingredients_text_en),
+    langueConnue ? cleanText(product.ingredients_text) : '',
+  ].filter(Boolean);
+
+  const lisible = candidats.find((t) => texteLisible(t));
+  if (lisible) return { texte: lisible, lisible: true };
+  if (candidats.length) return { texte: candidats[0], lisible: false };
+
+  // Aucun champ exploitable : le texte brut d'une langue non couverte, ou rien.
+  const brut = cleanText(product.ingredients_text);
+  return { texte: brut, lisible: !brut };
 }
 
 // OFF contient parfois la chaîne littérale "null"/"undefined" (saisie ou import
