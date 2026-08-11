@@ -77,6 +77,21 @@ honnete('0014352990933', 'Sardines de l\'Atlantique Nord-Est pechees par des bat
 honnete('_variante_', 'Thon peche a la ligne', 'thon, eau, sel', 'peche = verbe');
 honnete('_variante_', 'Maquereaux peches par nos pecheurs bretons', 'maquereaux, huile, sel', 'peche = verbe');
 
+// « MOULÉ » est un verbe, « moule » un coquillage — normalize() retire l'accent
+// et les rend identiques. Trouvé en cherchant des exemples de fromage :
+// 18821026, un camembert AOP au lait cru, accusé de ne pas contenir de moules.
+honnete('18821026', 'Camembert de Normandie Moule a la louche',
+  'lait cru de vache, ferments, presure, sel', 'moulé à la louche, pas des moules');
+honnete('_variante_', 'Beurre moule doux', 'creme pasteurisee, sel', 'beurre moulé');
+honnete('_variante_', 'Camembert moule main', 'lait cru, ferments, presure, sel', 'moulé main');
+// ... et le coquillage reste un coquillage.
+const moules = detectVerdict('Moules marinieres', 'moules, vin blanc, echalote, persil');
+if (moules.verdict === 'clean') pass++;
+else echecs.push(`Moules marinieres : le coquillage n'est plus vu — ${moules.verdict}`);
+const faux = detectVerdict('Moules de bouchot', 'chair de poisson, amidon, arome');
+if (faux.verdict === 'misleading') pass++;
+else echecs.push(`Moules de bouchot sans moules : plus accusé — ${faux.verdict}`);
+
 console.log('--- ... sans casser le fruit ---');
 // Le correctif ne doit pas rendre l'app aveugle à la vraie pêche.
 const fruit1 = detectVerdict('Tarte aux peches', 'farine, sucre, arome peche');

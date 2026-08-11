@@ -461,6 +461,24 @@ const COMPOUND_TRAPS = [
     pattern: /\bpechees?\b|\bpeches?\s+(?:par|a la ligne|a la canne|au chalut|a la senne|a l hamecon)\b/,
     drop: 'peche',
   },
+  // ⚠️ « MOULÉ » EST UN VERBE, « MOULE » UN COQUILLAGE. normalize() retire
+  // l'accent et les rend identiques. « Camembert de Normandie moulé à la
+  // louche » de Réo (18821026) était accusé de ne pas contenir de moules -
+  // un AOP au lait cru, pris en faute sur un fruit de mer.
+  // On n'écarte que devant les tournures du moulage, jamais le mot seul :
+  // « Moules de bouchot » doit rester un plat de moules.
+  // Deux façons de reconnaître le participe : la tournure du moulage
+  // (« à la louche », « main », forme féminine « moulée »), ou le voisinage
+  // d'un produit qui se vend moulé - un plat de moules ne parle jamais de
+  // camembert ni de beurre.
+  {
+    pattern: /\bmoule[es]*\s+(?:a\s+la\s+louche|(?:a\s+la\s+)?main\b)|\bmoulees?\b/,
+    drop: 'moule',
+  },
+  {
+    pattern: /\b(?:beurres?|fromages?|camemberts?|bries?|chevres?|coulommiers|munster|maroilles|reblochon)\b[^,]{0,30}\bmoules?\b|\bmoules?\b[^,]{0,30}\b(?:beurres?|fromages?|camemberts?|bries?|chevres?)\b/,
+    drop: 'moule',
+  },
 ];
 
 // Affichage en français des mots détectés : normalize() enlève les accents,
