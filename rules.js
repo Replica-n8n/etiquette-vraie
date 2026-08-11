@@ -1073,6 +1073,53 @@ const FAMILLES_LEGALES = [
     },
   },
   {
+    nom: 'Jambon cuit',
+    // Mesuré sur 600 jambons d'Open Food Facts : le rang est lisible sur
+    // 35,2 % du rayon, et le partage est net - 87 « cuit » contre 122
+    // « supérieur ». C'est la famille la plus rentable après la confiture.
+    categorie: /(^|-)(hams?|white-hams?|jambons?)$/,
+    rangs: ['jambon cuit', 'choix', 'supérieur'],
+    // Le Code des usages de la charcuterie est un accord PROFESSIONNEL, pas un
+    // décret : on décrit ce que chaque mention garantit, sans en faire une loi.
+    seuils: [null, null, null],
+    expl: [
+      "La mention de base. Elle autorise les polyphosphates, les gélifiants et l'ajout d'eau, dans les limites permises - c'est ce qui distingue les trois rangs de cette famille.",
+      "Un cran au-dessus : pas de polyphosphates, et moins d'additifs de texture que le jambon standard.",
+      "Le rang le plus exigeant : ni polyphosphates, ni gélifiant, ni arôme ajouté. C'est la mention qui engage le plus le fabricant.",
+    ],
+    rang(nomNorm) {
+      // Le jambon SEC est une autre famille, avec d'autres règles. On se tait
+      // plutôt que de lui appliquer une échelle qui ne le concerne pas.
+      if (/\bsecs?\b|serrano|iberic|bayonne|\bparme\b|prosciutto|\bcrus?\b|fume/.test(nomNorm)) return null;
+      if (/superieur/.test(nomNorm)) return 2;
+      if (/\bchoix\b/.test(nomNorm)) return 1;
+      if (/jambons?\s+(?:cuits?|blancs?)/.test(nomNorm)) return 0;
+      return null;                                  // dans le doute, on se tait
+    },
+  },
+  {
+    nom: 'Poudre chocolatée',
+    categorie: /(^|-)(cocoa-and-chocolate-powders|cocoa-powders|chocolate-powders)$/,
+    rangs: ['poudre sucrée', 'cacao sucré', 'chocolat en poudre', 'cacao pur'],
+    seuils: [null, 25, 32, null],
+    expl: [
+      "Vendue comme poudre pour boisson, pas comme chocolat : aucun minimum de cacao à respecter. C'est le rang de la plupart des poudres du petit-déjeuner.",
+      "Au moins 25 % de cacao. La mention est réglementée, mais c'est le plus bas des deux seuils de la famille.",
+      "Au moins 32 % de cacao. C'est ce que garantit le mot « chocolat » sur une poudre - et ce que la poudre cacaotée ne garantit pas.",
+      "Du cacao et rien d'autre, sans sucre ajouté. Le reste de la famille en est une dilution.",
+    ],
+    rang(nomNorm) {
+      // Le cacao pur d'abord : « cacao maigre non sucré » contient « cacao »
+      // et ne doit pas tomber dans une catégorie sucrée.
+      if (/cacao maigre|fat[\s-]?reduced|degraisse/.test(nomNorm)) return 3;
+      if (/cacao (?:pur|cru|amer|non sucre)|unsweetened cocoa|pure cocoa|\bcocoa powder\b|cacao en polvo|poudre de cacao/.test(nomNorm)) return 3;
+      if (/chocolat en poudre|chocolate powder|chocolat poudre/.test(nomNorm)) return 2;
+      if (/cacao sucre|sweetened cocoa/.test(nomNorm)) return 1;
+      if (/poudre cacaotee|boisson cacaotee|poudre pour boisson/.test(nomNorm)) return 0;
+      return null;                                  // dans le doute, on se tait
+    },
+  },
+  {
     nom: "Huile d'olive",
     categorie: /(^|-)(olive-oils?|huiles?-d-olive)$/,
     rangs: ['huile de grignons', "huile d'olive", 'vierge', 'vierge extra'],
@@ -1098,7 +1145,13 @@ const FAMILLES_LEGALES = [
 function estDeLaFamille(tags, motif) {
   return tags.some((tag) => {
     const nom = tag.replace(/^[a-z]{2}:/, '');
-    if (/-(in|with|au|aux|a-la|and|et)-/.test(nom)) return false;
+    // ⚠️ « X DANS Y » décrit un produit X, pas un produit Y : une boîte de
+    // sardines à l'huile d'olive n'est pas une huile.
+    // « A ET B », en revanche, est une vraie catégorie à laquelle le produit
+    // appartient bel et bien : `en:cocoa-and-chocolate-powders` est LE tag des
+    // poudres chocolatées, et le rejeter rendait la famille inatteignable.
+    // Le risque n'est pas le même, la règle non plus.
+    if (/-(in|with|au|aux|a-la)-/.test(nom)) return false;
     return motif.test(nom);
   });
 }
