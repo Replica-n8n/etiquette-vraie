@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#2F6F4F">
-<meta name="description" content="Scanne un produit alimentaire et vérifie si son nom correspond vraiment à sa composition">
+<meta name="description" content="Scanne un produit alimentaire : on te lit son étiquette — ce qu'il contient, dans quel ordre, et ce que son nom veut dire légalement">
 <title>Étiquette Vraie</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" href="./icon-192.png">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1786471969">
+<link rel="stylesheet" href="./style.css?v=1786480113">
 </head>
 <body>
 
@@ -28,8 +28,14 @@
 
     <div id="home-screen" class="home-screen">
       <div class="home-content">
-        <div class="home-title">Vérifier un aliment</div>
-        <div class="home-subtitle">Scanne un produit <b>alimentaire</b> emballé : on compare ce que son nom promet à sa vraie composition.</div>
+        <!-- ⚠️ LA PROMESSE DOIT ÊTRE TENABLE. L'ancienne disait « on compare ce
+             que son nom promet à sa vraie composition ». Mesuré le 2026-08-11 :
+             cette comparaison ne donne un résultat que sur 1 produit sur 387.
+             La promesse était donc démentie 99 fois sur 100, et le silence qui
+             suivait passait pour une panne. On annonce désormais ce que l'app
+             fait sur CHAQUE produit : elle lit l'étiquette. -->
+        <div class="home-title">Lire une étiquette</div>
+        <div class="home-subtitle">Scanne un produit <b>alimentaire</b> emballé : on te lit son étiquette — ce qu'il contient, dans quel ordre, et ce que son nom veut dire <b>légalement</b>.</div>
         <button id="btn-scan" class="home-button scan" type="button">
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5v14M7 5v14M11 5v14M14.5 5v14M18 5v14M21 5v14"/></svg>
           Scanner un code-barres
@@ -55,7 +61,7 @@
 
     <div id="search-screen" class="search-screen hidden">
       <div class="search-head">
-        <div class="search-title">Chercher un aliment</div>
+        <div class="search-title">Lire une étiquette</div>
         <div class="search-hint">Tape le nom d'un produit <b>alimentaire</b> (ex. "Oreo", "Nutella"), ou directement son <b>code-barres</b> si le scan a échoué.</div>
       </div>
       <form id="search-form" class="search-form">
@@ -314,7 +320,7 @@
   </div>
 </div>
 
-<script src="./rules.js?v=1786471969" defer></script>
-<script src="./app.js?v=1786471969" defer></script>
+<script src="./rules.js?v=1786480113" defer></script>
+<script src="./app.js?v=1786480113" defer></script>
 </body>
 </html>
