@@ -1,7 +1,7 @@
 {
   "name": "Étiquette Vraie",
   "short_name": "Étiquette Vraie",
-  "description": "Scanne un produit alimentaire : on te lit son étiquette — ce qu'il contient, dans quel ordre, et ce que son nom veut dire légalement",
+  "description": "Scanne un produit alimentaire emballé. On te lit son étiquette : ce qu'il contient, dans quel ordre, et ce que son nom veut dire légalement",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.10';
+const APP_VERSION = 'v2.11';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786485301';
+const BUILD = '1786485878';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
