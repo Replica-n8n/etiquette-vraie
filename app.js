@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.4';
+const APP_VERSION = 'v2.5';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786396066';
+const BUILD = '1786454463';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -778,27 +778,91 @@ async function fetchProduct(code) {
   }
 }
 
+// ⚠️ NE PLUS PASSER PAR LE VIEUX CGI. Mesuré le 2026-08-10 sur 20 catégories :
+// il répond **11 fois sur 20** (9 erreurs 503), avec une médiane de 3 225 ms et
+// des pointes à 5 784 ms pour un délai d'abandon fixé à 6 000. Sur un téléphone
+// en 4G, la moitié des succès se transformaient en abandons - d'où une
+// suggestion qu'on ne voyait presque jamais, sans que la règle soit en cause.
+// Le proxy Cloudflare répond à toutes les catégories testées en ~370 ms.
+//
+// Il ne renvoie en revanche ni `ingredients_text` ni `additives_tags` (la
+// recherche d'OFF ne les indexe pas), qui sont exactement ce qu'il faut pour
+// vérifier qu'un candidat est propre. D'où les deux temps : le proxy donne les
+// CODES, l'API produit - fiable, elle - donne la composition. On s'arrête au
+// premier candidat qui passe, donc en général un seul appel.
+const ALTERNATIVE_MAX_CANDIDATS = 3;
+
+// ⚠️ Ces tags ne désignent pas un TYPE de produit, ce sont des étages de la
+// taxonomie d'Open Food Facts. Chercher un remplaçant dedans revient à tirer au
+// hasard dans le magasin : le « Bouillon de Bœuf » de Maggi porte `en:groceries`
+// en dernière position, et l'app proposait une sauce soja indonésienne.
+// Mesuré sur les 500 produits les plus scannés : prendre le DERNIER tag donne
+// la catégorie la plus précise 83,6 % du temps et ne tombe sur un tag trop
+// large que 2,2 % du temps - c'est la meilleure règle disponible, il suffit de
+// lui retirer ces quelques marches. (Testé aussi : « le tag le plus long »,
+// bien pire - 36,6 % de bons choix et un tag générique une fois sur deux.)
+// On garde volontairement en:biscuits, en:breads, en:dairies : un biscuit
+// proposé pour un biscuit reste une suggestion sensée.
+const CATEGORIES_TROP_LARGES = new Set([
+  'en:groceries',
+  'en:plant-based-foods-and-beverages',
+  'en:plant-based-foods',
+  'en:beverages-and-beverages-preparations',
+  'en:cereals-and-their-products',
+  'en:cereals-and-potatoes',
+  'en:fermented-foods',
+  'en:foods',
+]);
+
 async function findAlternative(product) {
   const categories = product.categories_tags;
   if (!Array.isArray(categories) || categories.length === 0) return null;
-  const category = categories[categories.length - 1].replace(/^\w+:/, '');
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=10&tagtype_0=categories&tag_contains_0=contains&tag_0=${encodeURIComponent(category)}&sort_by=unique_scans_n`;
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
-    const response = await fetchOFF(url, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (!response.ok) return null;
-    const data = await response.json();
-    const candidates = data.products || [];
-    for (const candidate of candidates) {
-      if (!candidate.code || candidate.code === product.code) continue;
-      if (!candidate.ingredients_text || !candidate.product_name) continue;
-      // Les additifs du candidat sont de toute façon lus deux lignes plus bas :
-      // les passer au moteur écarte aussi celui qui annonce « sans colorant »
-      // et en contient un. Proposer un menteur en remplacement d'un menteur
-      // serait la pire sortie possible.
-      const candidateVerdict = detectVerdict(candidate.product_name, candidate.ingredients_text, {
+  // De la plus précise à la plus large : la dernière d'abord, puis celle qui la
+  // précède en repli - une catégorie très fine (« en:bigarade-orange-
+  // marmelades ») ne rassemble parfois personne d'autre.
+  const utilisables = categories.filter((c) => !CATEGORIES_TROP_LARGES.has(c));
+  const pistes = (utilisables.length ? utilisables : categories).slice(-2).reverse();
+
+  for (const categorie of pistes) {
+    let codes = [];
+    try {
+      const q = `categories_tags:"${categorie}"`;
+      const url = `${SEARCH_PROXY}?q=${encodeURIComponent(q)}&page_size=20`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 6000);
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (!response.ok) continue;
+      const data = await response.json();
+      codes = (data.products || [])
+        .filter((p) => p && p.code && p.code !== product.code && p.product_name)
+        .map((p) => p.code);
+    } catch (err) {
+      dbg('[Alternative] recherche indisponible:', err && err.message);
+      continue;
+    }
+
+    for (const code of codes.slice(0, ALTERNATIVE_MAX_CANDIDATS)) {
+      let candidate;
+      try {
+        candidate = await fetchProduct(code);
+      } catch (err) {
+        continue;                                  // fiche illisible : au suivant
+      }
+      if (!candidate || !candidate.product_name) continue;
+      // ⚠️ Le candidat doit passer la MÊME porte que la fiche : on lisait
+      // `ingredients_text` brut, donc une liste en espagnol était analysée
+      // comme du français, ressortait « clean », et l'app proposait un
+      // « Caldo de Verduras » qui affichait aussitôt « Langue non prise en
+      // charge ». Proposer un produit qu'on est incapable de juger soi-même
+      // n'est pas une alternative, c'est une impasse.
+      const ingr = ingredientsForAnalysis(candidate);
+      if (!ingr.texte || !ingr.lisible) continue;
+      // Les additifs du candidat sont de toute façon lus juste après : les
+      // passer au moteur écarte aussi celui qui annonce « sans colorant » et en
+      // contient un. Proposer un menteur en remplacement d'un menteur serait la
+      // pire sortie possible.
+      const candidateVerdict = detectVerdict(candidate.product_name, ingr.texte, {
         additivesTags: candidate.additives_tags,
       });
       // "noclaim" est aussi une alternative valable : son nom ne promet aucun
@@ -809,10 +873,8 @@ async function findAlternative(product) {
       if (flagged.risky.length > 0) continue;
       return candidate;
     }
-    return null;
-  } catch (err) {
-    return null;
   }
+  return null;
 }
 
 function renderResults(products) {
@@ -1485,6 +1547,14 @@ function renderResult(product) {
       thumb.src = alternative.image_front_small_url || '';
       document.getElementById('alternative-name').textContent = alternative.product_name;
       document.getElementById('alternative-brand').textContent = alternative.brands || '';
+      // La suggestion ouvre la fiche. `.alternative-row` existe déjà dans
+      // l'ancien HTML : le clic marche donc même sur un appareil qui sert
+      // encore l'index.html en cache, où l'élément est une <div>.
+      const ouvrir = document.querySelector('.alternative-row');
+      if (ouvrir) {
+        ouvrir.onclick = () => selectProduct(alternative.code);
+        ouvrir.setAttribute('aria-label', `Ouvrir la fiche : ${alternative.product_name}`);
+      }
       alternativeAccordion.classList.remove('hidden');
     }).catch((err) => {
       // Suggestion secondaire : si le proxy de recherche tombe, la fiche reste

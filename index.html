@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1786396066">
+<link rel="stylesheet" href="./style.css?v=1786454463">
 </head>
 <body>
 
@@ -230,13 +230,16 @@
       <details class="accordion hidden" id="alternative-accordion">
         <summary>Alternative disponible <span class="chev">⌄</span></summary>
         <div class="accordion-body">
-          <div class="alternative-row">
+          <!-- Un vrai <button> : la suggestion ouvre la fiche, elle doit donc
+               être atteignable au clavier et annoncée comme actionnable. -->
+          <button type="button" class="alternative-row" id="alternative-open">
             <img class="alternative-thumb" id="alternative-thumb" alt="" onerror="this.style.visibility='hidden'">
             <div>
               <div class="alternative-name" id="alternative-name"></div>
               <div class="alternative-brand" id="alternative-brand"></div>
             </div>
-          </div>
+            <span class="alternative-go" aria-hidden="true">›</span>
+          </button>
         </div>
       </details>
 
@@ -311,7 +314,7 @@
   </div>
 </div>
 
-<script src="./rules.js?v=1786396066" defer></script>
-<script src="./app.js?v=1786396066" defer></script>
+<script src="./rules.js?v=1786454463" defer></script>
+<script src="./app.js?v=1786454463" defer></script>
 </body>
 </html>
