@@ -1073,15 +1073,28 @@ const FAMILLES_LEGALES = [
     rang(nomNorm, ingrNorm, items, tags) {
       if (/\b(?:oignons?|onions?|echalotes?|shallots?|tomates? vertes?|piments?|poivrons?|bacon)\b/.test(nomNorm)) return null;
       if (/confiture de lait|dulce de leche|milk jam/.test(nomNorm)) return null;
-      if (/\bextra\b/.test(nomNorm) && /\bconfitures?\b|\bjams?\b/.test(nomNorm)) return 3;
-      if (/\bconfitures?\b|\bjams?\b/.test(nomNorm)) return 2;
+      // La directive européenne vaut dans toute l'Union, avec les mêmes seuils :
+      // un « confettura extra » italien et une « Konfitüre extra » allemande
+      // promettent exactement les 45 % de la confiture extra française. Ces
+      // quatre mots-là sont sans ambiguïté - ils traduisent « confiture », rien
+      // d'autre. Mesuré : 60 confitures sur 800 portaient « extra » sans
+      // recevoir de rang, toutes en langue étrangère.
+      // ⚠️ `mermelada`, `marmellata` et `Marmelade` sont volontairement ABSENTS
+      // d'ici : ce sont les mots réservés aux agrumes, employés à tort et à
+      // travers dans le commerce. Ils passent par la branche « marmelade »
+      // ci-dessous, qui exige de voir l'agrume.
+      const CONFITURE = /\bconfitures?\b|\bjams?\b|\bconfetturas?\b|\bconfituras?\b|\bkonfiture\b|\bdoce\b/;
+      if (/\bextra\b/.test(nomNorm) && CONFITURE.test(nomNorm)) return 3;
+      if (CONFITURE.test(nomNorm)) return 2;
       // ⚠️ « Marmelade » ne se lit pas pareil selon la langue. En droit
       // français et européen le mot est RÉSERVÉ AUX AGRUMES, avec son propre
       // minimum ; en allemand, « Marmelade » désigne n'importe quelle
       // confiture. « Marmelade Erdbeere » (fraise) existe pour de vrai dans la
       // base, et lui annoncer le seuil des agrumes serait un contresens. On
       // exige donc de VOIR l'agrume, dans le nom ou dans la catégorie.
-      if (/\bmarmelades?\b|\bmarmalades?\b/.test(nomNorm)) {
+      // Les quatre formes du mot réservé aux agrumes, dans les quatre langues
+      // où on le rencontre dans la base. Toutes exigent de VOIR l'agrume.
+      if (/\bmarmelades?\b|\bmarmalades?\b|\bmermeladas?\b|\bmarmellatas?\b/.test(nomNorm)) {
         const agrumeNom = /\bagrumes?\b|\bcitrus\b|\borange|\bcitron|\blemon|\blime\b|\bpamplemousse|\bgrapefruit|\bmandarine|\bclementine|\bbergamote|\bbigarade|\bseville\b|\byuzu\b|\bkumquat/.test(nomNorm);
         const agrumeTag = estDeLaFamille(tags || [], /(^|-)(citrus-jams?|orange-jams?|lemon-jams?|bigarade-orange-marmelades?)$/);
         return agrumeNom || agrumeTag ? 1 : null;

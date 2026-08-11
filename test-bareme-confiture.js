@@ -23,6 +23,11 @@ function ok(nom, cond, detail = '') {
 const JAM = ['en:plant-based-foods', 'en:spreads', 'en:jams'];
 const MARM = ['en:spreads', 'en:jams', 'en:citrus-jams', 'en:marmalades'];
 
+// Rang attendu, en une ligne : le helper de ce fichier renvoie l'indice.
+function attendu(label, nom, tags, r) {
+  ok(label, rang(nom, tags) === r, `obtenu ${rang(nom, tags)} / attendu ${r}`);
+}
+
 function rang(nom, tags = JAM, ingr = 'fruits, sucre') {
   const t = legalTier(nom, ingr, tags);
   return t ? t.ici : null;
@@ -58,6 +63,31 @@ ok('« extra » est le sommet', t3 && t3.sommet === true, t3 && String(t3.sommet
 // Décision du projet : aucune citation de texte réglementaire à l'écran.
 ok('aucune citation légale affichée',
   t && !/reglement|règlement|directive|decret|décret|\(UE\)|CE\b/i.test(t.expl), t && t.expl);
+
+console.log('--- La directive vaut dans toute l\'Union, dans toutes les langues ---');
+// Mesuré sur 800 confitures : 60 portaient « extra » sans recevoir de rang,
+// TOUTES en langue étrangère. Les seuils sont les mêmes partout en Europe.
+attendu('confettura extra (IT)', 'Confettura extra di albicocche', JAM, 3);
+attendu('Konfitüre extra (DE)', 'Konfiture extra Sauerkirsche', JAM, 3);
+attendu('confitura extra (ES/CA)', 'Confitura Extra De Pressec Hero', JAM, 3);
+attendu('doce extra (PT)', 'Doce Extra de Ananas dos Acores', JAM, 3);
+attendu('confettura simple', 'Confettura di fragole', JAM, 2);
+// ⚠️ « mermelada », « marmellata » et « Marmelade » sont les mots RÉSERVÉS aux
+// agrumes, employés à tort et à travers dans le commerce. Même garde-fou que
+// pour l'allemand : sans agrume visible, on se tait.
+ok('mermelada de fresa : on se tait',
+  rang('Mermelada extra de fresa', JAM) === null, String(rang('Mermelada extra de fresa', JAM)));
+attendu('mermelada de naranja', 'Mermelada extra de naranja', MARM, 1);
+attendu('marmellata di arance', 'Marmellata di arance', MARM, 1);
+
+console.log('--- « Conserve » n\'est pas une dénomination ---');
+// 3045320512823, Bonne Maman Black Cherry Conserve : OFF le classe bien en
+// en:jams, mais « conserve » est un mot de commerce britannique, absent des
+// dénominations que la réglementation définit. On ne peut en déduire ni 35 %
+// ni 45 %. Vu sur 2 produits pour 800 : le silence est la bonne réponse.
+ok('conserve britannique', rang('Bonne Maman Black Cherry Conserve 370G', JAM) === null,
+  String(rang('Bonne Maman Black Cherry Conserve 370G', JAM)));
+ok('preserve', rang('Blackberry Preserve', JAM) === null);
 
 console.log('--- Hors famille : ne rien afficher ---');
 ok('compote', rang('Compote de pommes', ['en:compotes', 'en:desserts']) === null);
