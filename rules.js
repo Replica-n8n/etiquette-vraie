@@ -1317,6 +1317,16 @@ function isNutritionFactsInsteadOfIngredients(ingredientsText) {
     /dont\s+sucres/,                          // ligne "glucides dont sucres"
     /of\s+which\s+(saturates|sugars)/,
     /\benergie\b/, /\benergy\b/,
+    // ⚠️ LES EAUX MINÉRALES ONT LEUR PROPRE TABLEAU. Vittel (7613036249928) et
+    // Contrex (7613035866386) ont une ANALYSE MINÉRALE dans le champ
+    // ingrédients : « Minéralisation caractéristique (mg/L) : Calcium 240 /
+    // Magnésium 42 / Sulfate 400 ». Ce n'est pas une liste, et l'app la lisait
+    // comme telle. Ces trois marqueurs ne figurent jamais dans une vraie liste.
+    // ⚠️ Ne PAS mettre « calcium » ou « magnésium » seuls : ce sont des additifs
+    // parfaitement ordinaires (carbonate de calcium, E504).
+    /\bmg\s*\/\s*l\b/,                        // « mg/L », l'unité d'une analyse
+    /mineralisation/,                          // « minéralisation caractéristique »
+    /residu\s+sec/,                            // « résidu sec à 180 °C »
   ];
   // Marqueurs DÉCISIFS : un seul suffit. Ce sont des titres de tableau ou des
   // unités d'énergie qui ne figurent JAMAIS dans une liste d'ingrédients.

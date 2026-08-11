@@ -43,6 +43,30 @@ honnete('_variante_', 'Gelatine bovine', 'gelatine', "« bovine » décrit l'ori
 honnete('_variante_', 'Collagene bovin', 'collagene hydrolyse', 'idem');
 honnete('_variante_', 'Presure bovine', 'presure, eau, sel', 'idem');
 
+console.log('--- Une analyse minérale n\'est pas une liste d\'ingrédients ---');
+// Vittel (7613036249928) et Contrex (7613035866386) ont un TABLEAU d'analyse
+// dans le champ ingrédients. Trouvés en mesurant le ratio d'ingrédients non
+// reconnus par Open Food Facts : sur 296 fiches, 5 n'en reconnaissaient aucun,
+// et ces deux-là étaient les seules vraiment corrompues.
+function illisible(code, nom, ingredients, pourquoi) {
+  const v = detectVerdict(nom, ingredients);
+  if (v.verdict === 'unknown') { pass++; return; }
+  echecs.push(`${code} ${nom}\n      verdict ${v.verdict} : ${v.headline}\n      or : ${pourquoi}`);
+}
+illisible('7613036249928', 'Vittel',
+  'Mineralisation caracteristique (mg/L) : Calcium 240 / Magnesium 42 / Sodium 5,2 / Sulfate 400',
+  "c'est une analyse d'eau, pas une liste");
+illisible('7613035866386', 'CONTREX eau minerale naturelle',
+  'Analyse en mg/l : Calcium 468 / Magnesium 74,5 / Sodium 9,4 / Sulfate 1121 / Residu sec 2125',
+  "c'est une analyse d'eau, pas une liste");
+// ⚠️ Les trois autres « rien reconnu » de la mesure sont des listes VALIDES.
+// Une règle fondée sur ce ratio les aurait fait taire : elle a été rejetée.
+honnete('20003166', 'Flocons d avoine', "100% flocons d'avoine complets.", 'liste valide, tout est reconnu par l\'œil humain');
+honnete('3088543506255', "Sirop d'Agave", 'agave syrup', 'liste valide');
+honnete('6111035000430', 'Sidi Ali', 'une eau minerale naturelle', 'liste valide');
+// Le calcium et le magnésium restent des ingrédients ordinaires.
+honnete('_variante_', 'Yaourt nature', 'lait, ferments lactiques, carbonate de calcium', 'le calcium est un additif courant');
+
 console.log('--- Un verbe n\'est pas un aliment ---');
 
 // « pêchées » est le participe du verbe pêcher. Le fruit, lui, ne se conjugue
