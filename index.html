@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1786717399">
+<link rel="stylesheet" href="./style.css?v=1786721291">
 </head>
 <body>
 
@@ -159,10 +159,12 @@
         <div class="bareme-sens"><span>le moins exigeant</span><span>le plus exigeant</span></div>
         <div class="bareme-marches" id="bareme-marches"></div>
         <div class="bareme-rangs" id="bareme-rangs"></div>
-        <!-- Une fonction que rien n'annonce n'existe pas. Les rangs étaient
-             cliquables depuis la v2.14 et personne ne pouvait le deviner :
-             9 px de haut, soulignement de la couleur des filets. -->
-        <div class="bareme-aide" id="bareme-aide">Touche un mot pour lire ce qu'il garantit</div>
+        <!-- ⚠️ PAS de ligne d'aide ici. « Touche un mot pour lire ce qu'il
+             garantit » a été essayée en v2.15 et retirée en v2.16 : elle
+             annonçait une action dont le résultat était DÉJÀ affiché en
+             dessous, et elle réglait un défaut d'affordance en ajoutant du
+             texte plutôt qu'en rendant les rangs cliquables pour de bon.
+             L'affordance appartient au bouton, pas à une légende. -->
         <!-- Quand on lit un AUTRE rang que celui du produit, il faut le dire :
              sans ça, l'explication d'à côté se lit comme celle du produit. -->
         <div class="bareme-expl-titre hidden" id="bareme-expl-titre"></div>
@@ -273,11 +275,11 @@
         </div>
       </div>
 
-      <div id="generic-modal" class="modal hidden">
+      <div id="generic-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="generic-modal-titre">
         <div class="modal-backdrop" data-closes="generic-modal"></div>
         <div class="modal-content">
           <div class="modal-header">
-            <h2>Dénomination officielle</h2>
+            <h2 id="generic-modal-titre">Dénomination officielle</h2>
             <button class="modal-close" id="generic-modal-close">✕</button>
           </div>
           <div class="modal-body"><p id="generic-modal-body"></p></div>
@@ -288,11 +290,11 @@
            compte : ce que la note mesure, et surtout ce qu'elle ne dit pas.
            L'app ne juge pas : elle explique le mot qu'on lui met sous les yeux,
            ici comme sur l'étiquette. -->
-      <div id="nutriscore-modal" class="modal hidden">
+      <div id="nutriscore-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="nutriscore-modal-titre">
         <div class="modal-backdrop" data-closes="nutriscore-modal"></div>
         <div class="modal-content">
           <div class="modal-header">
-            <h2>Le Nutri-Score, c'est quoi ?</h2>
+            <h2 id="nutriscore-modal-titre">Le Nutri-Score, c'est quoi ?</h2>
             <button class="modal-close" id="nutriscore-modal-close">✕</button>
           </div>
           <div class="modal-body">
@@ -303,11 +305,11 @@
         </div>
       </div>
 
-      <div id="nova-modal" class="modal hidden">
+      <div id="nova-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="nova-modal-titre">
         <div class="modal-backdrop" data-closes="nova-modal"></div>
         <div class="modal-content">
           <div class="modal-header">
-            <h2>Le groupe NOVA, c'est quoi ?</h2>
+            <h2 id="nova-modal-titre">Le groupe NOVA, c'est quoi ?</h2>
             <button class="modal-close" id="nova-modal-close">✕</button>
           </div>
           <div class="modal-body">
@@ -323,11 +325,11 @@
         </div>
       </div>
 
-      <div id="choco-modal" class="modal hidden">
+      <div id="choco-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="choco-modal-titre">
         <div class="modal-backdrop"></div>
         <div class="modal-content">
           <div class="modal-header">
-            <h2>Vrai chocolat ou cacao ?</h2>
+            <h2 id="choco-modal-titre">Vrai chocolat ou cacao ?</h2>
             <button class="modal-close" id="choco-modal-close">✕</button>
           </div>
           <div class="modal-body">
@@ -358,11 +360,11 @@
         </div>
       </div>
 
-      <div id="additives-modal" class="modal hidden">
+      <div id="additives-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="additives-modal-titre">
         <div class="modal-backdrop"></div>
         <div class="modal-content">
           <div class="modal-header">
-            <h2>Liste complète des additifs</h2>
+            <h2 id="additives-modal-titre">Liste complète des additifs</h2>
             <button class="modal-close" id="additives-modal-close">✕</button>
           </div>
           <div class="modal-body" id="additives-modal-body"></div>
@@ -375,7 +377,7 @@
   </div>
 </div>
 
-<script src="./rules.js?v=1786717399" defer></script>
-<script src="./app.js?v=1786717399" defer></script>
+<script src="./rules.js?v=1786721291" defer></script>
+<script src="./app.js?v=1786721291" defer></script>
 </body>
 </html>

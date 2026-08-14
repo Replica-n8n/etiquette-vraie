@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.15';
+const APP_VERSION = 'v2.16';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786717399';
+const BUILD = '1786721291';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -970,15 +970,28 @@ function freshnessText(lastModifiedT) {
   return `Donnée vérifiée ${ago}. La recette a pu changer depuis.`;
 }
 
+// Les métas portent une couleur en dur depuis la v1 ; on la traduit en classe
+// plutôt que de réécrire les cinq tables.
+const TON_PASTILLE = { '#C0392B': 't-rouge', '#B5792A': 't-orange', '#2F6F4F': 't-vert' };
+
 function renderScoreTile(iconId, valueId, meta, fallbackLabel) {
   const iconEl = document.getElementById(iconId);
   const valueEl = document.getElementById(valueId);
   if (meta) {
-    iconEl.style.background = meta.color;
-    iconEl.style.color = '#fff'; // texte blanc sur badge coloré (évite un gris résiduel)
+    // ⚠️ PASTILLE EN TEINTE DOUCE, PAS EN APLAT SATURÉ. Mesuré le 2026-08-14 :
+    // les blocs de la fiche ont tous entre 1,11 et 1,15 de contraste de surface
+    // avec le fond, et les SEULS pixels saturés de l'écran étaient ces
+    // pastilles. Dans une app qui refuse de noter, la chose la plus voyante
+    // était donc un « D » rouge : l'œil sautait du titre à la note en
+    // enjambant le barème. Même code couleur, même information, deux tons plus
+    // bas. Voir .icon.t-rouge / .t-orange / .t-vert dans style.css.
+    iconEl.style.background = '';
+    iconEl.style.color = '';
+    iconEl.className = `icon ${TON_PASTILLE[meta.color] || ''}`;
     iconEl.textContent = meta.icon;
     valueEl.textContent = meta.label;
   } else {
+    iconEl.className = 'icon';
     iconEl.style.background = 'var(--tile-empty)';
     iconEl.style.color = 'var(--tile-empty-ink)';
     iconEl.textContent = '-';
@@ -1110,7 +1123,14 @@ function renderIngredientExcerpt(ingredientsText, detail, verdictClassName) {
   listEl.innerHTML = rows
     .map((row) => {
       const num = String(row.num).padStart(2, '0');
-      const text = row.flagged ? `<span class="flagged ${verdictClassName}">${row.text}</span>` : row.text;
+      // ⚠️ Open Food Facts encadre les ALLERGÈNES de tirets bas (`_lait_`).
+      // C'est un balisage de la base, pas un mot de l'emballage, et il
+      // s'affichait brut : « 03 _lait_ écrémé (15%) ». 22 occurrences sur la
+      // seule fiche Mars glacé, sur la seule liste que l'utilisatrice compare
+      // mot à mot avec ce qu'elle tient en main. `ligneDecodage` les retirait
+      // déjà de son côté, pas celui-ci.
+      const propre = String(row.text).replace(/_/g, '');
+      const text = row.flagged ? `<span class="flagged ${verdictClassName}">${propre}</span>` : propre;
       return `<div${row.flagged ? ' data-flagged="1"' : ''}><span class="idx">${num}</span>${text}</div>`;
     })
     .join('');
@@ -1550,6 +1570,19 @@ function renderResult(product) {
   }
 
   renderBareme(tier);
+
+  // ⚠️ QUI PARLE EN PREMIER. Sur les verdicts qui n'accusent pas (58 % des
+  // fiches sont `noclaim`), le bandeau ouvrait par un aveu d'impuissance
+  // (« rien à confronter ») et le barème, seul à dire quelque chose de
+  // concret, arrivait après. L'audit du 2026-08-14 : on ouvrait par le
+  // renoncement et on refermait par la réponse. Quand l'app ACCUSE, en
+  // revanche, l'accusation reste en tête : c'est elle qu'on doit lire debout.
+  const baremeEl = document.getElementById('bareme-box');
+  if (baremeEl && verdictEl.parentNode) {
+    const accuse = verdict === 'misleading' || verdict === 'warning';
+    if (tier && !accuse) verdictEl.parentNode.insertBefore(baremeEl, verdictEl);
+    else verdictEl.parentNode.insertBefore(baremeEl, verdictEl.nextSibling);
+  }
 
   // Verdict "unknown" = OFF n'a pas les ingrédients. C'est le seul cas où on
   // propose une photo : l'utilisateur peut débloquer la vérification.
@@ -2175,12 +2208,35 @@ if (installButton) {
 // Popups « ce qu'est ce score ». Éléments NOUVEAUX : gardes obligatoires à
 // chaque étage, et écouteurs enregistrés APRÈS ceux du cœur : une exception ici
 // tuerait tous les enregistrements suivants (ce qui a cassé la v1.28).
+// ACCESSIBILITÉ DES MODALES. Aucune des cinq ne se fermait par Échap, aucune ne
+// prenait le focus ni ne le rendait : au clavier, ouvrir un popup était un
+// cul-de-sac. Un seul écouteur global couvre toutes les modales, présentes et
+// futures, plutôt que cinq écouteurs à ne pas oublier.
+let elementAvantModale = null;
+function ouvrirModale(modal) {
+  elementAvantModale = document.activeElement;
+  modal.classList.remove('hidden');
+  const fermeture = modal.querySelector('.modal-close');
+  if (fermeture) fermeture.focus();
+}
+function fermerModale(modal) {
+  modal.classList.add('hidden');
+  // Rendre le focus d'où il venait : sans ça on retombe en haut du document.
+  if (elementAvantModale && typeof elementAvantModale.focus === 'function') elementAvantModale.focus();
+  elementAvantModale = null;
+}
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  const ouverte = [...document.querySelectorAll('.modal')].find((m) => !m.classList.contains('hidden'));
+  if (ouverte) fermerModale(ouverte);
+});
+
 [['tile-nutriscore', 'nutriscore-modal'], ['tile-nova', 'nova-modal']].forEach(([idTuile, idModal]) => {
   const tuile = document.getElementById(idTuile);
   const modal = document.getElementById(idModal);
   if (!tuile || !modal) return;
-  const fermer = () => modal.classList.add('hidden');
-  const ouvrir = () => modal.classList.remove('hidden');
+  const fermer = () => fermerModale(modal);
+  const ouvrir = () => ouvrirModale(modal);
   tuile.addEventListener('click', ouvrir);
   // La tuile est un div avec role="button" : le clavier ne l'active pas seul.
   tuile.addEventListener('keydown', (e) => {
