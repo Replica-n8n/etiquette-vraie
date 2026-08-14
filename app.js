@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.21';
+const APP_VERSION = 'v2.22';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786739375';
+const BUILD = '1786740854';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1339,6 +1339,9 @@ function equilibrerTuiles() {
   // La dernière n'a plus à s'étaler en dessous, ce qui la faisait lire comme
   // une case oubliée plutôt que comme la troisième d'un rang.
   grille.classList.toggle('trois', visibles.length === 3);
+  // Deux tuiles : pas de rangée du dessous, donc rien à aligner. Elles se
+  // centrent. Voir le commentaire de .score-tile dans style.css.
+  grille.classList.toggle('deux', visibles.length === 2);
   visibles.forEach((t, i) => {
     t.classList.toggle(
       'pleine-largeur',

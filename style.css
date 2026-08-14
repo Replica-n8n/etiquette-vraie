@@ -438,11 +438,15 @@ body{
    à la note. Les scores sont des faits d'étiquette de SECOND PLAN : ils posent
    sur la page au lieu de flotter dessus. La carte est réservée à ce que l'app
    affirme elle-même, le verdict et le barème. */
-/* `justify-content:center` : en disposition en ligne, le contenu se collait au
-   bord gauche de sa colonne. Avec quatre tuiles ça passait, avec DEUX la page
-   paraissait ferrée à gauche et déséquilibrée. Les tuiles en colonne étaient
-   déjà centrées : les deux dispositions s'accordent enfin. */
-.score-tile{ background:transparent; border:0; border-radius:14px; padding:9px 10px; display:flex; align-items:center; justify-content:center; gap:9px; }
+/* ⚠️ ALIGNÉES À GAUCHE PAR DÉFAUT, et ce n'est pas un oubli. Centrer le contenu
+   de CHAQUE tuile (essayé en v2.21) désaligne les pastilles d'une rangée à
+   l'autre, puisque « Défavorable » et « 1 additif » n'ont pas la même largeur :
+   mesuré 43, 206, 55 et 233 px, soit 27 px d'écart dans une même colonne. Sur
+   une grille de quatre badges, l'œil attend une colonne, pas quatre centrages
+   indépendants. Le centrage ne vaut donc QUE pour deux tuiles, où il n'y a
+   aucune rangée du dessous avec qui s'aligner. */
+.score-tile{ background:transparent; border:0; border-radius:14px; padding:9px 10px; display:flex; align-items:center; justify-content:flex-start; gap:9px; }
+.score-grid.deux .score-tile{ justify-content:center; }
 .score-tile .icon{
   width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center;
   font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px; flex-shrink:0;
