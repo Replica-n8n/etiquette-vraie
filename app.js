@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.17';
+const APP_VERSION = 'v2.18';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786722626';
+const BUILD = '1786732412';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1520,7 +1520,11 @@ function renderResult(product) {
   // index.html servi depuis le cache), le « i » reste la seule porte.
   const genericLine = document.getElementById('generic-line');
   if (genericLine) {
-    genericLine.textContent = currentGenericName;
+    // Le texte va dans le span interne quand il existe : écrire sur le bouton
+    // l'effacerait, et avec lui le rognage à deux lignes. Repli sur le bouton
+    // pendant le cycle où l'ancien index.html est encore servi en cache.
+    const cible = document.getElementById('generic-line-texte') || genericLine;
+    cible.textContent = currentGenericName;
     genericLine.classList.toggle('hidden', !saysSomethingNew);
   }
   // Deux portes pour la même information, ce serait de l'encombrement : le « i »
@@ -2264,6 +2268,19 @@ if (chocoModal) {
   if (btnFermer) btnFermer.addEventListener('click', fermer);
   const fond = chocoModal.querySelector('.modal-backdrop');
   if (fond) fond.addEventListener('click', fermer);
+}
+
+// La tuile Additifs s'ouvre EN ENTIER, comme ses deux voisines. Depuis que le
+// « i » est repassé dans le flux (17 px), il ne peut plus servir de cible à lui
+// seul. Élément déjà présent de longue date, mais garde par principe.
+const tuileAdditifs = document.getElementById('tile-additives');
+if (tuileAdditifs) {
+  tuileAdditifs.addEventListener('click', (e) => {
+    // Le bouton « i » a son propre écouteur : ne pas ouvrir deux fois.
+    if (e.target.closest('#additives-info-btn')) return;
+    const btn = document.getElementById('additives-info-btn');
+    if (btn) btn.click();
+  });
 }
 
 // Additives modal

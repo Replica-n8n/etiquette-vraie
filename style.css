@@ -222,13 +222,17 @@ body{
   font:inherit; font-size:12.5px; line-height:1.4; color:var(--ink);
   text-align:left; cursor:pointer;
   border-left:2px solid var(--line);
-  /* ⚠️ PAS de `min-height` ici. Avec `-webkit-line-clamp`, forcer la boîte plus
-     haute que deux lignes laisse apparaître une TROISIÈME ligne tranchée en
-     deux : bug visible sur la Carte d'Or (« ...i (4%) » coupé au milieu).
-     La cible tactile se gagne par le REMPLISSAGE, qui est hors de la zone
-     rognée : 2 lignes de 17,5 px + 2 x 5 px = 45 px. */
-  padding:5px 0 5px 8px;
-  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  /* Le BOUTON porte la zone tactile, le span interne porte le rognage. */
+  display:flex; align-items:center; min-height:44px; padding:0 0 0 8px;
+}
+/* ⚠️ LE ROGNAGE VIT ICI, ET NULLE PART AILLEURS. `overflow:hidden` rogne au bord
+   du REMPLISSAGE : sur le bouton lui-même, le moindre padding-bottom laissait
+   passer une tranche de la 3e ligne (bug vu sur la Carte d'Or), et un
+   `min-height` faisait la même chose en plus gros. Deux tentatives ratées avant
+   celle-ci. Le span n'a aucun remplissage : il fait exactement deux lignes. */
+.generic-line-texte{
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  overflow:hidden; padding:0;
 }
 .generic-line.hidden{ display:none; }
 .generic-line:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
@@ -399,6 +403,15 @@ body{
 /* Centré, pas ferré à gauche : trois tuiles alignées à gauche dans des colonnes
    égales laissaient des blancs irréguliers à droite de chacune. */
 .score-grid.trois .score-tile{ flex-direction:column; align-items:center; text-align:center; gap:6px; padding:9px 6px; }
+/* ⚠️ LE « i » REPASSE DANS LE FLUX quand les tuiles sont centrées. En position
+   absolue en bas à droite, il venait se poser SUR la valeur une fois le texte
+   centré : « Ultra-transformé » et « 4 additifs » passaient dessous. Mesuré
+   chevauchant sur les trois tuiles. Ici il devient la dernière ligne de la
+   colonne ; c'est la tuile entière qui reste la cible tactile. */
+.score-grid.trois .info-mark,
+.score-grid.trois .info-btn{
+  position:static; width:17px; height:17px; margin-top:1px;
+}
 .score-grid.trois .score-tile .icon{ width:26px; height:26px; border-radius:8px; font-size:12px; }
 /* 8 px était sous le plancher : illisible sur un téléphone tenu à bout de bras
    dans un rayon au néon. Le libellé passe à 10 px, la valeur suit. */

@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1786722626">
+<link rel="stylesheet" href="./style.css?v=1786732412">
 </head>
 <body>
 
@@ -140,7 +140,11 @@
                produit EST : « Mars glacé » y devient « crème glacée nappée de
                caramel ». Elle était cachée derrière un « i » que personne
                n'ouvre. Deux lignes au plus, le reste dans le popup. -->
-          <button type="button" class="generic-line hidden" id="generic-line"></button>
+          <!-- Le texte vit dans un span INTERNE : c'est lui qui porte le
+               rognage à deux lignes, pendant que le bouton porte la zone
+               tactile. Sur le même élément, `overflow:hidden` mangeait aussi
+               la zone tactile. -->
+          <button type="button" class="generic-line hidden" id="generic-line"><span class="generic-line-texte" id="generic-line-texte"></span></button>
         </div>
 
       <div class="alert" id="verdict-box">
@@ -382,7 +386,7 @@
   </div>
 </div>
 
-<script src="./rules.js?v=1786722626" defer></script>
-<script src="./app.js?v=1786722626" defer></script>
+<script src="./rules.js?v=1786732412" defer></script>
+<script src="./app.js?v=1786732412" defer></script>
 </body>
 </html>
