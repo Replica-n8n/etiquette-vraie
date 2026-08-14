@@ -11,7 +11,7 @@
 // Les deux règles dures du barème s'appliquent : uniquement les produits DE la
 // famille, et rang CERTAIN sinon rien.
 
-const { legalTier } = require('./rules.js');
+const { legalTier, denominationLegale } = require('./rules.js');
 
 let pass = 0;
 const echecs = [];
@@ -111,6 +111,55 @@ const s = tier('Sorbet plein fruit Mangue');
 ok('sorbet : 2 rangs', s && s.rangs.length === 2, s && JSON.stringify(s.rangs));
 ok('sorbet : au sommet', s && s.sommet === true);
 ok('sorbet : aucune citation légale', s && !/reglement|directive|decret|code des|\(UE\)/i.test(s.expl), s && s.expl);
+
+console.log('--- LA DÉNOMINATION LÉGALE PRIME SUR LE NOM COMMERCIAL ---');
+// Mesuré sur 162 desserts glacés où les deux noms donnent un rang : ils se
+// CONTREDISENT 36 fois (22,2 %). Le nom commercial abrège, la dénomination
+// engage. Lire le premier faisait annoncer « aucune matière grasse laitière
+// exigée » à des produits légalement vendus comme crème glacée.
+const legal = (nom, generic, tags = GLACES) => {
+  const t = legalTier(nom, 'lait, sucre', tags, generic);
+  return t ? `${t.famille}:${t.rangs[t.ici]}` : null;
+};
+ok('Carte d\'Or : « Glace » au nom, « Crème glacée » en dénomination',
+  legal("CARTE D'OR Glace Chocolat Noir 900ml", 'Crème glacée chocolat noir (avec 2% de chocolat noir)') === 'Glace:crème glacée',
+  String(legal("CARTE D'OR Glace Chocolat Noir 900ml", 'Crème glacée chocolat noir (avec 2% de chocolat noir)')));
+ok('un nom muet que la dénomination fait parler',
+  legal('Mars glacé', 'Crème glacée nappée de caramel 16%, enrobage cacao 32%') === 'Glace:crème glacée',
+  String(legal('Mars glacé', 'Crème glacée nappée de caramel 16%, enrobage cacao 32%')));
+ok('la dénomination peut aussi RABAISSER le rang',
+  legal('Crème glacée pistache', 'Glace pistache avec pistaches hachées grillées') === 'Glace:glace',
+  String(legal('Crème glacée pistache', 'Glace pistache avec pistaches hachées grillées')));
+ok('sorbet relevé en plein fruit',
+  legal('Sorbet Citron 900ml', 'Sorbet plein fruit citron de Sicile, aromatisé') === 'Sorbet:sorbet plein fruit');
+// ⚠️ La dénomination mêle le produit ET sa composition. Sans couper à la tête
+// de phrase, « Glace façon yaourt, avec sorbet mangue » partait sur l'échelle
+// des sorbets alors que c'est une glace.
+ok('la composition qui suit ne détourne pas la famille',
+  legal("Carte D'Or Façon Yaourt", 'Glace façon yaourt, avec sorbet mangue-fruit de la passion') === 'Glace:glace',
+  String(legal("Carte D'Or Façon Yaourt", 'Glace façon yaourt, avec sorbet mangue-fruit de la passion')));
+ok('la parenthèse ne coupe pas la dénomination',
+  denominationLegale('Crème glacée chocolat noir (avec 2% de chocolat) avec des morceaux')
+    === 'Crème glacée chocolat noir (avec 2% de chocolat)',
+  denominationLegale('Crème glacée chocolat noir (avec 2% de chocolat) avec des morceaux'));
+ok('la première phrase suffit',
+  denominationLegale('Deux textures de crème glacée dans un même pot. Crème glacée vanille')
+    === 'Deux textures de crème glacée dans un même pot');
+ok('dénomination vide : on retombe sur le nom commercial',
+  legal('Sorbet Fraise', '') === 'Sorbet:sorbet');
+ok('dénomination muette : on retombe sur le nom commercial',
+  legal('Sorbet Fraise', 'Dessert glacé aux fruits rouges') === 'Sorbet:sorbet');
+ok('hors famille, la dénomination ne sauve rien',
+  legal('Mars glacé', 'Crème glacée nappée de caramel', ['en:biscuits']) === null);
+
+console.log('--- Chaque rang porte son explication (marches cliquables) ---');
+const t4 = tier('Glace Vanille');
+ok('4 explications servies', t4 && Array.isArray(t4.expls) && t4.expls.length === 4,
+  t4 && JSON.stringify((t4.expls || []).length));
+ok('chacune est non vide', t4 && t4.expls.every((e) => e && e.length > 20));
+ok('celle du rang atteint est bien expl', t4 && t4.expls[t4.ici] === t4.expl);
+const t2 = tier('Sorbet Citron');
+ok('2 explications pour le sorbet', t2 && t2.expls.length === 2);
 
 console.log('--- Non-régression : les 5 familles déjà livrées ---');
 ok('jus intact', legalTier('Pur jus orange', 'jus', ['en:juices']) !== null);

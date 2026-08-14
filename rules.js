@@ -1259,15 +1259,57 @@ function estDeLaFamille(tags, motif) {
   });
 }
 
-function legalTier(productName, ingredientsText, categoriesTags) {
+// LA DÉNOMINATION LÉGALE EST LA TÊTE DE PHRASE, PAS TOUTE LA PHRASE.
+//
+// `generic_name` mêle la dénomination et la composition : « Crème glacée
+// vanille avec une sauce au caramel salé (8 %) ». Ce qui engage le fabricant,
+// c'est le début ; la suite décrit ce qu'il y a dedans, et contient souvent le
+// mot d'une AUTRE famille. Sans cette coupe, « Glace façon yaourt, avec sorbet
+// mangue » était classé sur l'échelle des sorbets alors que c'est une glace.
+function denominationLegale(texte) {
+  const t = (texte || '').trim();
+  if (!t) return '';
+  // On coupe à la première virgule HORS parenthèses, au premier « avec », ou à
+  // la fin de la première phrase. « Crème glacée chocolat noir (avec 2 % de
+  // chocolat) » doit rester entière : la parenthèse ne coupe pas.
+  let profondeur = 0;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (c === '(') profondeur++;
+    else if (c === ')') profondeur = Math.max(0, profondeur - 1);
+    else if (profondeur === 0) {
+      if (c === ',' || c === ';') return t.slice(0, i);
+      if (c === '.' && (i === t.length - 1 || t[i + 1] === ' ')) return t.slice(0, i);
+      if (/\s/.test(c) && /^ (avec|with|garni|garnie|nappee?|nappé|enrobee?|enrobé)\b/i.test(
+        t.slice(i).normalize('NFD').replace(/[̀-ͯ]/g, ''))) return t.slice(0, i);
+    }
+  }
+  return t;
+}
+
+// ⚠️ `genericName` est FACULTATIF : appelé à trois arguments, le moteur est
+// identique à avant. C'est ce qui garde valables les tests des cinq premières
+// familles.
+function legalTier(productName, ingredientsText, categoriesTags, genericName) {
   const tags = (categoriesTags || []).map((t) => normalize(t));
   if (!tags.length) return null;
+  // ⚠️ LA DÉNOMINATION LÉGALE PASSE AVANT LE NOM COMMERCIAL. `generic_name` est
+  // le champ où Open Food Facts range « ce que le produit EST » ; le nom
+  // commercial, lui, abrège pour tenir sur l'emballage. Mesuré sur 162 desserts
+  // glacés où les deux parlent : ils se CONTREDISENT 36 fois (22,2 %), et
+  // presque toujours dans le même sens — « CARTE D'OR Glace Chocolat Noir » a
+  // pour dénomination « Crème glacée chocolat noir ». Lire le nom commercial
+  // faisait donc annoncer « aucune matière grasse laitière exigée » à un
+  // produit légalement vendu comme crème glacée : une fausse accusation.
+  const legalNorm = normalize(denominationLegale(genericName));
   const nomNorm = normalize(productName);
   const ingrNorm = normalize(ingredientsText);
   const items = splitIngredientList(ingrNorm);
   for (const f of FAMILLES_LEGALES) {
     if (!estDeLaFamille(tags, f.categorie)) continue;
-    const ici = f.rang(nomNorm, ingrNorm, items, tags);
+    // La dénomination légale d'abord, le nom commercial en repli.
+    const ici = (legalNorm ? f.rang(legalNorm, ingrNorm, items, tags) : null)
+      ?? f.rang(nomNorm, ingrNorm, items, tags);
     // ⚠️ On ESSAIE la famille suivante plutôt que d'abandonner. Deux familles
     // partagent désormais les mêmes catégories — glace et sorbet — et le
     // `return null` d'ici faisait taire la seconde dès que la première se
@@ -1277,6 +1319,10 @@ function legalTier(productName, ingredientsText, categoriesTags) {
     if (ici === null || ici === undefined) continue;
     return {
       famille: f.nom, rangs: f.rangs, ici, expl: f.expl[ici],
+      // TOUTES les explications, pas seulement celle du rang atteint : l'écran
+      // rend chaque marche cliquable, pour qu'on puisse lire ce que promet le
+      // mot d'à côté. Comprendre l'écart est tout l'intérêt d'une échelle.
+      expls: f.expl,
       sommet: ici === f.rangs.length - 1,
       // Minimum garanti par la dénomination, quand la famille en a un.
       seuil: (f.seuils && f.seuils[ici] !== undefined) ? f.seuils[ici] : null,
@@ -2083,7 +2129,7 @@ if (typeof module !== 'undefined') {
   module.exports = {
     detectVerdict, normalize, findFlavorMention, onlyAppearsAsArome,
     findIngredientPosition, ingredientShare, isMentionedInIngredients,
-    splitIngredientList, chocolateForm, chocolatePercent, legalTier,
+    splitIngredientList, chocolateForm, chocolatePercent, legalTier, denominationLegale,
     claimConflict, additiveLabel, findSubstitute, partLabel,
     langueDuTexte, texteLisible,
   };

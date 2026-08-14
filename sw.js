@@ -1,4 +1,4 @@
-const CACHE_NAME = 'etiquette-vraie-1786636757';
+const CACHE_NAME = 'etiquette-vraie-1786716244';
 // Chemins RELATIFS (résolus par rapport à l'emplacement de sw.js) pour que
 // l'app fonctionne à n'importe quelle URL (prod, sous-dossier, dépôt de test).
 const OFFLINE_URL = './index.html';

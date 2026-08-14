@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.13';
+const APP_VERSION = 'v2.14';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786636757';
+const BUILD = '1786716244';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -265,6 +265,22 @@ function bioMeta(labelsTags, ingredientsText) {
 // de vraies variantes distinctes et ne sont pas touchées).
 function additiveBaseCode(tag) {
   return tag.replace(/(?:iii|ii|iv|vii|vi|v|i)$/, '');
+}
+
+// ⚠️ UN SEUL COMPTAGE D'ADDITIFS POUR TOUT L'ÉCRAN. Open Food Facts liste les
+// sous-formes EN PLUS de la base (`e322` et `e322i`, `e500` et `e500ii`) : le
+// compte brut est donc systématiquement gonflé. La tuile dédoublonnait déjà,
+// pas la ligne de décodage — d'où « 7 additifs » écrit trois lignes au-dessus
+// d'une tuile qui en affichait 6, sur le Mars glacé. Les deux passent
+// désormais par ici.
+function additifsDedoublonnes(additivesTags) {
+  const vus = new Set();
+  return (additivesTags || []).filter((tag) => {
+    const base = additiveBaseCode(tag);
+    if (vus.has(base)) return false;
+    vus.add(base);
+    return true;
+  });
 }
 
 // Recherche l'info d'un additif, avec repli sur le code de base si sous-forme.
@@ -1359,6 +1375,32 @@ function renderBareme(tier) {
   rangsEl.innerHTML = '';
   rangsEl.style.gridTemplateColumns = cols;
 
+  const expl = document.getElementById('bareme-expl');
+  // Élément NOUVEAU : garde obligatoire tant qu'un ancien index.html peut être
+  // servi depuis le cache (voir la règle dure du déploiement).
+  const explTitre = document.getElementById('bareme-expl-titre');
+
+  // Chaque rang est CLIQUABLE : on lit ce que promet le mot d'à côté sans avoir
+  // à acheter le produit d'à côté. C'est la demande qui a le plus de sens sur
+  // une échelle - un rang seul ne dit rien, c'est l'ÉCART qui informe.
+  const montrer = (sel) => {
+    expl.textContent = (tier.expls && tier.expls[sel]) || tier.expl;
+    // Le cadre ne se pare du vert du sommet que pour le rang du PRODUIT :
+    // sinon, lire « sorbet plein fruit » repeindrait la fiche d'un sorbet
+    // ordinaire en réussite.
+    expl.className = `bareme-expl${sel === tier.ici && tier.sommet ? ' sommet' : ''}`;
+    if (explTitre) {
+      const ailleurs = sel !== tier.ici;
+      explTitre.textContent = ailleurs ? `« ${tier.rangs[sel]} » — ce que ce mot garantirait` : '';
+      explTitre.classList.toggle('hidden', !ailleurs);
+    }
+    [...rangsEl.children].forEach((b, i) => {
+      b.classList.toggle('ici', i === tier.ici);
+      b.classList.toggle('lu', i === sel && sel !== tier.ici);
+      b.setAttribute('aria-pressed', String(i === sel));
+    });
+  };
+
   tier.rangs.forEach((nom, i) => {
     const marche = document.createElement('i');
     marche.style.height = `${8 + i * (18 / (n - 1))}px`;
@@ -1366,15 +1408,17 @@ function renderBareme(tier) {
     if (i === tier.ici) marche.className = 'ici';
     marches.appendChild(marche);
 
-    const etiquette = document.createElement('span');
+    // Un <button> et non un <span> : atteignable au clavier et annoncé comme
+    // actionnable, comme la ligne d'alternative.
+    const etiquette = document.createElement('button');
+    etiquette.type = 'button';
     etiquette.textContent = nom;
-    if (i === tier.ici) etiquette.className = 'ici';
+    etiquette.className = i === tier.ici ? 'ici' : '';
+    etiquette.addEventListener('click', () => montrer(i));
     rangsEl.appendChild(etiquette);
   });
 
-  const expl = document.getElementById('bareme-expl');
-  expl.textContent = tier.expl;
-  expl.className = `bareme-expl${tier.sommet ? ' sommet' : ''}`;
+  montrer(tier.ici);
   boite.classList.remove('hidden');
 }
 
@@ -1449,7 +1493,16 @@ function renderResult(product) {
     && normalize(generic) !== normalize(productName)
     && !normalize(productName).includes(normalize(generic));
   currentGenericName = saysSomethingNew ? generic : '';
-  if (genericEl) genericEl.classList.toggle('hidden', !saysSomethingNew);
+  // Élément NOUVEAU : garde obligatoire. Tant qu'il n'existe pas (ancien
+  // index.html servi depuis le cache), le « i » reste la seule porte.
+  const genericLine = document.getElementById('generic-line');
+  if (genericLine) {
+    genericLine.textContent = currentGenericName;
+    genericLine.classList.toggle('hidden', !saysSomethingNew);
+  }
+  // Deux portes pour la même information, ce serait de l'encombrement : le « i »
+  // ne sert plus que dans le cycle de déploiement où la ligne n'existe pas.
+  if (genericEl) genericEl.classList.toggle('hidden', !saysSomethingNew || !!genericLine);
   // Code-barres affiché près de la version : permet à un utilisateur de nous
   // signaler un produit précis sans avoir l'emballage sous la main.
   const codeEl = document.getElementById('app-product-code');
@@ -1467,15 +1520,21 @@ function renderResult(product) {
   // Sur `noclaim`, le libellé du moteur (« Ce nom ne met en avant aucun
   // aliment ») devient la SECONDE ligne : il explique pourquoi il n'y a rien à
   // confronter. La première dit ce qui a été lu.
+  const additifsUniques = additifsDedoublonnes(product.additives_tags);
   const decodage = verdict === 'noclaim'
-    ? ligneDecodage(ingr.texte, product.additives_tags, findFlaggedAdditives(product.additives_tags).risky)
+    // ⚠️ On dédoublonne les TAGS avant d'en tirer les risqués : `risky` contient
+    // des objets, pas des codes.
+    ? ligneDecodage(ingr.texte, additifsUniques, findFlaggedAdditives(additifsUniques).risky)
     : '';
   document.getElementById('verdict-text').textContent = decodage || headline;
 
   // Le barème est calculé AVANT la sous-ligne : celle-ci doit savoir quel
   // minimum légal est déjà affiché, pour ne pas lui opposer une borne plus
   // faible (voir verdictSubLine).
-  const tier = legalTier(product.product_name, ingr.texte, product.categories_tags);
+  // ⚠️ La dénomination LÉGALE (`generic_name`) est passée en 4e argument et
+  // prime sur le nom commercial : voir legalTier. C'est ce champ qui dit ce que
+  // le produit EST.
+  const tier = legalTier(product.product_name, ingr.texte, product.categories_tags, product.generic_name);
 
   // Sous-ligne : ce que l'ancien panneau « Il y a vraiment » portait d'utile.
   const sousEl = document.getElementById('verdict-sub');
@@ -1496,14 +1555,11 @@ function renderResult(product) {
   const flaggedAdditives = findFlaggedAdditives(product.additives_tags);
   currentRiskyAdditives = flaggedAdditives.risky;
 
-  // Stocker les additifs du produit, DÉDOUBLONNÉS par code de base : OFF liste
-  // les sous-formes en plus de la base (e322 + e322i, e500 + e500ii) alors que
-  // c'est le même additif - sans regroupement, le popup en affichait 6 pour 4.
-  const seenAdditiveBases = new Set();
-  currentAllAdditives = (product.additives_tags || []).reduce((list, tag) => {
+  // Les additifs du produit, dédoublonnés par `additifsDedoublonnes` — la même
+  // fonction que la ligne de décodage, pour que les deux comptages de l'écran
+  // ne puissent plus diverger.
+  currentAllAdditives = additifsUniques.reduce((list, tag) => {
     const base = additiveBaseCode(tag);
-    if (seenAdditiveBases.has(base)) return list;
-    seenAdditiveBases.add(base);
     const isRisky = RISKY_ADDITIVES[tag] || RISKY_ADDITIVES[base];
     const isLimited = LIMITED_ADDITIVES[tag] || LIMITED_ADDITIVES[base];
     const category = isRisky ? 'risky' : (isLimited ? 'limited' : 'ok');
@@ -2071,6 +2127,16 @@ if (genericBtn && genericModal) {
   document.getElementById('generic-modal-close').addEventListener('click', fermer);
   genericModal.querySelector('.modal-backdrop').addEventListener('click', fermer);
 }
+// La ligne visible ouvre le même popup : elle est tronquée à deux lignes, et
+// certaines dénominations font trois lignes de plus. Élément NOUVEAU, donc
+// garde obligatoire et écouteur enregistré APRÈS ceux du cœur.
+const genericLineBtn = document.getElementById('generic-line');
+if (genericLineBtn && genericModal) {
+  genericLineBtn.addEventListener('click', () => {
+    document.getElementById('generic-modal-body').textContent = currentGenericName;
+    genericModal.classList.remove('hidden');
+  });
+}
 
 // Installation : l'événement arrive tôt, souvent avant tout clic. On l'empêche
 // d'ouvrir la bannière native du navigateur pour la proposer nous-mêmes, au bon
@@ -2102,6 +2168,26 @@ if (installButton) {
     }
   });
 }
+
+// Popups « ce qu'est ce score ». Éléments NOUVEAUX : gardes obligatoires à
+// chaque étage, et écouteurs enregistrés APRÈS ceux du cœur — une exception ici
+// tuerait tous les enregistrements suivants (ce qui a cassé la v1.28).
+[['tile-nutriscore', 'nutriscore-modal'], ['tile-nova', 'nova-modal']].forEach(([idTuile, idModal]) => {
+  const tuile = document.getElementById(idTuile);
+  const modal = document.getElementById(idModal);
+  if (!tuile || !modal) return;
+  const fermer = () => modal.classList.add('hidden');
+  const ouvrir = () => modal.classList.remove('hidden');
+  tuile.addEventListener('click', ouvrir);
+  // La tuile est un div avec role="button" : le clavier ne l'active pas seul.
+  tuile.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ouvrir(); }
+  });
+  const btnFermer = document.getElementById(`${idModal}-close`);
+  if (btnFermer) btnFermer.addEventListener('click', fermer);
+  const fond = modal.querySelector('.modal-backdrop');
+  if (fond) fond.addEventListener('click', fermer);
+});
 
 // Popup "forme du chocolat". Élément NOUVEAU : gardes obligatoires, sinon une
 // exception ici tuerait tous les écouteurs enregistrés en dessous pendant le

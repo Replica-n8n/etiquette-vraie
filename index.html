@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1786636757">
+<link rel="stylesheet" href="./style.css?v=1786716244">
 </head>
 <body>
 
@@ -135,6 +135,12 @@
             <span id="product-name"></span><button id="generic-info-btn" class="info-inline hidden" type="button" aria-label="Voir la dénomination officielle">i</button>
           </div>
           <div class="product-sub" id="product-sub"></div>
+          <!-- LA DÉNOMINATION LÉGALE, VISIBLE. C'est la seule phrase de l'écran
+               écrite sous contrainte de loi, et la seule qui dise ce que le
+               produit EST — « Mars glacé » y devient « crème glacée nappée de
+               caramel ». Elle était cachée derrière un « i » que personne
+               n'ouvre. Deux lignes au plus, le reste dans le popup. -->
+          <button type="button" class="generic-line hidden" id="generic-line"></button>
         </div>
 
       <div class="alert" id="verdict-box">
@@ -153,6 +159,9 @@
         <div class="bareme-sens"><span>le moins exigeant</span><span>le plus exigeant</span></div>
         <div class="bareme-marches" id="bareme-marches"></div>
         <div class="bareme-rangs" id="bareme-rangs"></div>
+        <!-- Quand on lit un AUTRE rang que celui du produit, il faut le dire :
+             sans ça, l'explication d'à côté se lit comme celle du produit. -->
+        <div class="bareme-expl-titre hidden" id="bareme-expl-titre"></div>
         <div class="bareme-expl" id="bareme-expl"></div>
       </div>
 
@@ -173,14 +182,17 @@
       </div>
 
       <div class="score-grid">
-        <div class="score-tile" id="tile-nutriscore">
+        <!-- Tuiles cliquables : un score qu'on ne sait pas lire ne renseigne
+             pas, il intimide. role/tabindex plutôt qu'un <button> pour ne pas
+             refaire la mise en page de .score-tile. -->
+        <div class="score-tile cliquable" id="tile-nutriscore" role="button" tabindex="0" aria-label="Ce qu'est le Nutri-Score">
           <div class="icon" id="nutriscore-icon"></div>
           <div>
             <div class="score-label">Nutri-Score</div>
             <div class="score-value" id="nutriscore-value"></div>
           </div>
         </div>
-        <div class="score-tile" id="tile-nova">
+        <div class="score-tile cliquable" id="tile-nova" role="button" tabindex="0" aria-label="Ce qu'est le groupe NOVA">
           <div class="icon" id="nova-icon"></div>
           <div>
             <div class="score-label">NOVA</div>
@@ -268,6 +280,45 @@
         </div>
       </div>
 
+      <!-- Ces deux popups DÉCRIVENT un score, ils ne le reprennent pas à leur
+           compte : ce que la note mesure, et surtout ce qu'elle ne dit pas.
+           L'app ne juge pas — elle explique le mot qu'on lui met sous les yeux,
+           ici comme sur l'étiquette. -->
+      <div id="nutriscore-modal" class="modal hidden">
+        <div class="modal-backdrop" data-closes="nutriscore-modal"></div>
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Le Nutri-Score, c'est quoi ?</h2>
+            <button class="modal-close" id="nutriscore-modal-close">✕</button>
+          </div>
+          <div class="modal-body">
+            <p>Une lettre de <b>A à E</b>, calculée par une formule publique sur 100 g de produit. Elle additionne des points pour le sucre, le gras saturé, le sel et les calories, puis en retire pour les fruits et légumes, les fibres et les protéines.</p>
+            <p>C'est une mesure <b>nutritionnelle</b>, et elle sert surtout à <b>comparer deux produits du même rayon</b> — deux céréales, deux pizzas.</p>
+            <p class="modal-limite">Ce qu'il ne dit pas : rien sur les additifs, rien sur le degré de transformation, rien sur la portion que vous mangez vraiment. Un E n'est pas un interdit, un A n'est pas un feu vert.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="nova-modal" class="modal hidden">
+        <div class="modal-backdrop" data-closes="nova-modal"></div>
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Le groupe NOVA, c'est quoi ?</h2>
+            <button class="modal-close" id="nova-modal-close">✕</button>
+          </div>
+          <div class="modal-body">
+            <p>Un classement de <b>1 à 4</b> selon le <b>degré de transformation</b>, pas selon la valeur nutritionnelle.</p>
+            <div class="nova-echelle">
+              <div><b>1</b> — brut ou peu transformé : un fruit, du lait, des œufs.</div>
+              <div><b>2</b> — ingrédient de cuisine : huile, sucre, sel, beurre.</div>
+              <div><b>3</b> — transformé : pain, fromage, conserve, poisson fumé.</div>
+              <div><b>4</b> — ultra-transformé : contient au moins un ingrédient qu'on n'a pas dans sa cuisine — émulsifiant, arôme, amidon modifié, colorant.</div>
+            </div>
+            <p class="modal-limite">Ce qu'il ne dit pas : un 4 n'est pas un danger, c'est une recette d'usine. Et le classement ne distingue rien à l'intérieur d'un groupe — deux produits en 4 peuvent être très différents.</p>
+          </div>
+        </div>
+      </div>
+
       <div id="choco-modal" class="modal hidden">
         <div class="modal-backdrop"></div>
         <div class="modal-content">
@@ -320,7 +371,7 @@
   </div>
 </div>
 
-<script src="./rules.js?v=1786636757" defer></script>
-<script src="./app.js?v=1786636757" defer></script>
+<script src="./rules.js?v=1786716244" defer></script>
+<script src="./app.js?v=1786716244" defer></script>
 </body>
 </html>

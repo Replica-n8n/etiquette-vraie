@@ -203,6 +203,18 @@ body{
   font-weight:700; font-size:19px; line-height:1.15; margin-bottom:3px;
 }
 .product-sub{ font-size:12px; color:var(--ink-soft); }
+/* Dénomination légale. Tronquée à DEUX lignes : 65 fiches sur 1919 dépassent
+   90 caractères, et une phrase de cinq lignes repousserait le verdict hors de
+   l'écran. Le reste s'ouvre au clic. */
+.generic-line{
+  display:block; width:100%; margin-top:5px; padding:0; border:0; background:none;
+  font:inherit; font-size:12px; line-height:1.35; color:var(--ink);
+  text-align:left; cursor:pointer;
+  border-left:2px solid var(--line); padding-left:7px;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+}
+.generic-line.hidden{ display:none; }
+.generic-line:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
 /* Dénomination légale : ce que le produit EST vraiment, souvent écrit en tout
    petit sur l'emballage alors que le nom commercial s'étale. On la remonte. */
 .product-generic{
@@ -296,7 +308,31 @@ body{
 .bareme-marches i{ display:block; border-radius:3px 3px 0 0; opacity:0.32; }
 .bareme-marches i.ici{ opacity:1; }
 .bareme-rangs{ display:grid; gap:3px; margin-top:4px; font-size:9px; line-height:1.25; color:var(--ink-soft); text-align:center; }
-.bareme-rangs span.ici{ color:var(--ink); font-weight:700; }
+/* Chaque rang est un bouton : on lit ce que promet le mot d'à côté. Le
+   soulignement pointillé est la seule marque d'« actionnable » qui tienne dans
+   9 px sans transformer l'échelle en barre de navigation. */
+.bareme-rangs button{
+  font:inherit; color:inherit; background:none; border:0; padding:2px 1px;
+  cursor:pointer; text-align:center; border-radius:5px;
+  text-decoration:underline dotted; text-underline-offset:2px;
+  text-decoration-color:var(--line);
+}
+.bareme-rangs button.ici{ color:var(--ink); font-weight:700; text-decoration:none; }
+.bareme-rangs button.lu{ color:var(--ink); background:var(--neutral-soft); text-decoration:none; }
+.bareme-rangs button:focus-visible{ outline:2px solid var(--ink); outline-offset:1px; }
+.bareme-expl-titre{
+  margin-top:9px; font-size:9.5px; font-weight:700; letter-spacing:0.02em;
+  color:var(--ink-soft);
+}
+.bareme-expl-titre.hidden{ display:none; }
+/* Une tuile qui s'ouvre doit le montrer, sans crier : le curseur, et un léger
+   enfoncement au toucher. */
+.score-tile.cliquable{ cursor:pointer; }
+.score-tile.cliquable:active{ transform:scale(0.985); }
+.score-tile.cliquable:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+/* Ce qu'un score NE dit PAS : même corps que le texte, ton plus discret. */
+.modal-limite{ color:var(--ink-soft); border-top:1px solid var(--line); padding-top:9px; }
+.nova-echelle{ margin:10px 0; display:grid; gap:6px; font-size:13px; line-height:1.4; }
 .bareme-expl{
   margin-top:10px; padding:9px 10px; border-radius:10px;
   background:var(--paper); border:1px solid var(--line);
