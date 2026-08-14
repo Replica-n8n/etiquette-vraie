@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1786734899">
+<link rel="stylesheet" href="./style.css?v=1786738648">
 </head>
 <body>
 
@@ -193,7 +193,7 @@
              pas, il intimide. role/tabindex plutôt qu'un <button> pour ne pas
              refaire la mise en page de .score-tile. -->
         <div class="score-tile cliquable" id="tile-nutriscore" role="button" tabindex="0" aria-label="Ce qu'est le Nutri-Score">
-          <div class="icon" id="nutriscore-icon"></div>
+          <span class="pastille-wrap"><span class="icon" id="nutriscore-icon"></span><span class="info-mark" aria-hidden="true">i</span></span>
           <div>
             <div class="score-label">Nutri-Score</div>
             <div class="score-value" id="nutriscore-value"></div>
@@ -201,23 +201,20 @@
           <!-- Le même « i » que sur la tuile Additifs : sans lui, rien ne dit
                qu'on peut toucher pour savoir ce qu'est ce score. C'est un
                repère, pas un bouton : c'est la tuile entière qui ouvre. -->
-          <span class="info-mark" aria-hidden="true">i</span>
         </div>
         <div class="score-tile cliquable" id="tile-nova" role="button" tabindex="0" aria-label="Ce qu'est le groupe NOVA">
-          <div class="icon" id="nova-icon"></div>
+          <span class="pastille-wrap"><span class="icon" id="nova-icon"></span><span class="info-mark" aria-hidden="true">i</span></span>
           <div>
             <div class="score-label">NOVA</div>
             <div class="score-value" id="nova-value"></div>
           </div>
-          <span class="info-mark" aria-hidden="true">i</span>
         </div>
         <div class="score-tile additives-tile" id="tile-additives">
-          <div class="icon" id="additives-icon"></div>
+          <span class="pastille-wrap"><span class="icon" id="additives-icon"></span><button id="additives-info-btn" class="info-btn" type="button" aria-label="Voir la liste complète des additifs">i</button></span>
           <div>
             <div class="score-label">Additifs</div>
             <div class="score-value" id="additives-value"></div>
           </div>
-          <button id="additives-info-btn" class="info-btn" type="button" aria-label="Voir la liste complète des additifs">i</button>
         </div>
         <div class="score-tile" id="tile-bio">
           <div class="icon" id="bio-icon"></div>
@@ -383,7 +380,7 @@
   </main>
 </div>
 
-<script src="./rules.js?v=1786734899" defer></script>
-<script src="./app.js?v=1786734899" defer></script>
+<script src="./rules.js?v=1786738648" defer></script>
+<script src="./app.js?v=1786738648" defer></script>
 </body>
 </html>
