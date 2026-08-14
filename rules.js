@@ -1167,7 +1167,7 @@ const FAMILLES_LEGALES = [
     // exception.
     expl: [
       "Au moins 25 % de fruits, et aucune matière grasse ajoutée. Le minimum tombe à 15 % pour les fruits acides comme le citron, et à 5 % pour les fruits à coque.",
-      "Au moins 45 % de fruits, presque le double d'un sorbet ordinaire — 20 % pour les fruits acides. Le rang le plus exigeant de la famille.",
+      "Au moins 45 % de fruits, presque le double d'un sorbet ordinaire, et 20 % pour les fruits acides. Le rang le plus exigeant de la famille.",
     ],
     rang(nomNorm) {
       if (/\bplein fruit\b/.test(nomNorm)) return 1;
@@ -1178,7 +1178,7 @@ const FAMILLES_LEGALES = [
   {
     nom: 'Glace',
     // Mesuré sur 607 desserts glacés d'Open Food Facts : 33,3 % du rayon reçoit
-    // un rang, et le partage est le plus net de toutes les familles livrées —
+    // un rang, et le partage est le plus net de toutes les familles livrées :
     // 89 « glace » contre 53 « crème glacée ». C'est l'écart que cette famille
     // existe pour dire.
     // ⚠️ PAS de `glaces?` ici, et c'est la leçon `en:sardines-in-olive-oil` sous
@@ -1191,7 +1191,7 @@ const FAMILLES_LEGALES = [
     rangs: ["glace à l'eau", 'glace', 'glace au lait', 'crème glacée'],
     expl: [
       "De l'eau, du sucre et un parfum. Ni matière grasse ni lait : c'est tout ce que ce mot annonce.",
-      "« Glace » tout court n'exige AUCUNE matière grasse laitière — une graisse exclusivement végétale suffit. C'est le mot le plus employé du rayon, et le moins engageant.",
+      "« Glace » tout court n'exige AUCUNE matière grasse laitière : une graisse exclusivement végétale suffit. C'est le mot le plus employé du rayon, et le moins engageant.",
       "Au moins 2,5 % de matière grasse laitière. Deux fois moins qu'une crème glacée, pour un mot qui met pourtant le lait en avant.",
       "Au moins 5 % de matière grasse, et exclusivement laitière : ni coco, ni palme, ni colza. Le rang le plus exigeant de la famille.",
     ],
@@ -1297,7 +1297,7 @@ function legalTier(productName, ingredientsText, categoriesTags, genericName) {
   // le champ où Open Food Facts range « ce que le produit EST » ; le nom
   // commercial, lui, abrège pour tenir sur l'emballage. Mesuré sur 162 desserts
   // glacés où les deux parlent : ils se CONTREDISENT 36 fois (22,2 %), et
-  // presque toujours dans le même sens — « CARTE D'OR Glace Chocolat Noir » a
+  // presque toujours dans le même sens : « CARTE D'OR Glace Chocolat Noir » a
   // pour dénomination « Crème glacée chocolat noir ». Lire le nom commercial
   // faisait donc annoncer « aucune matière grasse laitière exigée » à un
   // produit légalement vendu comme crème glacée : une fausse accusation.
@@ -1311,7 +1311,7 @@ function legalTier(productName, ingredientsText, categoriesTags, genericName) {
     const ici = (legalNorm ? f.rang(legalNorm, ingrNorm, items, tags) : null)
       ?? f.rang(nomNorm, ingrNorm, items, tags);
     // ⚠️ On ESSAIE la famille suivante plutôt que d'abandonner. Deux familles
-    // partagent désormais les mêmes catégories — glace et sorbet — et le
+    // partagent désormais les mêmes catégories, glace et sorbet, et le
     // `return null` d'ici faisait taire la seconde dès que la première se
     // taisait. Vérifié sur les 3000 produits les plus scannés : aucune fiche
     // n'appartient à deux des cinq familles d'origine, ce changement leur est

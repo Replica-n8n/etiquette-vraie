@@ -136,6 +136,6 @@ async function testDecoder() {
 }
 
 testDecoder().then(() => {
-  console.log(`\n${pass}/${pass + fail} passent${fail ? ` — ${fail} ÉCHEC(S)` : ' — TOUT PASSE'}`);
+  console.log(`\n${pass}/${pass + fail} passent${fail ? ` · ${fail} ÉCHEC(S)` : ' · TOUT PASSE'}`);
   process.exit(fail ? 1 : 0);
 });

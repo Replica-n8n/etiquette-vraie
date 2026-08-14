@@ -305,21 +305,30 @@ body{
   color:var(--ink-soft); margin-bottom:5px;
 }
 .bareme-marches{ display:grid; gap:3px; align-items:end; height:26px; }
-.bareme-marches i{ display:block; border-radius:3px 3px 0 0; opacity:0.32; }
+/* La marche est le plus gros objet de l'échelle : elle doit répondre au doigt
+   elle aussi, sinon la cible utile se limite à une étiquette de 9 px. */
+.bareme-marches i{ display:block; border-radius:3px 3px 0 0; opacity:0.32; cursor:pointer; }
 .bareme-marches i.ici{ opacity:1; }
 .bareme-rangs{ display:grid; gap:3px; margin-top:4px; font-size:9px; line-height:1.25; color:var(--ink-soft); text-align:center; }
-/* Chaque rang est un bouton : on lit ce que promet le mot d'à côté. Le
-   soulignement pointillé est la seule marque d'« actionnable » qui tienne dans
-   9 px sans transformer l'échelle en barre de navigation. */
+/* Chaque rang est un bouton. La cible faisait 15 px de haut et le pointillé
+   avait la couleur des filets : au doigt, sur un téléphone, la fonction était
+   introuvable. Hauteur portée à 30 px (56 px avec la marche au-dessus) et
+   soulignement d'un ton qui se voit. */
 .bareme-rangs button{
-  font:inherit; color:inherit; background:none; border:0; padding:2px 1px;
-  cursor:pointer; text-align:center; border-radius:5px;
-  text-decoration:underline dotted; text-underline-offset:2px;
-  text-decoration-color:var(--line);
+  font:inherit; color:inherit; background:none; border:0; padding:5px 1px;
+  min-height:30px; cursor:pointer; text-align:center; border-radius:6px;
+  text-decoration:underline; text-underline-offset:2px;
+  text-decoration-color:var(--ink-soft); text-decoration-thickness:1px;
+  -webkit-tap-highlight-color:rgba(0,0,0,0.06);
 }
 .bareme-rangs button.ici{ color:var(--ink); font-weight:700; text-decoration:none; }
 .bareme-rangs button.lu{ color:var(--ink); background:var(--neutral-soft); text-decoration:none; }
 .bareme-rangs button:focus-visible{ outline:2px solid var(--ink); outline-offset:1px; }
+.bareme-aide{
+  margin-top:5px; text-align:center; font-size:8.5px; letter-spacing:0.02em;
+  color:var(--ink-soft);
+}
+.bareme-aide.hidden{ display:none; }
 .bareme-expl-titre{
   margin-top:9px; font-size:9.5px; font-weight:700; letter-spacing:0.02em;
   color:var(--ink-soft);

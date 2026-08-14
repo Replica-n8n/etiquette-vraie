@@ -53,9 +53,9 @@ console.log('--- Le même poisson sous deux noms de vente ---');
 // Déclarés séparément, ils devenaient substituts l'un de l'autre, et l'app
 // accusait « Filets de morue salée » dont la liste dit « Cabillaud » - la vérité.
 const m1 = detectVerdict('Filets de morue salee', 'cabillaud (gadus morhua), sel');
-ok('morue composée de cabillaud : honnête', m1.verdict === 'clean', `${m1.verdict} — ${m1.headline}`);
+ok('morue composée de cabillaud : honnête', m1.verdict === 'clean', `${m1.verdict} · ${m1.headline}`);
 const m2 = detectVerdict('Filet de cabillaud', 'morue salee, eau');
-ok('cabillaud composé de morue : honnête', m2.verdict === 'clean', `${m2.verdict} — ${m2.headline}`);
+ok('cabillaud composé de morue : honnête', m2.verdict === 'clean', `${m2.verdict} · ${m2.headline}`);
 ok('cabillaud ne remplace pas la morue', sub('morue', 'cabillaud, eau, sel') === null, sub('morue', 'cabillaud, eau, sel'));
 // ... et la vraie substitution reste attrapée.
 const m3 = detectVerdict('Filet de morue', 'pangasius, eau, sel');
@@ -68,7 +68,7 @@ console.log('--- Un nom propre n\'est pas un aliment ---');
 // qu'après une consonne (citron -> citronné).
 const s1 = detectVerdict('Solene cereales poulet a l italienne', 'ble, poulet, tomate, sel');
 ok('Solène n\'est pas de la sole', !/sole/i.test(s1.headline || ''), s1.headline);
-ok('Solène : le poulet est bien vu', s1.verdict === 'clean', `${s1.verdict} — ${s1.headline}`);
+ok('Solène : le poulet est bien vu', s1.verdict === 'clean', `${s1.verdict} · ${s1.headline}`);
 
 console.log('--- Le verdict dit enfin ce qu\'il y a à la place ---');
 const v1 = detectVerdict('Filet de cabillaud', 'pangasius, eau, sel, stabilisant');

@@ -110,7 +110,7 @@ ok('2 arguments : comportement inchangé', sansContexte.verdict === 'noclaim' ||
 
 // « Rien à vérifier » devient « Trompeur » : c'est tout l'objet de la règle.
 const v1 = detectVerdict('Gaufrette sans colorant', 'farine, sucre, colorant e160a', { additivesTags: ['en:e160a'] });
-ok('noclaim -> misleading', v1.verdict === 'misleading', `verdict=${v1.verdict} — ${v1.headline}`);
+ok('noclaim -> misleading', v1.verdict === 'misleading', `verdict=${v1.verdict} · ${v1.headline}`);
 ok('le libellé nomme l\'additif', /E160a/i.test(v1.headline || ''), v1.headline);
 ok('le libellé cite l\'allégation', /colorant/i.test(v1.headline || ''), v1.headline);
 ok('la règle est identifiable', v1.detail && v1.detail.rule === 'allegation-contredite', JSON.stringify(v1.detail));
@@ -129,7 +129,7 @@ ok('le conflit est tout de même signalé', v3.detail && v3.detail.claim && v3.d
 // « À vérifier » : le fabricant a prévenu sur la saveur, mais ment sur le
 // colorant. Le mensonge est plus grave que la réserve : il l'emporte.
 const v4 = detectVerdict('Barre chocolatee sans colorant', 'avoine, morceaux gout chocolat, e150a', { additivesTags: ['en:e150a'] });
-ok('warning -> misleading', v4.verdict === 'misleading', `verdict=${v4.verdict} — ${v4.headline}`);
+ok('warning -> misleading', v4.verdict === 'misleading', `verdict=${v4.verdict} · ${v4.headline}`);
 
 // Composition absente : aucune conclusion possible, l'allégation ne change rien.
 const v5 = detectVerdict('Compote sans colorant', '', { additivesTags: ['en:e160a'] });

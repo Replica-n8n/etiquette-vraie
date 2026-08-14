@@ -1,4 +1,4 @@
-# Contribution photo sur fiches incomplètes — conception
+# Contribution photo sur fiches incomplètes, conception
 
 Date : 2026-08-02 · Branche de travail : `develop`
 
@@ -16,7 +16,7 @@ Cas déclencheur : `062020172365`, Nutella B-ready de Ferrero. Présent dans OFF
 Bar »), `brands` faux (« Nutella » au lieu de Ferrero), aucune photo, aucun
 ingrédient. L'app affichait « impossible de vérifier » sans rien pouvoir proposer.
 
-## Ce que Robotoff fait — et ne fait pas
+## Ce que Robotoff fait, et ne fait pas
 
 Vérifié sur la documentation puis **observé en direct** sur ce produit.
 
@@ -83,7 +83,7 @@ seule fonctionnait déjà, il n'avait jamais été appelé.
 
 ### Point d'entrée
 
-Sur l'écran résultat, quand le verdict vaut `unknown` — les deux cas de
+Sur l'écran résultat, quand le verdict vaut `unknown`, les deux cas de
 `rules.js` : ingrédients absents, et tableau nutritionnel capturé à leur place.
 
 Rien ailleurs : on ne demande pas de photo sur une fiche complète.
@@ -96,8 +96,8 @@ une fiche affichée. On crée un **bloc distinct, photo seule**, dans
 
 Les deux blocs ont des textes, des champs et des situations différents ; les
 fusionner en masquant conditionnellement des champs les coupleraient sans rien
-gagner. En revanche la mécanique dessous — compression de l'image et envoi au
-Worker — est **partagée**, pas dupliquée.
+gagner. En revanche la mécanique dessous, compression de l'image et envoi au
+Worker, est **partagée**, pas dupliquée.
 
 ### Trois états, lus dans les données d'OFF
 
@@ -108,13 +108,13 @@ locale : la question est justement ce que voit un utilisateur **différent**.
 |---|---|---|
 | vide | absente | invitation à photographier |
 | vide | présente | « photo envoyée, en attente de vérification » |
-| remplie | — | rien, la fiche est vérifiable |
+| remplie | rien | rien, la fiche est vérifiable |
 
 Coût : ajouter `image_ingredients_url` à `PRODUCT_FIELDS`.
 
 Sans cet état, plusieurs personnes photographiant le même produit produiraient
-des révisions successives — chaque envoi **remplace** l'image d'ingrédients de
-référence, donc une photo floue peut dégrader une photo nette — et autant de
+des révisions successives, chaque envoi **remplace** l'image d'ingrédients de
+référence, donc une photo floue peut dégrader une photo nette, et autant de
 suggestions Robotoff redondantes à traiter pour les annotateurs.
 
 **Réserve :** si la photo présente est illisible, ce garde-fou l'ancre
@@ -124,7 +124,7 @@ illisible ? ») plutôt qu'un blocage sec.
 ### Drapeau de mise en ligne
 
 `CONTRIBUTE_ENABLED` coupe aujourd'hui toute contribution en prod. Il a été créé
-à cause du risque de saisie approximative — risque inexistant ici.
+à cause du risque de saisie approximative, risque inexistant ici.
 
 On sépare donc en deux portes :
 - formulaire texte « produit absent » : **reste coupé en prod** jusqu'à ce qu'il
@@ -139,11 +139,11 @@ L'invitation, sur fiche incomplète :
 > vérifier. Tu as l'emballage sous la main ? Photographie la liste d'ingrédients :
 > ça débloquera la vérification, pour toi et pour les autres.
 
-Le succès doit dire la vérité sur le délai — sinon l'utilisateur rescanne dans la
+Le succès doit dire la vérité sur le délai, sinon l'utilisateur rescanne dans la
 minute, revoit « impossible de vérifier » et conclut à un échec :
 
 > Merci ! Ta photo est partie chez Open Food Facts. Les ingrédients apparaîtront
-> une fois la lecture vérifiée par leur équipe — compte quelques jours.
+> une fois la lecture vérifiée par leur équipe, compte quelques jours.
 
 État « déjà envoyée » :
 
@@ -160,7 +160,7 @@ défaut, alors que Robotoff a détecté la liste en **anglais**
 (`ingredient_detection | en`) sur cette étiquette canadienne bilingue. Les deux
 ne coïncident pas nécessairement.
 
-Sans conséquence observée ici — l'insight a été créé malgré tout. À surveiller si
+Sans conséquence observée ici, l'insight a été créé malgré tout. À surveiller si
 d'autres produits bilingues remontent ; ne pas corriger à l'aveugle.
 
 ## Tests

@@ -77,7 +77,7 @@ honnete('0014352990933', 'Sardines de l\'Atlantique Nord-Est pechees par des bat
 honnete('_variante_', 'Thon peche a la ligne', 'thon, eau, sel', 'peche = verbe');
 honnete('_variante_', 'Maquereaux peches par nos pecheurs bretons', 'maquereaux, huile, sel', 'peche = verbe');
 
-// « MOULÉ » est un verbe, « moule » un coquillage — normalize() retire l'accent
+// « MOULÉ » est un verbe, « moule » un coquillage · normalize() retire l'accent
 // et les rend identiques. Trouvé en cherchant des exemples de fromage :
 // 18821026, un camembert AOP au lait cru, accusé de ne pas contenir de moules.
 honnete('18821026', 'Camembert de Normandie Moule a la louche',
@@ -87,20 +87,20 @@ honnete('_variante_', 'Camembert moule main', 'lait cru, ferments, presure, sel'
 // ... et le coquillage reste un coquillage.
 const moules = detectVerdict('Moules marinieres', 'moules, vin blanc, echalote, persil');
 if (moules.verdict === 'clean') pass++;
-else echecs.push(`Moules marinieres : le coquillage n'est plus vu — ${moules.verdict}`);
+else echecs.push(`Moules marinieres : le coquillage n'est plus vu · ${moules.verdict}`);
 const faux = detectVerdict('Moules de bouchot', 'chair de poisson, amidon, arome');
 if (faux.verdict === 'misleading') pass++;
-else echecs.push(`Moules de bouchot sans moules : plus accusé — ${faux.verdict}`);
+else echecs.push(`Moules de bouchot sans moules : plus accusé · ${faux.verdict}`);
 
 console.log('--- ... sans casser le fruit ---');
 // Le correctif ne doit pas rendre l'app aveugle à la vraie pêche.
 const fruit1 = detectVerdict('Tarte aux peches', 'farine, sucre, arome peche');
 if (/peche|pêche/i.test(fruit1.headline) && fruit1.verdict === 'misleading') pass++;
-else echecs.push(`Tarte aux peches : le fruit n'est plus vu — ${fruit1.verdict} ${fruit1.headline}`);
+else echecs.push(`Tarte aux peches : le fruit n'est plus vu · ${fruit1.verdict} ${fruit1.headline}`);
 
 const fruit2 = detectVerdict('Compote peche abricot', 'pommes, sucre, arome');
 if (fruit2.verdict === 'misleading') pass++;
-else echecs.push(`Compote peche abricot : le fruit n'est plus vu — ${fruit2.verdict} ${fruit2.headline}`);
+else echecs.push(`Compote peche abricot : le fruit n'est plus vu · ${fruit2.verdict} ${fruit2.headline}`);
 
 const fruit3 = detectVerdict('Yaourt a la peche', 'lait, sucre, peches 8%');
 if (fruit3.verdict === 'clean') pass++;

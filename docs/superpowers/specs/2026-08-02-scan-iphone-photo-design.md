@@ -1,4 +1,4 @@
-# Scan iPhone par photo — conception
+# Scan iPhone par photo, conception
 
 Date : 2026-08-02 · Branche de travail : `develop`
 
@@ -11,7 +11,7 @@ pas une version d'iOS à attendre.
 
 Aujourd'hui ces utilisateurs voient : « Scanner non supporté ici. Utilise Chrome
 sur Android, ou cherche par nom. » (`app.js:325`). Le conseil est impossible à
-suivre sur iOS — Chrome y est aussi soumis à WebKit. Le message revient à leur
+suivre sur iOS, Chrome y est aussi soumis à WebKit. Le message revient à leur
 dire de changer de téléphone.
 
 Confirmé le 2026-08-02 sur un iPhone réel en v1.25 : même écran depuis le
@@ -29,7 +29,7 @@ fait à la demande, sur l'image capturée, via ZXing compilé en WebAssembly.
 
 Pas de décodage vidéo en continu : c'est le coût que cette conception évite.
 
-Le scan en direct reste possible plus tard sans rien jeter — il consiste à
+Le scan en direct reste possible plus tard sans rien jeter, il consiste à
 appeler le même décodeur en boucle. La photo est une étape, pas une impasse.
 
 ### Écarté
@@ -92,7 +92,7 @@ délibérément. Le checksum GS1 suffit. Différence assumée entre les deux che
 Le bouton déclencheur n'est créé que si `BarcodeDetector` est absent. Sur
 Android, le DOM reste strictement identique à aujourd'hui.
 
-Pleine largeur, environ 56 px de haut, en bas de l'écran — atteignable au pouce,
+Pleine largeur, environ 56 px de haut, en bas de l'écran, atteignable au pouce,
 utilisable à une main.
 
 Consigne selon le chemin :
@@ -107,7 +107,7 @@ Consigne selon le chemin :
 | Tout premier appui | désactivé | Préparation du lecteur… |
 | Appuis suivants | désactivé | Lecture… |
 | Échec | réactivé | message d'aide |
-| Succès | — | bascule sur la fiche produit |
+| Succès | rien | bascule sur la fiche produit |
 
 « Préparation du lecteur » n'apparaît qu'une fois : c'est le téléchargement du
 WASM. Sans cet état, le premier appui semble sans effet et l'utilisateur appuie
@@ -134,7 +134,7 @@ Aucune saisie de chiffres n'est jamais proposée.
 ## WASM et service worker
 
 Le décodeur est versionné dans le repo sous `vendor/zxing/` : binaire `.wasm` et
-sa glu JavaScript. Pas de CDN — hors-ligne préservé, aucune dépendance tierce,
+sa glu JavaScript. Pas de CDN, hors-ligne préservé, aucune dépendance tierce,
 rien d'externe exécuté chez les utilisateurs.
 
 Version **lecture seule** de ZXing : l'app ne génère jamais de codes-barres.
@@ -142,7 +142,7 @@ Version **lecture seule** de ZXing : l'app ne génère jamais de codes-barres.
 **Taille réelle mesurée (livraison v1.28) : 1,02 Mo brut, ~438 Ko compressé.**
 Mon estimation initiale (« quelques centaines de Ko ») était basse d'un facteur
 deux. Reste acceptable puisque seul un iPhone le télécharge, une seule fois, et
-qu'il est ensuite mis en cache — mais c'est un vrai coût en données mobiles au
+qu'il est ensuite mis en cache, mais c'est un vrai coût en données mobiles au
 premier usage, pas une broutille.
 
 Fichiers versionnés, arborescence amont conservée pour rester auditable et
@@ -176,7 +176,7 @@ l'installation un fichier qu'il n'exécutera jamais. Il est récupéré au premi
 appui, puis conservé.
 
 Conséquence assumée : sur iPhone, la première lecture exige du réseau ; ensuite
-le hors-ligne fonctionne. L'invalidation est déjà gérée — `CACHE_NAME` change à
+le hors-ligne fonctionne. L'invalidation est déjà gérée, `CACHE_NAME` change à
 chaque build et les anciens caches sont supprimés.
 
 ## Tests
@@ -187,13 +187,13 @@ chaque build et les anciens caches sont supprimés.
   checksum GS1 valide et invalide, entrées non numériques. Logique pure,
   protège les deux chemins.
 - Décodage réel : ZXing-WASM tourne aussi sous Node. Images de codes-barres
-  connus — nette, floue, de travers — et vérification du résultat. Vrai test
+  connus, nette, floue, de travers, et vérification du résultat. Vrai test
   d'intégration du décodeur.
 - `node test-rules.js` reste vert : le moteur de détection n'est pas touché.
 
 ### Fait à la livraison v1.28
 
-`node test-barcode.js` — 15/15. La validation est extraite du **vrai** `app.js`
+`node test-barcode.js`, 15/15. La validation est extraite du **vrai** `app.js`
 (pas recopiée, sinon elle divergerait en silence), et le décodeur lit un
 code-barres sur une photo de rayon réelle (`test-fixtures/barcode.jpg`).
 
@@ -206,19 +206,19 @@ plus sur un téléphone.
 Chemin Android vérifié non régressé en simulant `BarcodeDetector` : la branche
 native est prise, le bouton déclencheur reste masqué.
 
-### Non automatisables — iPhone réel requis
+### Non automatisables, iPhone réel requis
 
 - autorisation caméra et aperçu dans Safari ;
 - même parcours depuis la PWA installée sur l'écran d'accueil (cas
   historiquement le plus fragile) ;
-- **ouverture depuis un lien de messagerie — cas PRINCIPAL, pas marginal.** Le
+- **ouverture depuis un lien de messagerie, cas PRINCIPAL, pas marginal.** Le
   lien de test a été diffusé par WhatsApp, Messenger **et** Signal : c'est ainsi
   que la majorité des utilisateurs arrivent. Chacune a sa propre WebView et ses
   propres réglages (certaines ouvrent dans Safari, d'autres gardent
   l'utilisateur dans l'app), et ces WebView restreignent parfois
   `getUserMedia`. L'aperçu caméra peut donc échouer là où il fonctionne dans
   Safari. **Tester les trois séparément**, et prévoir un message dédié « ouvre
-  dans Safari » si l'une échoue — le message actuel ne couvre pas ce cas ;
+  dans Safari » si l'une échoue, le message actuel ne couvre pas ce cas ;
 - temps réel de bout en bout : appui → résultat ;
 - vérification sur Android que le module et le WASM ne sont jamais chargés.
 
@@ -244,4 +244,4 @@ un iPhone réel, puis seulement fusionner vers `main`.
 - Torche / lampe.
 - La consigne de recherche (`index.html:51`) recommande encore de taper le
   code-barres « si le scan a échoué », ce qui contredit la décision prise ici.
-  À reprendre lors d'un passage sur ces textes — pas dans ce lot.
+  À reprendre lors d'un passage sur ces textes, pas dans ce lot.

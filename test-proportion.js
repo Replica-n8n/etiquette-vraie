@@ -1,4 +1,4 @@
-// Proportion réelle de l'aliment promis — batterie de non-régression.
+// Proportion réelle de l'aliment promis · batterie de non-régression.
 // Lancer :  node test-proportion.js
 //
 // Les fixtures sont de VRAIS extraits d'Open Food Facts, capturés depuis l'API
@@ -206,5 +206,5 @@ check('déclaré l emporte sur la borne',
   'declare');
 
 
-console.log(`\n${pass}/${pass + fail} passent${fail ? ` — ${fail} ÉCHEC(S)` : ' — TOUT PASSE'}`);
+console.log(`\n${pass}/${pass + fail} passent${fail ? ` · ${fail} ÉCHEC(S)` : ' · TOUT PASSE'}`);
 process.exit(fail ? 1 : 0);

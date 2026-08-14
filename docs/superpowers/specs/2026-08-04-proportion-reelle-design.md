@@ -1,4 +1,4 @@
-# La proportion réelle de l'aliment promis — conception
+# La proportion réelle de l'aliment promis, conception
 
 Date : 2026-08-04 · Branche de travail : `develop`
 
@@ -38,11 +38,11 @@ fonction, comparer la promesse du nom à la réalité de la liste.**
   chiffre parle de lui-même. `findIngredientPercent` continue de produire
   « À vérifier » comme aujourd'hui.
 
-  **Pourquoi aucun seuil n'est codé** — c'est la raison de fond, pas une remise à
+  **Pourquoi aucun seuil n'est codé**, c'est la raison de fond, pas une remise à
   plus tard. Il n'existe pas de seuil universel : *une soupe est liquide par
   définition*, l'eau y domine normalement et ce n'est pas une tromperie. La même
   proportion dans une terrine le serait. Et une truffe à l'état de trace dans un
-  produit qui la met en avant est une arnaque — sauf si l'étiquette annonce
+  produit qui la met en avant est une arnaque, sauf si l'étiquette annonce
   « saveur truffe », cas déjà couvert par les mots de réserve (« À vérifier »).
   Un seuil unique se tromperait donc dans les deux sens, en accusant des produits
   honnêtes et en blanchissant des produits douteux. Le chiffre affiché laisse
@@ -58,7 +58,7 @@ fonction, comparer la promesse du nom à la réalité de la liste.**
 `ingredients` de l'API v2 d'Open Food Facts, à ajouter à `PRODUCT_FIELDS`.
 
 **Couverture vérifiée** : quand `ingredients_text` existe, `ingredients` existe
-aussi. Aucune perte de couverture — la donnée est disponible exactement quand
+aussi. Aucune perte de couverture, la donnée est disponible exactement quand
 l'app a déjà quelque chose à dire.
 
 Chaque entrée porte `id` (identifiant taxonomique, ex. `en:lobster`), `text`
@@ -84,7 +84,7 @@ absolu, **et signalé comme estimé**.
 
 ## Architecture
 
-### Dans `rules.js` — une fonction, testable en Node
+### Dans `rules.js`, une fonction, testable en Node
 
 ```
 ingredientShare(word, ingredients) → { valeur, source: 'declare'|'estime' } | null
@@ -98,13 +98,13 @@ ingredientShare(word, ingredients) → { valeur, source: 'declare'|'estime' } | 
    `estime`. Sinon `null`.
 
 `detectVerdict(name, text, ingredients?)` accepte un troisième argument
-facultatif. Sans lui, comportement strictement identique à aujourd'hui — les 85
+facultatif. Sans lui, comportement strictement identique à aujourd'hui, les 85
 tests existants continuent de passer sans modification.
 
 Les mots de `CATEGORY_WORDS` sont exclus du chiffrage : le beurre d'un « beurre
 d'amandes » n'est pas un ingrédient de sa propre liste.
 
-### Dans `app.js` — affichage
+### Dans `app.js`, affichage
 
 `PRODUCT_FIELDS` gagne `ingredients`. `renderCompareValue` affiche
 `homard 3,8 %`, le pourcentage en `IBM Plex Mono` couleur `--green`, suivi d'un
@@ -125,7 +125,7 @@ Sans chiffre disponible, l'aliment s'affiche seul, exactement comme aujourd'hui.
 
 ## Tests
 
-`node test-rules.js` — nouvelle famille avec des extraits **réels** de données
+`node test-rules.js`, nouvelle famille avec des extraits **réels** de données
 OFF figés en fixtures, pas des objets inventés :
 
 - bisque de homard : `en:lobster` déclaré à 12 % → `12, declare`
@@ -141,7 +141,7 @@ l'ajout est bien facultatif.
 
 ## Livraison
 
-⚠️ **Prototype d'abord, site de test ensuite, prod en dernier** — trois étapes
+⚠️ **Prototype d'abord, site de test ensuite, prod en dernier**, trois étapes
 séparées, chacune validée par l'utilisatrice. Ne jamais pousser `preview` et
 `main` dans la même commande : c'est ce qui a laissé passer la régression
 Android de la v1.28.

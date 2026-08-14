@@ -3,7 +3,7 @@
 //
 // Mesuré sur 607 desserts glacés réels d'Open Food Facts avant d'être codé :
 //   33,3 % du rayon reçoit un rang, et le partage est le plus net de toutes les
-//   familles livrées — 89 « glace » contre 53 « crème glacée ».
+//   familles livrées · 89 « glace » contre 53 « crème glacée ».
 // C'est exactement l'écart que l'app existe pour dire : « glace » n'exige
 // AUCUNE matière grasse laitière (le Code autorise une graisse exclusivement
 // végétale), « crème glacée » en exige 5 %, exclusivement laitières.
@@ -66,7 +66,7 @@ ok('marque « Swedish Glace »', rang('Swedish Glace dairy-free smooth Vanilla')
 ok('glace aux œufs', rang('Glace aux oeufs vanille') === null);
 // ⚠️ « ice cream » n'est PAS « crème glacée » : au Royaume-Uni la mention
 // autorise la graisse végétale. Lui prêter la garantie française serait une
-// fausse promesse — mesuré : 51 fiches anglaises sur 607, UK, Australie, NZ.
+// fausse promesse · mesuré : 51 fiches anglaises sur 607, UK, Australie, NZ.
 ok('« Vanilla Ice Cream »', rang('Vanilla Ice Cream') === null);
 ok('« Traditional Dairy Ice Cream »', rang('Traditional Dairy Ice Cream') === null);
 ok('« Mars ice cream »', rang('Mars ice cream x6') === null);
@@ -75,7 +75,7 @@ ok('nom sans dénomination (2)', rang('Extrême original - vanille pépites') ==
 ok('hors famille', rang('Glace Vanille', ['en:biscuits']) === null);
 // ⚠️ Trouvé sur un vrai produit : les thés glacés portent des tags qui se
 // TERMINENT par le mot de la famille (`fr:the-vert-glace`, `en:thes-glaces`)
-// sans en être — la leçon `en:sardines-in-olive-oil` sous une autre forme.
+// sans en être · la leçon `en:sardines-in-olive-oil` sous une autre forme.
 ok('thé glacé (tag fr:the-vert-glace)',
   rang('Thé vert glacé', ['en:beverages', 'en:iced-teas', 'fr:the-vert-glace']) === null,
   String(rang('Thé vert glacé', ['en:beverages', 'en:iced-teas', 'fr:the-vert-glace'])));

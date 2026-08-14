@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.14';
+const APP_VERSION = 'v2.15';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786716244';
+const BUILD = '1786717399';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -270,7 +270,7 @@ function additiveBaseCode(tag) {
 // ⚠️ UN SEUL COMPTAGE D'ADDITIFS POUR TOUT L'ÉCRAN. Open Food Facts liste les
 // sous-formes EN PLUS de la base (`e322` et `e322i`, `e500` et `e500ii`) : le
 // compte brut est donc systématiquement gonflé. La tuile dédoublonnait déjà,
-// pas la ligne de décodage — d'où « 7 additifs » écrit trois lignes au-dessus
+// pas la ligne de décodage, d'où « 7 additifs » écrit trois lignes au-dessus
 // d'une tuile qui en affichait 6, sur le Mars glacé. Les deux passent
 // désormais par ici.
 function additifsDedoublonnes(additivesTags) {
@@ -1061,7 +1061,7 @@ function buildIngredientExcerpt(ingredientsText, detail) {
 }
 
 // ===========================================================================
-// « ÉTIQUETTE LUE » — ce que l'app a fait, quand elle n'a rien à confronter
+// « ÉTIQUETTE LUE » : ce que l'app a fait, quand elle n'a rien à confronter
 //
 // Sur 58 % des fiches le nom ne promet aucun aliment : il n'y a rien à
 // comparer, et l'app se taisait. Le bandeau était même masqué. Or elle VIENT
@@ -1391,7 +1391,7 @@ function renderBareme(tier) {
     expl.className = `bareme-expl${sel === tier.ici && tier.sommet ? ' sommet' : ''}`;
     if (explTitre) {
       const ailleurs = sel !== tier.ici;
-      explTitre.textContent = ailleurs ? `« ${tier.rangs[sel]} » — ce que ce mot garantirait` : '';
+      explTitre.textContent = ailleurs ? `« ${tier.rangs[sel]} » : ce que ce mot garantirait` : '';
       explTitre.classList.toggle('hidden', !ailleurs);
     }
     [...rangsEl.children].forEach((b, i) => {
@@ -1406,6 +1406,9 @@ function renderBareme(tier) {
     marche.style.height = `${8 + i * (18 / (n - 1))}px`;
     marche.style.background = BAREME_RAMPE[Math.round(i * (BAREME_RAMPE.length - 1) / (n - 1))];
     if (i === tier.ici) marche.className = 'ici';
+    // La marche répond au doigt elle aussi : c'est le plus gros objet de
+    // l'échelle, et viser une étiquette de 9 px sur un téléphone est un pari.
+    marche.addEventListener('click', () => montrer(i));
     marches.appendChild(marche);
 
     // Un <button> et non un <span> : atteignable au clavier et annoncé comme
@@ -1511,7 +1514,7 @@ function renderResult(product) {
   const verdictEl = document.getElementById('verdict-box');
   // Le bandeau `noclaim` était MASQUÉ : un tampon seul dans un cadre vide
   // n'était ni informatif ni décoratif. Il l'est redevenu le jour où il a eu
-  // quelque chose à dire — ce que l'app a LU, plutôt que ce qu'elle n'a pas
+  // quelque chose à dire : ce que l'app a LU, plutôt que ce qu'elle n'a pas
   // trouvé. Voir ligneDecodage. Les autres états muets gardent leur bandeau :
   // ils expliquent une limite réelle (langue non lue, composition absente).
   verdictEl.className = `alert ${meta.className}`;
@@ -1555,7 +1558,7 @@ function renderResult(product) {
   const flaggedAdditives = findFlaggedAdditives(product.additives_tags);
   currentRiskyAdditives = flaggedAdditives.risky;
 
-  // Les additifs du produit, dédoublonnés par `additifsDedoublonnes` — la même
+  // Les additifs du produit, dédoublonnés par `additifsDedoublonnes`, la même
   // fonction que la ligne de décodage, pour que les deux comptages de l'écran
   // ne puissent plus diverger.
   currentAllAdditives = additifsUniques.reduce((list, tag) => {
@@ -2170,7 +2173,7 @@ if (installButton) {
 }
 
 // Popups « ce qu'est ce score ». Éléments NOUVEAUX : gardes obligatoires à
-// chaque étage, et écouteurs enregistrés APRÈS ceux du cœur — une exception ici
+// chaque étage, et écouteurs enregistrés APRÈS ceux du cœur : une exception ici
 // tuerait tous les enregistrements suivants (ce qui a cassé la v1.28).
 [['tile-nutriscore', 'nutriscore-modal'], ['tile-nova', 'nova-modal']].forEach(([idTuile, idModal]) => {
   const tuile = document.getElementById(idTuile);

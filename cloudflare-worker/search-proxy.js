@@ -1,4 +1,4 @@
-// Étiquette Vraie — proxy de recherche Open Food Facts (Cloudflare Worker)
+// Étiquette Vraie · proxy de recherche Open Food Facts (Cloudflare Worker)
 //
 // Pourquoi : la NOUVELLE API de recherche d'OFF (search.openfoodfacts.org) est
 // fiable, mais refuse les appels directs depuis un navigateur (CORS). Un Worker
@@ -16,7 +16,7 @@ const WORKER_VERSION = 'w3-add-brands-ua';
 
 const OFF_SEARCH = 'https://search.openfoodfacts.org/search';
 const FIELDS = 'code,product_name,brands,image_front_small_url,lang,languages_tags,countries_tags';
-const CACHE_TTL = 21600; // 6 h — les recettes changent lentement
+const CACHE_TTL = 21600; // 6 h · les recettes changent lentement
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -109,7 +109,7 @@ async function handleContribute(request, env) {
   const name = String(body.product_name || '').trim().slice(0, 200);
   // La marque est un champ à part chez OFF : sans elle, la fiche reste
   // incomplète et le produit est difficile à retrouver par la recherche.
-  // ⚠️ Envoyée en `add_brands`, jamais en `brands` — voir plus bas.
+  // ⚠️ Envoyée en `add_brands`, jamais en `brands` · voir plus bas.
   const brands = String(body.brands || '').trim().slice(0, 120);
   const lang = /^[a-z]{2}$/.test(body.lang || '') ? body.lang : 'fr';
   // uuid anonyme fourni par l'app (aucune donnée perso)
@@ -179,7 +179,7 @@ export default {
     if (url.pathname === '/auth-check') return handleAuthCheck(env);
     if (url.pathname === '/contribute') return handleContribute(request, env);
     if (url.pathname !== '/search') {
-      return new Response(`Etiquette Vraie proxy ${WORKER_VERSION} — /search?q=... · POST /contribute · /auth-check`, { headers: CORS });
+      return new Response(`Etiquette Vraie proxy ${WORKER_VERSION} · /search?q=... · POST /contribute · /auth-check`, { headers: CORS });
     }
 
     const q = (url.searchParams.get('q') || '').trim();

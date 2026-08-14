@@ -251,7 +251,7 @@ let ko=0, fam='';
 for(const r of res){ if(!r.ok)ko++;
   console.log(`${r.ok?'✅':'❌'} ${r.v.padEnd(10)} (${r.exp.padEnd(10)}) ${r.lbl.padEnd(22)} ${r.ok?'':'→ '+r.h}`);
 }
-console.log(`\n${T.length-ko}/${T.length} passent` + (ko?` — ${ko} ÉCHEC(S)`:' — TOUT PASSE'));
+console.log(`\n${T.length-ko}/${T.length} passent` + (ko?` · ${ko} ÉCHEC(S)`:' · TOUT PASSE'));
 
 // ---------------------------------------------------------------------------
 // TEXTES LÉGAUX : ils doivent parler de l'aliment du produit, pas du chocolat
