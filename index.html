@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1786721291">
+<link rel="stylesheet" href="./style.css?v=1786722626">
 </head>
 <body>
 
@@ -197,6 +197,10 @@
             <div class="score-label">Nutri-Score</div>
             <div class="score-value" id="nutriscore-value"></div>
           </div>
+          <!-- Le même « i » que sur la tuile Additifs : sans lui, rien ne dit
+               qu'on peut toucher pour savoir ce qu'est ce score. C'est un
+               repère, pas un bouton : c'est la tuile entière qui ouvre. -->
+          <span class="info-mark" aria-hidden="true">i</span>
         </div>
         <div class="score-tile cliquable" id="tile-nova" role="button" tabindex="0" aria-label="Ce qu'est le groupe NOVA">
           <div class="icon" id="nova-icon"></div>
@@ -204,6 +208,7 @@
             <div class="score-label">NOVA</div>
             <div class="score-value" id="nova-value"></div>
           </div>
+          <span class="info-mark" aria-hidden="true">i</span>
         </div>
         <div class="score-tile additives-tile" id="tile-additives">
           <div class="icon" id="additives-icon"></div>
@@ -377,7 +382,7 @@
   </div>
 </div>
 
-<script src="./rules.js?v=1786721291" defer></script>
-<script src="./app.js?v=1786721291" defer></script>
+<script src="./rules.js?v=1786722626" defer></script>
+<script src="./app.js?v=1786722626" defer></script>
 </body>
 </html>

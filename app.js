@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.16';
+const APP_VERSION = 'v2.17';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786721291';
+const BUILD = '1786722626';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1577,10 +1577,16 @@ function renderResult(product) {
   // concret, arrivait après. L'audit du 2026-08-14 : on ouvrait par le
   // renoncement et on refermait par la réponse. Quand l'app ACCUSE, en
   // revanche, l'accusation reste en tête : c'est elle qu'on doit lire debout.
+  // ⚠️ La règle ne vaut QUE pour les verdicts qui n'affirment rien. Corrigé le
+  // 2026-08-14 : la v2.16 passait le barème devant sur `clean` aussi, et le
+  // tampon « CLEAN » se retrouvait au milieu bas de l'écran, invisible, alors
+  // que c'est une chose que l'app a VÉRIFIÉE. Seuls `noclaim`, `unknown` et
+  // `foreign` cèdent leur place : ces trois-là décrivent une limite, pas un
+  // résultat.
   const baremeEl = document.getElementById('bareme-box');
   if (baremeEl && verdictEl.parentNode) {
-    const accuse = verdict === 'misleading' || verdict === 'warning';
-    if (tier && !accuse) verdictEl.parentNode.insertBefore(baremeEl, verdictEl);
+    const neDitRien = verdict === 'noclaim' || verdict === 'unknown' || verdict === 'foreign';
+    if (tier && neDitRien) verdictEl.parentNode.insertBefore(baremeEl, verdictEl);
     else verdictEl.parentNode.insertBefore(baremeEl, verdictEl.nextSibling);
   }
 
