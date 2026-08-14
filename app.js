@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.20';
+const APP_VERSION = 'v2.21';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786738648';
+const BUILD = '1786739375';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1332,6 +1332,9 @@ function equilibrerTuiles() {
   if (!grille) return;
   const visibles = [...grille.querySelectorAll('.score-tile')]
     .filter((t) => !t.classList.contains('hidden'));
+  // Une grille vide gardait sa marge : un blanc inexpliqué entre le bandeau et
+  // le bloc photo, sur les fiches dont on ne sait rien.
+  grille.classList.toggle('hidden', visibles.length === 0);
   // Trois tuiles : elles tiennent sur une ligne, corps réduits (voir style.css).
   // La dernière n'a plus à s'étaler en dessous, ce qui la faisait lire comme
   // une case oubliée plutôt que comme la troisième d'un rang.
@@ -1639,7 +1642,19 @@ function renderResult(product) {
   const additivesInfoBtn = document.getElementById('additives-info-btn');
   if (additivesInfoBtn) additivesInfoBtn.classList.toggle('hidden', additivesCount === 0);
   renderScoreTile('additives-icon', 'additives-value', additivesMeta(additivesCount, worstAdditiveCat), 'Non renseigné');
-  // Les additifs restent toujours affichés : « aucun » est une information.
+  // ⚠️ « AUCUN ADDITIF » N'EST UNE INFORMATION QUE SI LA COMPOSITION EST CONNUE.
+  // Sur un verdict `unknown`, Open Food Facts n'a PAS la liste d'ingrédients :
+  // `additives_n` est alors absent, retombe à 0, et la tuile affirmait « Aucun »
+  // sur un produit dont l'app vient d'écrire qu'elle ne peut rien vérifier.
+  // Vu sur Cocoa Camino (0752612000113) : deux lignes qui se contredisent à
+  // trois centimètres d'écart. Zéro additif déclaré et zéro additif connu sont
+  // deux choses différentes.
+  montrerTuile('tile-additives', verdict !== 'unknown');
+  // Même règle pour l'accordéon : « Position dans la liste d'ingrédients »
+  // proposait de dérouler une liste qui n'existe pas, pour n'y lire que
+  // « Non renseigné ». Éléments NOUVEAUX côté id : gardes obligatoires.
+  montrerTuile('detail-label', verdict !== 'unknown');
+  montrerTuile('ingredients-accordion', verdict !== 'unknown');
   // Le bio, non : « Non certifié » sur neuf produits sur dix n'apprend rien.
   const bio = bioMeta(product.labels_tags, product.ingredients_text);
   montrerTuile('tile-bio', !!bio);
