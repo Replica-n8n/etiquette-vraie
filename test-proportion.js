@@ -113,15 +113,24 @@ const document = {
   createDocumentFragment: () => makeNode('#fragment'),
 };
 
-const { renderCompareValue, realShares } = new Function(
+// ⚠️ `renderCompareValue` n'existe plus : le panneau « Le nom suggère / Il y a
+// vraiment » qu'elle remplissait a été retiré en v2.0, et sa dernière ligne de
+// code le 2026-08-14. Ce que ces tests protègent vraiment, ce sont
+// `realShares` et `shareSuffix`, qui vivent toujours et alimentent la
+// sous-ligne du bandeau. On recompose donc ici l'assemblage minimal qu'ils
+// faisaient, plutôt que de perdre la batterie.
+const { shareSuffix, realShares } = new Function(
   'document', 'ingredientShare', 'partLabel',
-  `${extract('shareSuffix')}\n${extract('renderCompareValue')}\n${extract('realShares')}\n` +
-  'return { renderCompareValue, realShares };'
+  `${extract('shareSuffix')}\n${extract('realShares')}\n` +
+  'return { shareSuffix, realShares };'
 )(document, ingredientShare, partLabel);
 
 function rendu(detail, produit) {
   const el = makeNode('div');
-  renderCompareValue(el, detail.compareReal, realShares(detail, produit));
+  el.textContent = detail.compareReal;
+  const parts = realShares(detail, produit);
+  const part = parts && parts[0];
+  if (part) el.appendChild(shareSuffix(part));
   return el.textContent.replace(/\s+/g, ' ').trim();
 }
 

@@ -402,15 +402,20 @@ body{
 .score-grid.trois{ grid-template-columns:repeat(3, 1fr); gap:6px; }
 /* Centré, pas ferré à gauche : trois tuiles alignées à gauche dans des colonnes
    égales laissaient des blancs irréguliers à droite de chacune. */
+/* En colonne, le « i » du coin haut-droit ne croise rien : la pastille est
+   centrée (x 37 à 63 sur 100 px) et les libellés commencent sous elle. Pas de
+   remplissage à réserver, contrairement à la disposition en ligne. */
 .score-grid.trois .score-tile{ flex-direction:column; align-items:center; text-align:center; gap:6px; padding:9px 6px; }
-/* ⚠️ LE « i » REPASSE DANS LE FLUX quand les tuiles sont centrées. En position
-   absolue en bas à droite, il venait se poser SUR la valeur une fois le texte
-   centré : « Ultra-transformé » et « 4 additifs » passaient dessous. Mesuré
-   chevauchant sur les trois tuiles. Ici il devient la dernière ligne de la
-   colonne ; c'est la tuile entière qui reste la cible tactile. */
-.score-grid.trois .info-mark,
-.score-grid.trois .info-btn{
-  position:static; width:17px; height:17px; margin-top:1px;
+/* ⚠️ LE « i » EN HAUT À DROITE, dans le coin laissé libre par la pastille
+   centrée. En bas à droite il se posait SUR la valeur une fois le texte centré
+   (« Ultra-transformé » et « 4 additifs » passaient dessous, mesuré sur les
+   trois tuiles). Le `padding-right` de la tuile réserve sa place pour que le
+   texte ne puisse jamais repasser sous lui.
+   Il ne mesure que le cercle : c'est la tuile ENTIÈRE qui est la cible. */
+.score-tile .info-mark,
+.score-tile .info-btn{
+  position:absolute; top:6px; right:6px; bottom:auto;
+  width:17px; height:17px;
 }
 .score-grid.trois .score-tile .icon{ width:26px; height:26px; border-radius:8px; font-size:12px; }
 /* 8 px était sous le plancher : illisible sur un téléphone tenu à bout de bras
@@ -425,7 +430,7 @@ body{
    à la note. Les scores sont des faits d'étiquette de SECOND PLAN : ils posent
    sur la page au lieu de flotter dessus. La carte est réservée à ce que l'app
    affirme elle-même, le verdict et le barème. */
-.score-tile{ background:transparent; border:0; border-radius:14px; padding:9px 4px; display:flex; align-items:center; gap:9px; }
+.score-tile{ background:transparent; border:0; border-radius:14px; padding:9px 26px 9px 4px; display:flex; align-items:center; gap:9px; }
 .score-tile .icon{
   width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center;
   font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px; flex-shrink:0;

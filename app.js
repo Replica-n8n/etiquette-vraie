@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.18';
+const APP_VERSION = 'v2.19';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786732412';
+const BUILD = '1786734899';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1257,33 +1257,6 @@ function shareSuffix(part) {
   return frag;
 }
 
-// "chocolat : présent" ne dit pas si c'est du VRAI chocolat ou du cacao
-// dégraissé. La sous-ligne répond à la question que l'acheteuse se pose, en
-// trois mots ; le "i" porte l'explication et la forme exacte. Afficher la
-// forme brute ("cacao maigre en poudre") n'apprendrait rien à qui ignore le
-// rôle du beurre de cacao - c'est ce qui a fait écarter cette variante.
-function formeSuffix(forme) {
-  const sub = document.createElement('span');
-  sub.className = `compare-forme ${forme.vrai ? 'ok' : 'ko'}`;
-  sub.textContent = forme.vrai ? 'vrai chocolat' : 'cacao en poudre, pas du chocolat';
-  // Le "i" se pose SUR la mention qu'il explique, pas sur le nom de l'aliment
-  // au-dessus : c'est "vrai chocolat" qui demande un pourquoi.
-  // Il n'apparaît QUE si son popup existe déjà dans le HTML : au déploiement,
-  // le nouveau app.js tourne un ou deux chargements avec l'ancien index.html,
-  // et un "i" qui n'ouvre rien serait pire que pas de "i".
-  if (document.getElementById('choco-modal')) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'info-inline';
-    btn.textContent = 'i';
-    btn.setAttribute('aria-label', 'Pourquoi cette forme compte, ou non, comme du chocolat');
-    btn.addEventListener('click', () => ouvrirFormeModal(forme));
-    sub.appendChild(document.createTextNode(' '));
-    sub.appendChild(btn);
-  }
-  return sub;
-}
-
 function ouvrirFormeModal(forme) {
   const modal = document.getElementById('choco-modal');
   if (!modal) return;
@@ -1293,7 +1266,7 @@ function ouvrirFormeModal(forme) {
   if (bloc) bloc.className = `choco-verdict ${forme.vrai ? 'ok' : 'ko'}`;
   if (reponse) reponse.textContent = forme.vrai ? 'C\'est du vrai chocolat' : 'Ce n\'est pas du chocolat';
   if (found) found.textContent = `Dans ce produit : ${forme.formes.join(', ')}`;
-  modal.classList.remove('hidden');
+  ouvrirModale(modal);
 }
 
 // LA SOUS-LIGNE DU BANDEAU remplace le panneau « Le nom suggère / Il y a
@@ -1437,37 +1410,19 @@ function renderBareme(tier) {
     etiquette.type = 'button';
     etiquette.textContent = nom;
     etiquette.className = i === tier.ici ? 'ici' : '';
+    // « Ton produit est ici » n'existait QUE visuellement : la classe `.ici` ne
+    // change que la graisse et le fond. Pour une synthèse vocale, les quatre
+    // rangs se ressemblaient donc trait pour trait.
+    if (i === tier.ici) {
+      etiquette.setAttribute('aria-current', 'true');
+      etiquette.setAttribute('aria-label', `${nom}, le rang de ce produit`);
+    }
     etiquette.addEventListener('click', () => montrer(i));
     rangsEl.appendChild(etiquette);
   });
 
   montrer(tier.ici);
   boite.classList.remove('hidden');
-}
-
-function renderCompareValue(el, text, shares, formes) {
-  el.innerHTML = '';
-  const parts = String(text || '').split(',').map((s) => s.trim()).filter(Boolean);
-  const shareAt = (i) => (Array.isArray(shares) && shares[i]) || null;
-  const formeAt = (i) => (Array.isArray(formes) && formes[i]) || null;
-  const garnir = (cible, i) => {
-    if (shareAt(i)) cible.appendChild(shareSuffix(shareAt(i)));
-    if (formeAt(i)) cible.appendChild(formeSuffix(formeAt(i)));
-  };
-  if (parts.length <= 1) {
-    el.textContent = parts[0] || '';
-    if (parts.length === 1) garnir(el, 0);
-    return;
-  }
-  const ul = document.createElement('ul');
-  ul.className = 'compare-list';
-  parts.forEach((part, i) => {
-    const li = document.createElement('li');
-    li.textContent = part;
-    garnir(li, i);
-    ul.appendChild(li);
-  });
-  el.appendChild(ul);
 }
 
 // Proportion réelle de chaque aliment promis, alignée sur les libellés affichés.
@@ -1571,6 +1526,22 @@ function renderResult(product) {
       : verdictSubLine(detail, product, ingr.texte, headline, tier);
     sousEl.textContent = sous;
     sousEl.classList.toggle('hidden', !sous);
+    // ⚠️ REBRANCHEMENT DU POPUP « vrai chocolat ou cacao ». Depuis la refonte
+    // v2.0, le seul chemin qui l'ouvrait passait par le panneau de comparaison
+    // supprimé : `renderCompareValue` n'était plus appelée nulle part, et
+    // quarante lignes de HTML restaient inatteignables. La sous-ligne dit
+    // « du vrai chocolat » sans jamais pouvoir expliquer pourquoi.
+    const forme = Array.isArray(detail && detail.formes) ? detail.formes.find(Boolean) : null;
+    if (sous && forme && document.getElementById('choco-modal')) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'info-inline';
+      btn.textContent = 'i';
+      btn.setAttribute('aria-label', 'Pourquoi cette forme compte, ou non, comme du chocolat');
+      btn.addEventListener('click', () => ouvrirFormeModal(forme));
+      sousEl.appendChild(document.createTextNode(' '));
+      sousEl.appendChild(btn);
+    }
   }
 
   renderBareme(tier);
@@ -1630,12 +1601,11 @@ function renderResult(product) {
     additiveAlertEl.classList.add('hidden');
   }
 
-  // Le panneau « Le nom suggère / Il y a vraiment » est RETIRÉ depuis le
-  // 2026-08-09 : sur les verdicts qui nomment l'aliment manquant il répétait le
-  // bandeau mot pour mot, et ce qu'il portait d'utile ailleurs - proportion,
-  // forme du chocolat - tient dans la sous-ligne. Le bloc reste dans le HTML
-  // le temps d'un cycle de déploiement, masqué : le supprimer tout de suite
-  // ferait planter un app.js encore en cache qui le cherche.
+  // Le panneau « Le nom suggère / Il y a vraiment » a été retiré du HTML le
+  // 2026-08-14, après cinq jours passé masqué le temps que les app.js en cache
+  // expirent. Ce qu'il portait d'utile, proportion et forme du chocolat, vit
+  // dans la sous-ligne du bandeau. La garde ci-dessous survit pour le cycle où
+  // un ancien app.js chercherait encore l'élément.
   const compareEl = document.getElementById('compare-section');
   if (compareEl) compareEl.classList.add('hidden');
 

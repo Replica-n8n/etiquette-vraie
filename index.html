@@ -11,20 +11,22 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1786732412">
+<link rel="stylesheet" href="./style.css?v=1786734899">
 </head>
 <body>
 
 <div class="phone">
-  <div class="screen">
+  <!-- Repère de page : sans <main>, un lecteur d'écran n'avait aucun moyen de
+       sauter la barre du haut pour atteindre la fiche. -->
+  <main class="screen">
 
-    <div class="topbar">
+    <header class="topbar">
       <button class="back" id="back-button" type="button" aria-label="Retour">←</button>
       <div class="brand">
         <span class="brand-name">Étiquette <b>Vraie</b></span>
         <span class="version"><span id="app-version"></span><span id="app-product-code"></span></span>
       </div>
-    </div>
+    </header>
 
     <div id="home-screen" class="home-screen">
       <div class="home-content">
@@ -131,9 +133,9 @@
                marque et ne se rattachait visuellement à rien.
                #product-name reste l'élément dont app.js écrit le textContent :
                le bouton, placé à côté, survit donc à la réécriture. -->
-          <div class="product-name">
+          <h1 class="product-name">
             <span id="product-name"></span><button id="generic-info-btn" class="info-inline hidden" type="button" aria-label="Voir la dénomination officielle">i</button>
-          </div>
+          </h1>
           <div class="product-sub" id="product-sub"></div>
           <!-- LA DÉNOMINATION LÉGALE, VISIBLE. C'est la seule phrase de l'écran
                écrite sous contrainte de loi, et la seule qui dise ce que le
@@ -172,7 +174,7 @@
         <!-- Quand on lit un AUTRE rang que celui du produit, il faut le dire :
              sans ça, l'explication d'à côté se lit comme celle du produit. -->
         <div class="bareme-expl-titre hidden" id="bareme-expl-titre"></div>
-        <div class="bareme-expl" id="bareme-expl"></div>
+        <div class="bareme-expl" id="bareme-expl" role="status" aria-live="polite"></div>
       </div>
 
       <div class="alert compact v-misleading hidden" id="additive-alert">
@@ -180,15 +182,10 @@
         <div class="alert-text" id="additive-alert-text"></div>
       </div>
 
-      <div class="compare" id="compare-section">
-        <div class="compare-col suggest">
-          <div class="compare-label">Le nom suggère</div>
-          <div class="compare-value" id="compare-suggest"></div>
-        </div>
-        <div class="compare-col real" id="compare-real-col">
-          <div class="compare-label">Il y a vraiment</div>
-          <div class="compare-value" id="compare-real"></div>
-        </div>
+      <!-- Le panneau « Le nom suggère / Il y a vraiment » a été supprimé en
+           v2.0 : son contenu utile est passé en sous-ligne du bandeau. Le bloc
+           est resté masqué dans le DOM le temps d'un cycle de déploiement,
+           puis retiré le 2026-08-14, une fois tous les app.js en cache expirés. -->
       </div>
 
       <div class="score-grid">
@@ -220,7 +217,7 @@
             <div class="score-label">Additifs</div>
             <div class="score-value" id="additives-value"></div>
           </div>
-          <button id="additives-info-btn" class="info-btn" title="Voir la liste complète des additifs">i</button>
+          <button id="additives-info-btn" class="info-btn" type="button" aria-label="Voir la liste complète des additifs">i</button>
         </div>
         <div class="score-tile" id="tile-bio">
           <div class="icon" id="bio-icon"></div>
@@ -277,7 +274,7 @@
       </details>
 
       <div class="freshness">
-        <span>🕓</span>
+        <span aria-hidden="true">🕓</span>
         <div>
           <span id="freshness-text"></span>
           <a id="off-link" href="#" target="_blank" rel="noopener">Signaler un changement</a>
@@ -383,10 +380,10 @@
     </div>
 
     <div class="bottom-space"></div>
-  </div>
+  </main>
 </div>
 
-<script src="./rules.js?v=1786732412" defer></script>
-<script src="./app.js?v=1786732412" defer></script>
+<script src="./rules.js?v=1786734899" defer></script>
+<script src="./app.js?v=1786734899" defer></script>
 </body>
 </html>
