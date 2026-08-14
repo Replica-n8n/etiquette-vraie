@@ -1150,6 +1150,78 @@ const FAMILLES_LEGALES = [
       return null;                                  // dans le doute, on se tait
     },
   },
+  // Le sorbet passe AVANT la glace : les deux familles partagent les mêmes
+  // catégories, et l'axe des fruits doit être reconnu en premier.
+  {
+    nom: 'Sorbet',
+    categorie: /(^|-)(sorbets?|ice-creams-and-sorbets)$/,
+    // Échelle réduite à UN SEUL axe, la teneur en fruits. « Glace aux fruits »
+    // (15 %) en a été écartée : elle appartient aussi à l'axe lacté, et
+    // « Glace à la fraise » ne dit pas si le fabricant revendique la
+    // dénomination réservée. Mesuré : 0 fiche sur 607 portait « glace aux
+    // fruits », il n'y avait rien à y gagner.
+    rangs: ['sorbet', 'sorbet plein fruit'],
+    // ⚠️ PAS de `seuils` : le minimum dépend du FRUIT (15 % pour les fruits
+    // acides, 5 % pour les fruits à coque). Un chiffre unique ferait taire à
+    // tort la borne d'un citron. Les seuils vivent dans le texte, avec leur
+    // exception.
+    expl: [
+      "Au moins 25 % de fruits, et aucune matière grasse ajoutée. Le minimum tombe à 15 % pour les fruits acides comme le citron, et à 5 % pour les fruits à coque.",
+      "Au moins 45 % de fruits, presque le double d'un sorbet ordinaire — 20 % pour les fruits acides. Le rang le plus exigeant de la famille.",
+    ],
+    rang(nomNorm) {
+      if (/\bplein fruit\b/.test(nomNorm)) return 1;
+      if (/\bsorbets?\b/.test(nomNorm)) return 0;
+      return null;                                  // dans le doute, on se tait
+    },
+  },
+  {
+    nom: 'Glace',
+    // Mesuré sur 607 desserts glacés d'Open Food Facts : 33,3 % du rayon reçoit
+    // un rang, et le partage est le plus net de toutes les familles livrées —
+    // 89 « glace » contre 53 « crème glacée ». C'est l'écart que cette famille
+    // existe pour dire.
+    // ⚠️ PAS de `glaces?` ici, et c'est la leçon `en:sardines-in-olive-oil` sous
+    // une autre forme : les thés glacés portent les tags `fr:the-vert-glace` et
+    // `en:thes-glaces`, qui se terminent par le mot de la famille sans en être.
+    // Mesuré : « Thé vert glacé » recevait le rang « glace » et s'entendait dire
+    // qu'il ne garantit aucune matière grasse laitière. Les vraies catégories
+    // des desserts glacés sont anglaises.
+    categorie: /(^|-)(ice-creams?|ice-creams-and-sorbets|frozen-desserts?)$/,
+    rangs: ["glace à l'eau", 'glace', 'glace au lait', 'crème glacée'],
+    expl: [
+      "De l'eau, du sucre et un parfum. Ni matière grasse ni lait : c'est tout ce que ce mot annonce.",
+      "« Glace » tout court n'exige AUCUNE matière grasse laitière — une graisse exclusivement végétale suffit. C'est le mot le plus employé du rayon, et le moins engageant.",
+      "Au moins 2,5 % de matière grasse laitière. Deux fois moins qu'une crème glacée, pour un mot qui met pourtant le lait en avant.",
+      "Au moins 5 % de matière grasse, et exclusivement laitière : ni coco, ni palme, ni colza. Le rang le plus exigeant de la famille.",
+    ],
+    rang(nomNorm) {
+      // ⚠️ « Swedish Glace » est une MARQUE (dessert végétal) : le mot y est un
+      // nom propre. Seul cas rencontré sur 607 fiches.
+      if (/\bswedish glace\b/.test(nomNorm)) return null;
+      // ⚠️ « ice cream » n'est PAS « crème glacée ». Au Royaume-Uni la mention
+      // autorise la graisse végétale ; lui prêter la garantie française serait
+      // une fausse promesse. 51 fiches anglaises sur 607 (UK, Australie,
+      // Nouvelle-Zélande, Allemagne) sortent donc du barème sans rang.
+      // ⚠️ « Creme glacé caramel » existe dans la base : la finale du participe
+      // n'est pas fiable, on ne l'exige pas.
+      if (/\bcremes? glace/.test(nomNorm)) return 3;
+      if (/\bglaces? au lait\b/.test(nomNorm)) return 2;
+      // La glace aux ŒUFS est plus exigeante que la crème glacée sur un AUTRE
+      // critère (7 % de jaune d'œuf) : aucune place sûre sur cette échelle.
+      if (/\bglaces? aux oeufs\b/.test(nomNorm)) return null;
+      // ⚠️ `normalize` ne retire PAS l'apostrophe : la base écrit « a l'eau ».
+      if (/\bglaces? a l['’ ]?eau\b|\bglacons?\b/.test(nomNorm)) return 0;
+      // ⚠️ LE PIÈGE DE L'ADJECTIF. `normalize` efface l'accent : « Mars glacé »,
+      // « cônes glacés », « Bounty Barres Glacees » deviennent tous « glace ».
+      // Sans ce garde-fou, l'app annonçait à un Mars glacé qu'il ne garantit
+      // aucune matière grasse laitière. Le mot n'est la dénomination que quand
+      // il ne qualifie PAS un support ou une barre chocolatée.
+      if (/\b(?:barres?|batonnets?|cones?|cornets?|buches?|desserts?|biscuits?|gateaux?|sandwichs?|cafes?|thes?|marrons?|yaourts?|mars|twix|snickers|bounty|kit ?kat|lion|daim|oreo)\s+glace/.test(nomNorm)) return null;
+      if (/\bglaces?\b/.test(nomNorm)) return 1;
+      return null;                                  // dans le doute, on se tait
+    },
+  },
   {
     nom: "Huile d'olive",
     categorie: /(^|-)(olive-oils?|huiles?-d-olive)$/,
@@ -1196,7 +1268,13 @@ function legalTier(productName, ingredientsText, categoriesTags) {
   for (const f of FAMILLES_LEGALES) {
     if (!estDeLaFamille(tags, f.categorie)) continue;
     const ici = f.rang(nomNorm, ingrNorm, items, tags);
-    if (ici === null || ici === undefined) return null;
+    // ⚠️ On ESSAIE la famille suivante plutôt que d'abandonner. Deux familles
+    // partagent désormais les mêmes catégories — glace et sorbet — et le
+    // `return null` d'ici faisait taire la seconde dès que la première se
+    // taisait. Vérifié sur les 3000 produits les plus scannés : aucune fiche
+    // n'appartient à deux des cinq familles d'origine, ce changement leur est
+    // donc rigoureusement neutre.
+    if (ici === null || ici === undefined) continue;
     return {
       famille: f.nom, rangs: f.rangs, ici, expl: f.expl[ici],
       sommet: ici === f.rangs.length - 1,
