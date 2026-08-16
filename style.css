@@ -99,24 +99,28 @@ body{
   position:relative; display:flex; align-items:center; justify-content:center;
   padding:16px 18px 20px;
 }
-/* Barre d'actions flottante, en bas, dans la zone du pouce. Centrée sur la
-   largeur du téléphone plutôt que collée aux bords de la fenêtre. */
+/* ⚠️ BARRE FIXE EN BAS DE PAGE, PAS DEUX PASTILLES FLOTTANTES. Demandé le
+   2026-08-14 : les boutons doivent s'ALIGNER sur les bords du contenu, comme
+   toutes les cartes de la fiche, et se poser au bas de l'écran plutôt que
+   sembler survoler la page. D'où le même retrait de 16 px que les cartes, un
+   fond plein et un filet au-dessus.
+   Centrée sur la largeur du téléphone plutôt que sur celle de la fenêtre :
+   sans ça, en aperçu sur ordinateur, les boutons partaient aux bords de
+   l'écran. */
 .actions-flottantes{
   position:fixed; z-index:900;
   left:50%; transform:translateX(-50%);
-  bottom:calc(14px + env(safe-area-inset-bottom, 0px));
-  width:390px; max-width:calc(100% - 24px);
-  padding:0 14px;
+  bottom:0;
+  width:390px; max-width:100%;
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
   display:flex; align-items:center; justify-content:space-between;
-  pointer-events:none;                 /* la barre ne bloque pas le défilement */
+  background:var(--paper); border-top:1px solid var(--line);
 }
-.actions-flottantes > *{ pointer-events:auto; }
 .back{
   width:46px; height:46px; border-radius:23px;
   background:var(--card); border:1px solid var(--line);
   display:flex; align-items:center; justify-content:center;
   font-size:17px; color:var(--ink); cursor:pointer;
-  box-shadow:0 6px 18px -8px rgba(0,0,0,0.55);
   transition:transform 140ms var(--ease-out);
 }
 .back:active{ transform:scale(0.94); }
@@ -126,7 +130,6 @@ body{
   height:46px; padding:0 18px; border:0; border-radius:23px;
   background:var(--brand); color:#fff; cursor:pointer;
   font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13.5px;
-  box-shadow:0 8px 20px -6px rgba(0,0,0,0.5);
   transition:transform 140ms var(--ease-out), background 140ms ease;
 }
 .fab-scan svg{ width:17px; height:17px; }
@@ -134,9 +137,9 @@ body{
 .fab-scan:hover{ background:var(--brand-hover); }
 .actions-flottantes .back:focus-visible,
 .actions-flottantes .fab-scan:focus-visible{ outline:2px solid var(--ink); outline-offset:3px; }
-/* La barre flotte AU-DESSUS du contenu : il faut de la place sous le dernier
-   bloc, sinon elle recouvre « Signaler un changement ». */
-.bottom-space{ height:76px; }
+/* La barre couvre le bas de l'écran : il faut de la place sous le dernier
+   bloc, sinon elle masque « Signaler un changement ». */
+.bottom-space{ height:88px; }
 /* Nom sur une ligne, version dessous : le nom reste vraiment centré */
 .brand{
   display:flex; flex-direction:column; align-items:center; gap:1px;
@@ -520,6 +523,9 @@ body{
 
 /* La suggestion est devenue un bouton : on annule l'apparence native et on
    rend l'action lisible - le texte seul ne disait pas qu'on pouvait l'ouvrir. */
+/* Plusieurs lignes désormais : un filet les sépare, sinon les vignettes se
+   touchent et la liste devient un bloc illisible. */
+.alternative-row + .alternative-row{ border-top:1px solid var(--line); margin-top:2px; padding-top:10px; }
 .alternative-row{
   display:flex; align-items:center; gap:12px; padding:12px 0 2px;
   width:100%; background:none; border:0; text-align:left; cursor:pointer;

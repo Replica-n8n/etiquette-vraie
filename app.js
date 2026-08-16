@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.25';
+const APP_VERSION = 'v2.26';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786881698';
+const BUILD = '1786882405';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -814,6 +814,11 @@ async function fetchProduct(code) {
 // CODES, l'API produit - fiable, elle - donne la composition. On s'arrête au
 // premier candidat qui passe, donc en général un seul appel.
 const ALTERNATIVE_MAX_CANDIDATS = 3;
+// ⚠️ BORNE DE COÛT. Chaque candidat retenu a coûté un `fetchProduct`. On en
+// AFFICHE jusqu'à 5, mais on n'en EXAMINE pas davantage qu'avant : le plafond
+// d'examen par catégorie reste ALTERNATIVE_MAX_CANDIDATS, et la recherche
+// s'arrête dès qu'on en a 5. Si la catégorie n'en fournit que 2, on en montre 2.
+const ALTERNATIVE_MAX_RENDUES = 5;
 
 // ⚠️ Ces tags ne désignent pas un TYPE de produit, ce sont des étages de la
 // taxonomie d'Open Food Facts. Chercher un remplaçant dedans revient à tirer au
@@ -839,7 +844,8 @@ const CATEGORIES_TROP_LARGES = new Set([
 
 async function findAlternative(product) {
   const categories = product.categories_tags;
-  if (!Array.isArray(categories) || categories.length === 0) return null;
+  if (!Array.isArray(categories) || categories.length === 0) return [];
+  const retenus = [];
   // De la plus précise à la plus large : la dernière d'abord, puis celle qui la
   // précède en repli - une catégorie très fine (« en:bigarade-orange-
   // marmelades ») ne rassemble parfois personne d'autre.
@@ -894,10 +900,46 @@ async function findAlternative(product) {
       if (candidateVerdict.verdict !== 'clean' && candidateVerdict.verdict !== 'noclaim') continue;
       const flagged = findFlaggedAdditives(candidate.additives_tags);
       if (flagged.risky.length > 0) continue;
-      return candidate;
+      retenus.push({ produit: candidate, verdict: candidateVerdict.verdict });
+      if (retenus.length >= ALTERNATIVE_MAX_RENDUES) break;
     }
+    if (retenus.length >= ALTERNATIVE_MAX_RENDUES) break;
   }
-  return null;
+  return trierAlternatives(retenus, product);
+}
+
+// ⚠️ L'APP NE NOTE PAS, DONC « MEILLEUR » NE PEUT PAS VOULOIR DIRE « MEILLEUR
+// POUR LA SANTÉ ». Dans son vocabulaire, un produit est préférable quand SON
+// ÉTIQUETTE TIENT CE QU'ELLE PROMET. Deux critères, tous deux déjà calculés :
+//   1. `clean` avant `noclaim` : un nom dont l'aliment est confirmé dit plus
+//      qu'un nom qui ne promet rien.
+//   2. à famille légale égale, le rang supérieur d'abord. C'est le seul
+//      classement que l'app s'autorise, et il vient de la loi, pas d'elle.
+// Aucun score n'est affiché : c'est l'ORDRE de la liste qui porte l'information,
+// comme le barème porte la sienne par sa position.
+function trierAlternatives(retenus, produitScanne) {
+  const familleScannee = (() => {
+    const t = legalTier(produitScanne.product_name, '', produitScanne.categories_tags,
+      produitScanne.generic_name);
+    return t ? t.famille : null;
+  })();
+  return retenus
+    .map((r) => {
+      const t = legalTier(r.produit.product_name, '', r.produit.categories_tags,
+        r.produit.generic_name);
+      return {
+        ...r,
+        // Le rang ne compte QUE si les deux produits relèvent de la même
+        // famille : comparer un rang de sorbet à un rang de confiture n'a
+        // aucun sens.
+        rang: (t && t.famille === familleScannee) ? t.ici : -1,
+      };
+    })
+    .sort((a, b) => {
+      if (a.verdict !== b.verdict) return a.verdict === 'clean' ? -1 : 1;
+      return b.rang - a.rang;
+    })
+    .map((r) => r.produit);
 }
 
 function renderResults(products) {
@@ -1700,22 +1742,59 @@ function renderResult(product) {
 
   const alternativeAccordion = document.getElementById('alternative-accordion');
   alternativeAccordion.classList.add('hidden');
-  const needsAlternative = verdict === 'misleading' || verdict === 'warning' || currentRiskyAdditives.length > 0;
+  // ⚠️ `unknown` rejoint la liste : quand Open Food Facts n'a pas la composition,
+  // la fiche n'a plus rien à montrer. Mesuré le 2026-08-14 : 8,3 % des produits
+  // canadiens les plus scannés, 0 % des français, et 90,9 % d'entre eux portent
+  // une catégorie. La catégorie est le seul matériau abondant qui reste.
+  // Voir docs/superpowers/specs/2026-08-14-alternatives-fiches-illisibles-design.md
+  const needsAlternative = verdict === 'misleading' || verdict === 'warning'
+    || verdict === 'unknown' || currentRiskyAdditives.length > 0;
   if (needsAlternative) {
-    findAlternative(product).then((alternative) => {
-      if (!alternative) return;
-      const thumb = document.getElementById('alternative-thumb');
-      thumb.style.visibility = 'visible';
-      thumb.src = alternative.image_front_small_url || '';
-      document.getElementById('alternative-name').textContent = alternative.product_name;
-      document.getElementById('alternative-brand').textContent = alternative.brands || '';
-      // La suggestion ouvre la fiche. `.alternative-row` existe déjà dans
-      // l'ancien HTML : le clic marche donc même sur un appareil qui sert
-      // encore l'index.html en cache, où l'élément est une <div>.
-      const ouvrir = document.querySelector('.alternative-row');
-      if (ouvrir) {
-        ouvrir.onclick = () => selectProduct(alternative.code);
-        ouvrir.setAttribute('aria-label', `Ouvrir la fiche : ${alternative.product_name}`);
+    findAlternative(product).then((alternatives) => {
+      // Repli : un ancien app.js en cache pouvait renvoyer un objet unique.
+      const liste = Array.isArray(alternatives)
+        ? alternatives : (alternatives ? [alternatives] : []);
+      if (!liste.length) return;
+      const resume = alternativeAccordion.querySelector('summary');
+      const corps = alternativeAccordion.querySelector('.accordion-body');
+      // Sur une fiche qu'on n'a PAS pu lire, « Alternative disponible » serait
+      // faux : on ne remplace rien, on montre ce qu'on sait lire.
+      if (resume) {
+        resume.textContent = verdict === 'unknown'
+          ? "Des produits qu'on a pu lire" : 'Alternative disponible';
+        const chev = document.createElement('span');
+        chev.className = 'chev';
+        chev.textContent = '⌄';
+        resume.appendChild(chev);
+      }
+      if (corps) {
+        corps.innerHTML = '';
+        for (const alt of liste) {
+          const ligne = document.createElement('button');
+          ligne.type = 'button';
+          ligne.className = 'alternative-row';
+          ligne.setAttribute('aria-label', `Ouvrir la fiche : ${alt.product_name}`);
+          const img = document.createElement('img');
+          img.className = 'alternative-thumb';
+          img.alt = '';
+          img.src = alt.image_front_small_url || '';
+          img.onerror = () => { img.style.visibility = 'hidden'; };
+          const bloc = document.createElement('div');
+          const nom = document.createElement('div');
+          nom.className = 'alternative-name';
+          nom.textContent = alt.product_name;
+          const marque = document.createElement('div');
+          marque.className = 'alternative-brand';
+          marque.textContent = alt.brands || '';
+          bloc.append(nom, marque);
+          const fleche = document.createElement('span');
+          fleche.className = 'alternative-go';
+          fleche.setAttribute('aria-hidden', 'true');
+          fleche.textContent = '›';
+          ligne.append(img, bloc, fleche);
+          ligne.addEventListener('click', () => selectProduct(alt.code));
+          corps.appendChild(ligne);
+        }
       }
       alternativeAccordion.classList.remove('hidden');
     }).catch((err) => {
