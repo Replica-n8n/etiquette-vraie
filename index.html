@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1786904047">
+<link rel="stylesheet" href="./style.css?v=1786905812">
 </head>
 <body>
 
@@ -145,6 +145,11 @@
                rognage à deux lignes, pendant que le bouton porte la zone
                tactile. Sur le même élément, `overflow:hidden` mangeait aussi
                la zone tactile. -->
+          <!-- ⚠️ SURTITRE : la dénomination devient l'ANCRAGE de la fiche, pas
+               une ligne de détail sous la marque. C'est la seule phrase de
+               l'écran écrite sous contrainte de loi ; elle est présentée comme
+               une citation. Élément NOUVEAU, masqué avec la ligne. -->
+          <div class="denom-surtitre hidden" id="denom-surtitre">Dénomination légale</div>
           <button type="button" class="generic-line hidden" id="generic-line"><span class="generic-line-texte" id="generic-line-texte"></span></button>
         </div>
 
@@ -170,6 +175,9 @@
              dessous, et elle réglait un défaut d'affordance en ajoutant du
              texte plutôt qu'en rendant les rangs cliquables pour de bon.
              L'affordance appartient au bouton, pas à une légende. -->
+        <!-- ⚠️ La clé du seuil sort du paragraphe : elle se lit avant le
+             texte, d'un coup d'œil. Élément NOUVEAU. -->
+        <div class="bareme-cle" id="bareme-cle">Seuil garanti</div>
         <!-- Quand on lit un AUTRE rang que celui du produit, il faut le dire :
              sans ça, l'explication d'à côté se lit comme celle du produit. -->
         <div class="bareme-expl-titre hidden" id="bareme-expl-titre"></div>
@@ -389,7 +397,7 @@
   </main>
 </div>
 
-<script src="./rules.js?v=1786904047" defer></script>
-<script src="./app.js?v=1786904047" defer></script>
+<script src="./rules.js?v=1786905812" defer></script>
+<script src="./app.js?v=1786905812" defer></script>
 </body>
 </html>

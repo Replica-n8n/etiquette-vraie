@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.31';
+const APP_VERSION = 'v2.32';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786904047';
+const BUILD = '1786905812';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1440,7 +1440,11 @@ function renderBareme(tier) {
   if (!tier) { boite.classList.add('hidden'); return; }
   const n = tier.rangs.length;
   const cols = `repeat(${n}, 1fr)`;
-  document.getElementById('bareme-famille').textContent = `Ce que c'est, légalement · ${tier.famille}`;
+  // ⚠️ Le titre nomme LE MOT DU PRODUIT. « Ce que c'est, légalement · Glace »
+  // décrivait une rubrique ; « Ce que "crème glacée" garantit » énonce la
+  // promesse de l'app à l'endroit exact où elle se tient.
+  document.getElementById('bareme-famille').textContent =
+    `Ce que « ${tier.rangs[tier.ici]} » garantit`;
 
   const marches = document.getElementById('bareme-marches');
   marches.innerHTML = '';
@@ -1463,6 +1467,8 @@ function renderBareme(tier) {
     // sinon, lire « sorbet plein fruit » repeindrait la fiche d'un sorbet
     // ordinaire en réussite.
     expl.className = `bareme-expl${sel === tier.ici && tier.sommet ? ' sommet' : ''}`;
+    const cle = document.getElementById('bareme-cle');
+    if (cle) cle.classList.toggle('hidden', !expl.textContent);
     if (explTitre) {
       const ailleurs = sel !== tier.ici;
       explTitre.textContent = ailleurs ? `« ${tier.rangs[sel]} » : ce que ce mot garantirait` : '';
@@ -1479,6 +1485,13 @@ function renderBareme(tier) {
     const marche = document.createElement('i');
     marche.style.height = `${8 + i * (18 / (n - 1))}px`;
     marche.style.background = BAREME_RAMPE[Math.round(i * (BAREME_RAMPE.length - 1) / (n - 1))];
+    // ⚠️ LES RANGS AU-DESSUS RESTENT DESSINÉS MAIS ÉTEINTS. Toutes les marches
+    // non atteintes avaient la même opacité : on ne voyait pas qu'il existe un
+    // cran plus exigeant que celui du produit. C'est pourtant l'information que
+    // l'échelle porte.
+    if (i === tier.ici) marche.style.opacity = '1';
+    else if (i < tier.ici) marche.style.opacity = String(0.45 + 0.25 * (tier.ici > 0 ? i / tier.ici : 0));
+    else marche.style.opacity = '0.3';
     if (i === tier.ici) marche.className = 'ici';
     // La marche répond au doigt elle aussi : c'est le plus gros objet de
     // l'échelle, et viser une étiquette de 9 px sur un téléphone est un pari.
@@ -1562,6 +1575,9 @@ function renderResult(product) {
     const cible = document.getElementById('generic-line-texte') || genericLine;
     cible.textContent = currentGenericName;
     genericLine.classList.toggle('hidden', !saysSomethingNew);
+    // Le surtitre vit et meurt avec la ligne. Élément NOUVEAU : garde.
+    const surtitre = document.getElementById('denom-surtitre');
+    if (surtitre) surtitre.classList.toggle('hidden', !saysSomethingNew);
   }
   // Deux portes pour la même information, ce serait de l'encombrement : le « i »
   // ne sert plus que dans le cycle de déploiement où la ligne n'existe pas.
