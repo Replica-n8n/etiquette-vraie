@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.27';
+const APP_VERSION = 'v2.28';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786899404';
+const BUILD = '1786900995';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -773,7 +773,7 @@ async function searchProducts(term, onRetry, signal) {
 // de "photo envoyée, OFF ne l'a pas encore validée". Sans ce champ, plusieurs
 // utilisateurs photographieraient le même produit en série - chaque envoi
 // REMPLACE l'image de référence, donc une photo floue peut en dégrader une nette.
-const PRODUCT_FIELDS = 'product_name,generic_name,ingredients_text,ingredients_text_fr,ingredients_text_en,lang,brands,last_modified_t,image_front_small_url,image_ingredients_url,ingredients,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags';
+const PRODUCT_FIELDS = 'product_name,generic_name,ingredients_text,ingredients_text_fr,ingredients_text_en,lang,brands,last_modified_t,image_front_small_url,image_ingredients_url,ingredients,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags,images';
 
 async function fetchProduct(code) {
   // API v2 et NON v0 : la v0 APLATIT l'arbre des ingrédients. Un sous-ingrédient
@@ -819,6 +819,11 @@ const ALTERNATIVE_MAX_CANDIDATS = 3;
 // d'examen par catégorie reste ALTERNATIVE_MAX_CANDIDATS, et la recherche
 // s'arrête dès qu'on en a 5. Si la catégorie n'en fournit que 2, on en montre 2.
 const ALTERNATIVE_MAX_RENDUES = 5;
+// ⚠️ MÉMOIRE DES ALTERNATIVES, par code-barres. Sans elle, revenir sur une fiche
+// déjà vue relançait toute la recherche : le bloc disparaissait puis
+// resurgissait plusieurs secondes plus tard, sous les yeux. Vécu en revenant
+// d'une alternative par l'historique.
+const alternativesConnues = new Map();
 
 // ⚠️ Ces tags ne désignent pas un TYPE de produit, ce sont des étages de la
 // taxonomie d'Open Food Facts. Chercher un remplaçant dedans revient à tirer au
@@ -845,6 +850,7 @@ const CATEGORIES_TROP_LARGES = new Set([
 async function findAlternative(product) {
   const categories = product.categories_tags;
   if (!Array.isArray(categories) || categories.length === 0) return [];
+  if (alternativesConnues.has(product.code)) return alternativesConnues.get(product.code);
   const retenus = [];
   // De la plus précise à la plus large : la dernière d'abord, puis celle qui la
   // précède en repli - une catégorie très fine (« en:bigarade-orange-
@@ -905,7 +911,9 @@ async function findAlternative(product) {
     }
     if (retenus.length >= ALTERNATIVE_MAX_RENDUES) break;
   }
-  return trierAlternatives(retenus, product);
+  const triees = trierAlternatives(retenus, product);
+  alternativesConnues.set(product.code, triees);
+  return triees;
 }
 
 // ⚠️ L'APP NE NOTE PAS, DONC « MEILLEUR » NE PEUT PAS VOULOIR DIRE « MEILLEUR
@@ -1005,16 +1013,35 @@ function showProduct(product) {
   }
 }
 
+// « il y a 5 jours », « il y a 3 mois ». Sorti de freshnessText pour servir
+// aussi à la date d'envoi de la photo.
+function ilYA(timestamp) {
+  if (!timestamp) return '';
+  const jours = Math.floor((Date.now() - timestamp * 1000) / 86400000);
+  if (jours < 1) return "aujourd'hui";
+  if (jours < 30) return `il y a ${jours} jour${jours > 1 ? 's' : ''}`;
+  if (jours < 365) return `il y a ${Math.round(jours / 30)} mois`;
+  return `il y a ${Math.round(jours / 365)} an${jours >= 730 ? 's' : ''}`;
+}
+
 function freshnessText(lastModifiedT) {
   if (!lastModifiedT) return 'Date de dernière vérification inconnue.';
-  const modifiedDate = new Date(lastModifiedT * 1000);
-  const days = Math.floor((Date.now() - modifiedDate.getTime()) / 86400000);
-  let ago;
-  if (days < 1) ago = "aujourd'hui";
-  else if (days < 30) ago = `il y a ${days} jour${days > 1 ? 's' : ''}`;
-  else if (days < 365) ago = `il y a ${Math.round(days / 30)} mois`;
-  else ago = `il y a ${Math.round(days / 365)} an${days >= 730 ? 's' : ''}`;
-  return `Donnée vérifiée ${ago}. La recette a pu changer depuis.`;
+  return `Donnée vérifiée ${ilYA(lastModifiedT)}. La recette a pu changer depuis.`;
+}
+
+// ⚠️ LA DATE DE LA PHOTO D'INGRÉDIENTS, PAS CELLE DE LA DERNIÈRE IMAGE.
+// `last_image_t` existe et serait plus simple, mais il date la dernière image
+// de N'IMPORTE QUEL type : sur Cocoa Camino il donne le 17 mai alors que la
+// photo des ingrédients date du 26 octobre. Open Food Facts range l'image
+// choisie sous `images.ingredients_<langue>`, qui ne porte pas de date mais un
+// `imgid` pointant vers l'original, lui daté.
+function dateEnvoiPhotoIngredients(product) {
+  const images = product && product.images;
+  if (!images) return null;
+  const cle = Object.keys(images).find((k) => /^ingredients_/.test(k));
+  const choisie = cle ? images[cle] : null;
+  const original = choisie && choisie.imgid ? images[choisie.imgid] : null;
+  return (original && original.uploaded_t) || null;
 }
 
 // Les métas portent une couleur en dur depuis la v1 ; on la traduit en classe
@@ -1761,7 +1788,7 @@ function renderResult(product) {
       // faux : on ne remplace rien, on montre ce qu'on sait lire.
       if (resume) {
         resume.textContent = verdict === 'unknown'
-          ? "Des produits qu'on a pu lire" : 'Alternative disponible';
+          ? 'Alternatives connues' : 'Alternative disponible';
         const chev = document.createElement('span');
         chev.className = 'chev';
         chev.textContent = '⌄';
@@ -1796,6 +1823,11 @@ function renderResult(product) {
           corps.appendChild(ligne);
         }
       }
+      // ⚠️ OUVERT D'EMBLÉE sur une fiche qu'on n'a pas pu lire : c'est le seul
+      // contenu utile de l'écran, un accordéon replié ne se remarque pas.
+      // Sur les autres verdicts la fiche a déjà de quoi lire : il reste replié.
+      if (verdict === 'unknown') alternativeAccordion.setAttribute('open', '');
+      else alternativeAccordion.removeAttribute('open');
       alternativeAccordion.classList.remove('hidden');
     }).catch((err) => {
       // Suggestion secondaire : si le proxy de recherche tombe, la fiche reste
@@ -1930,8 +1962,10 @@ function setFillGapTarget(product, verdict) {
     // pour le cas où la photo existante serait illisible, mais discrète : ce
     // n'est plus l'action attendue.
     document.getElementById('fillgap-title').textContent = 'Photo en attente';
-    document.getElementById('fillgap-text').textContent =
-      "Une photo des ingrédients a déjà été envoyée. Open Food Facts doit encore la vérifier.";
+    const quand = ilYA(dateEnvoiPhotoIngredients(product));
+    document.getElementById('fillgap-text').textContent = quand
+      ? `Une photo des ingrédients a déjà été envoyée ${quand}. Open Food Facts doit encore la vérifier.`
+      : "Une photo des ingrédients a déjà été envoyée. Open Food Facts doit encore la vérifier.";
     openBtn.textContent = 'Elle est illisible ? En envoyer une meilleure';
     openBtn.classList.add('subtle');
   } else {
