@@ -370,11 +370,11 @@ body{
   content:""; flex:1; height:1px;
   background:linear-gradient(90deg, var(--line), transparent);
 }
-.bareme-sens{
-  display:flex; justify-content:space-between;
-  font-size:10px; letter-spacing:0.02em; text-transform:uppercase;
-  color:var(--ink-soft); margin-bottom:5px;
-}
+/* ⚠️ « LE MOINS EXIGEANT / LE PLUS EXIGEANT » a été RETIRÉ le 2026-08-16 : la
+   hauteur croissante des marches dit déjà le sens de l'échelle, et deux lignes
+   de petites capitales se suivaient sous le titre. La règle reste masquée
+   plutôt que supprimée le temps d'un cycle de déploiement. */
+.bareme-sens{ display:none; }
 .bareme-marches{ display:grid; gap:2px; align-items:end; height:36px; margin-top:10px; }
 /* La marche est le plus gros objet de l'échelle : elle doit répondre au doigt
    elle aussi, sinon la cible utile se limite à une étiquette de 9 px. */
@@ -429,7 +429,15 @@ body{
 .score-tile.cliquable:active{ transform:scale(0.985); }
 .score-tile.cliquable:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
 /* Ce qu'un score NE dit PAS : même corps que le texte, ton plus discret. */
-.modal-limite{ color:var(--ink-soft); border-top:1px solid var(--line); padding-top:9px; }
+/* « Ce que ce score ne dit pas » est une SECONDE voix : le filet doit se voir,
+   et le texte ne doit pas lui coller dessus. */
+/* ⚠️ SÉLECTEUR PLUS SPÉCIFIQUE QUE `.modal-body p + p`, sinon le margin de
+   12 px de celui-ci l'emportait et le filet restait collé au texte. */
+.modal-body p.modal-limite{
+  color:var(--ink-soft);
+  border-top:1px solid var(--line);
+  margin-top:20px; padding-top:16px;
+}
 .nova-echelle{ margin:10px 0; display:grid; gap:6px; font-size:13px; line-height:1.4; }
 /* L'explication prolonge la clé : même carte, coins raccordés, un seul bloc. */
 .bareme-expl{
@@ -691,6 +699,8 @@ body{
 .modal-body{
   overflow-y:auto; padding:16px 20px; flex:1;
 }
+/* Les paragraphes se touchaient : deux idées collées se lisent comme une. */
+.modal-body p + p{ margin-top:12px; }
 .additive-item{
   padding:12px; margin-bottom:8px; background:var(--paper);
   border-radius:12px; border-left:4px solid var(--amber);
