@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.24';
+const APP_VERSION = 'v2.25';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786848196';
+const BUILD = '1786881698';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -297,6 +297,11 @@ function showScreen(screen) {
   scanScreen.classList.toggle('hidden', screen !== 'scan');
   resultScreen.classList.toggle('hidden', screen !== 'result');
   backButton.classList.toggle('hidden', screen === 'home');
+  // Le scan flottant vit partout SAUF là où il n'a pas de sens : sur l'écran de
+  // scan lui-même, et sur l'accueil qui porte déjà son gros bouton vert.
+  // Élément NOUVEAU : garde obligatoire le temps d'un cycle de déploiement.
+  const fab = document.getElementById('fab-scan');
+  if (fab) fab.classList.toggle('hidden', screen === 'scan' || screen === 'home');
   if (screen === 'home' || screen === 'search') {
     searchInput.value = '';
     resultsList.innerHTML = '';
@@ -2004,6 +2009,11 @@ backButton.addEventListener('click', () => showScreen('home'));
 
 document.getElementById('btn-search').addEventListener('click', () => showScreen('search'));
 document.getElementById('btn-scan').addEventListener('click', () => showScreen('scan'));
+// Le scan flottant fait la même chose que le bouton d'accueil. Élément NOUVEAU,
+// donc garde : sans elle, un ancien index.html en cache ferait planter tous les
+// écouteurs enregistrés en dessous (la panne de la v1.28).
+const fabScan = document.getElementById('fab-scan');
+if (fabScan) fabScan.addEventListener('click', () => showScreen('scan'));
 
 // Repli du chemin iPhone : proposé après un échec de lecture, jamais de saisie
 // de chiffres - personne ne tape un code-barres à 13 chiffres.

@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1786848196">
+<link rel="stylesheet" href="./style.css?v=1786881698">
 </head>
 <body>
 
@@ -21,7 +21,6 @@
   <main class="screen">
 
     <header class="topbar">
-      <button class="back" id="back-button" type="button" aria-label="Retour">←</button>
       <div class="brand">
         <span class="brand-name">Étiquette <b>Vraie</b></span>
         <span class="version"><span id="app-version"></span><span id="app-product-code"></span></span>
@@ -380,7 +379,21 @@
   </main>
 </div>
 
-<script src="./rules.js?v=1786848196" defer></script>
-<script src="./app.js?v=1786848196" defer></script>
+<!-- ⚠️ LES DEUX ACTIONS LES PLUS FRÉQUENTES, DANS LA ZONE DU POUCE. Le retour
+     était en haut à gauche, c'est-à-dire au point le plus éloigné du pouce droit
+     quand l'autre main tient le produit, alors que revenir en arrière est
+     l'action la plus répétée de l'app. Ils descendent tous les deux en bas.
+     Barre FIXE et centrée sur la largeur du téléphone : `position:fixed` seul
+     collerait les boutons aux bords de l'écran d'ordinateur en aperçu. -->
+<div class="actions-flottantes" id="actions-flottantes">
+  <button class="back" id="back-button" type="button" aria-label="Retour">←</button>
+  <button class="fab-scan hidden" id="fab-scan" type="button" aria-label="Scanner un code-barres">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5v14M7 5v14M11 5v14M14.5 5v14M18 5v14M21 5v14"/></svg>
+    Scan
+  </button>
+</div>
+
+<script src="./rules.js?v=1786881698" defer></script>
+<script src="./app.js?v=1786881698" defer></script>
 </body>
 </html>
