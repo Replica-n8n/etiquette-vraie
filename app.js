@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.28';
+const APP_VERSION = 'v2.29';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786900995';
+const BUILD = '1786901701';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -858,7 +858,11 @@ async function findAlternative(product) {
   const utilisables = categories.filter((c) => !CATEGORIES_TROP_LARGES.has(c));
   const pistes = (utilisables.length ? utilisables : categories).slice(-2).reverse();
 
-  for (const categorie of pistes) {
+  // ⚠️ LES DEUX PISTES DE CATÉGORIE SONT SUIVIES EN PARALLÈLE. En série, une
+  // catégorie pauvre faisait attendre la suivante : mesuré 30 secondes sur
+  // « darkmilk », qui épuise sa catégorie fine avant d'élargir. Le nombre
+  // d'appels est le même, seul l'ordonnancement change.
+  const parPiste = await Promise.all(pistes.map(async (categorie) => {
     let codes = [];
     try {
       const q = `categories_tags:"${categorie}"`;
@@ -867,23 +871,25 @@ async function findAlternative(product) {
       const timeout = setTimeout(() => controller.abort(), 6000);
       const response = await fetch(url, { signal: controller.signal });
       clearTimeout(timeout);
-      if (!response.ok) continue;
+      if (!response.ok) return [];
       const data = await response.json();
       codes = (data.products || [])
         .filter((p) => p && p.code && p.code !== product.code && p.product_name)
         .map((p) => p.code);
     } catch (err) {
       dbg('[Alternative] recherche indisponible:', err && err.message);
-      continue;
+      return [];
     }
-
-    for (const code of codes.slice(0, ALTERNATIVE_MAX_CANDIDATS)) {
-      let candidate;
-      try {
-        candidate = await fetchProduct(code);
-      } catch (err) {
-        continue;                                  // fiche illisible : au suivant
-      }
+    // Les candidats aussi sont chargés en parallèle : six allers-retours qui ne
+    // dépendent pas les uns des autres coûtaient leur somme, ils coûtent
+    // désormais le plus lent.
+    const charges = await Promise.all(
+      codes.slice(0, ALTERNATIVE_MAX_CANDIDATS).map(
+        (code) => fetchProduct(code).catch(() => null),
+      ),
+    );
+    const bons = [];
+    for (const candidate of charges) {
       if (!candidate || !candidate.product_name) continue;
       // ⚠️ Le candidat doit passer la MÊME porte que la fiche : on lisait
       // `ingredients_text` brut, donc une liste en espagnol était analysée
@@ -895,22 +901,32 @@ async function findAlternative(product) {
       if (!ingr.texte || !ingr.lisible) continue;
       // Les additifs du candidat sont de toute façon lus juste après : les
       // passer au moteur écarte aussi celui qui annonce « sans colorant » et en
-      // contient un. Proposer un menteur en remplacement d'un menteur serait la
-      // pire sortie possible.
+      // contient un.
       const candidateVerdict = detectVerdict(candidate.product_name, ingr.texte, {
         additivesTags: candidate.additives_tags,
       });
       // "noclaim" est aussi une alternative valable : son nom ne promet aucun
       // aliment, donc il ne peut pas tromper. L'exclure amputait le vivier de
-      // 57 % des fiches (mesure du 2026-08-07) - la plupart des produits.
+      // 57 % des fiches (mesure du 2026-08-07).
       if (candidateVerdict.verdict !== 'clean' && candidateVerdict.verdict !== 'noclaim') continue;
-      const flagged = findFlaggedAdditives(candidate.additives_tags);
-      if (flagged.risky.length > 0) continue;
-      retenus.push({ produit: candidate, verdict: candidateVerdict.verdict });
+      if (findFlaggedAdditives(candidate.additives_tags).risky.length > 0) continue;
+      bons.push({ produit: candidate, verdict: candidateVerdict.verdict });
+    }
+    return bons;
+  }));
+
+  // La piste la plus PRÉCISE d'abord, puis l'élargissement, sans doublon.
+  const vus = new Set();
+  for (const lot of parPiste) {
+    for (const r of lot) {
+      if (vus.has(r.produit.code)) continue;
+      vus.add(r.produit.code);
+      retenus.push(r);
       if (retenus.length >= ALTERNATIVE_MAX_RENDUES) break;
     }
     if (retenus.length >= ALTERNATIVE_MAX_RENDUES) break;
   }
+
   const triees = trierAlternatives(retenus, product);
   alternativesConnues.set(product.code, triees);
   return triees;
@@ -1962,10 +1978,18 @@ function setFillGapTarget(product, verdict) {
     // pour le cas où la photo existante serait illisible, mais discrète : ce
     // n'est plus l'action attendue.
     document.getElementById('fillgap-title').textContent = 'Photo en attente';
+    // ⚠️ NE PLUS PROMETTRE UNE VÉRIFICATION QUI N'ARRIVE PAS. L'ancienne phrase
+    // disait « Open Food Facts doit encore la vérifier », ce qui laisse croire à
+    // une file d'attente qui avance. Mesuré le 2026-08-14 : plus de 10 000
+    // produits ont une photo d'ingrédients sans texte, et sur 17 dont j'ai pu
+    // dater la photo, la médiane est de 3,1 ans, aucune de moins de 6 mois.
+    // L'échantillon est petit et biaisé (les photos transcrites sortent de
+    // l'ensemble), mais il interdit de promettre un délai. On dit ce qui est :
+    // la photo existe, le texte n'a pas été saisi, et personne ne sait quand.
     const quand = ilYA(dateEnvoiPhotoIngredients(product));
     document.getElementById('fillgap-text').textContent = quand
-      ? `Une photo des ingrédients a déjà été envoyée ${quand}. Open Food Facts doit encore la vérifier.`
-      : "Une photo des ingrédients a déjà été envoyée. Open Food Facts doit encore la vérifier.";
+      ? `Une photo des ingrédients a été envoyée ${quand}, mais personne ne l'a encore recopiée en texte. Tant que ce n'est pas fait, l'app ne peut rien lire.`
+      : "Une photo des ingrédients existe, mais personne ne l'a encore recopiée en texte. Tant que ce n'est pas fait, l'app ne peut rien lire.";
     openBtn.textContent = 'Elle est illisible ? En envoyer une meilleure';
     openBtn.classList.add('subtle');
   } else {
