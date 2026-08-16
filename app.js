@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.29';
+const APP_VERSION = 'v2.30';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786901701';
+const BUILD = '1786903414';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1793,11 +1793,51 @@ function renderResult(product) {
   const needsAlternative = verdict === 'misleading' || verdict === 'warning'
     || verdict === 'unknown' || currentRiskyAdditives.length > 0;
   if (needsAlternative) {
+    // ⚠️ LA SECTION S'AFFICHE TOUT DE SUITE, EN ATTENTE. Elle apparaissait
+    // d'un coup une fois la recherche finie, ce qui faisait sauter la page sous
+    // les yeux. Trois lignes fantômes disent qu'il se passe quelque chose ; si
+    // la recherche ne rapporte rien, la section disparaît.
+    const resumeAttente = alternativeAccordion.querySelector('summary');
+    const corpsAttente = alternativeAccordion.querySelector('.accordion-body');
+    if (resumeAttente) {
+      resumeAttente.textContent = verdict === 'unknown'
+        ? 'Alternatives connues' : 'Alternative disponible';
+      const chevAttente = document.createElement('span');
+      chevAttente.className = 'chev';
+      chevAttente.textContent = '⌄';
+      resumeAttente.appendChild(chevAttente);
+    }
+    if (corpsAttente) {
+      corpsAttente.innerHTML = '';
+      for (let i = 0; i < 3; i++) {
+        const fantome = document.createElement('div');
+        fantome.className = 'alternative-row squelette';
+        fantome.setAttribute('aria-hidden', 'true');
+        const vignette = document.createElement('span');
+        vignette.className = 'alternative-thumb squelette-bloc';
+        const texte = document.createElement('div');
+        const l1 = document.createElement('span');
+        l1.className = 'squelette-bloc squelette-ligne';
+        const l2 = document.createElement('span');
+        l2.className = 'squelette-bloc squelette-ligne courte';
+        texte.append(l1, l2);
+        fantome.append(vignette, texte);
+        corpsAttente.appendChild(fantome);
+      }
+      const annonce = document.createElement('div');
+      annonce.className = 'squelette-annonce';
+      annonce.setAttribute('role', 'status');
+      annonce.textContent = 'Recherche en cours…';
+      corpsAttente.appendChild(annonce);
+    }
+    if (verdict === 'unknown') alternativeAccordion.setAttribute('open', '');
+    alternativeAccordion.classList.remove('hidden');
+
     findAlternative(product).then((alternatives) => {
       // Repli : un ancien app.js en cache pouvait renvoyer un objet unique.
       const liste = Array.isArray(alternatives)
         ? alternatives : (alternatives ? [alternatives] : []);
-      if (!liste.length) return;
+      if (!liste.length) { alternativeAccordion.classList.add('hidden'); return; }
       const resume = alternativeAccordion.querySelector('summary');
       const corps = alternativeAccordion.querySelector('.accordion-body');
       // Sur une fiche qu'on n'a PAS pu lire, « Alternative disponible » serait
@@ -1848,6 +1888,7 @@ function renderResult(product) {
     }).catch((err) => {
       // Suggestion secondaire : si le proxy de recherche tombe, la fiche reste
       // parfaitement lisible. Sans ce catch, c'était un rejet non géré.
+      alternativeAccordion.classList.add('hidden');
       dbg('[Alternative] indisponible:', err && err.message);
     });
   }
@@ -1994,8 +2035,12 @@ function setFillGapTarget(product, verdict) {
     openBtn.classList.add('subtle');
   } else {
     document.getElementById('fillgap-title').textContent = 'Fiche incomplète';
+    // ⚠️ AUCUNE PROMESSE. La phrase disait « Photographie-la : ça débloquera la
+    // vérification, pour toi et pour les autres ». Or la saisie du texte prend
+    // des années quand elle arrive (médiane mesurée à 3,1 ans le 2026-08-14).
+    // On énonce le fait, le bouton dit l'action, et rien n'engage personne.
     document.getElementById('fillgap-text').textContent =
-      "Open Food Facts n'a pas la liste d'ingrédients de ce produit. Photographie-la : ça débloquera la vérification, pour toi et pour les autres.";
+      "Open Food Facts n'a pas la liste d'ingrédients de ce produit.";
     openBtn.textContent = "Photographier la liste d'ingrédients";
   }
   openBtn.classList.remove('hidden');

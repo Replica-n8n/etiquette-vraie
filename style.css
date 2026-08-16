@@ -500,6 +500,24 @@ body{
 /* ⚠️ Le bloc des alternatives touchait l'accordéon du dessus : deux cartes
    collées se lisent comme une seule. Il lui faut son propre espace. */
 #alternative-accordion{ margin-top:14px; }
+/* Lignes fantômes pendant la recherche. Le battement dit « ça travaille »
+   sans faire tourner un sablier dans le vide, et la section garde sa place :
+   la page ne saute plus quand les vrais produits arrivent. */
+.alternative-row.squelette{ cursor:default; pointer-events:none; }
+.squelette-bloc{
+  display:block; border-radius:6px; background:var(--tile-empty);
+  animation:battement 1.4s ease-in-out infinite;
+}
+.alternative-thumb.squelette-bloc{ width:38px; height:38px; border-radius:8px; }
+.squelette-ligne{ height:11px; width:150px; margin-bottom:6px; }
+.squelette-ligne.courte{ width:88px; margin-bottom:0; animation-delay:.2s; }
+@keyframes battement{ 0%,100%{ opacity:.45 } 50%{ opacity:.9 } }
+@media (prefers-reduced-motion: reduce){
+  .squelette-bloc{ animation:none; opacity:.6; }
+}
+.squelette-annonce{
+  margin-top:8px; font-size:11px; color:var(--ink-soft);
+}
 .accordion{ margin:0 16px 8px; background:var(--card); border:1px solid var(--line); border-radius:13px; overflow:hidden; }
 .accordion summary{
   list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
