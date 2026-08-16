@@ -142,5 +142,26 @@ for (const [code, nom, ingr, pourquoi] of ouverts) {
   console.log(`  ${code} ${nom}\n      ${v.verdict} : ${v.headline}\n      (${pourquoi})`);
 }
 
+// ---------------------------------------------------------------------------
+// L'ÉCRAN NE DOIT PAS SE CONTREDIRE (vus en rayon au Canada le 2026-08-14)
+// Les deux fiches affichaient « Aucun aliment mis en avant par le nom » pendant
+// que la ligne du dessus écrivait l'aliment en toutes lettres. `pepper` et
+// `poivre` étaient connus, la forme en grains non ; `whey` manquait.
+// Mesuré avant d'ajouter : 9 produits enfin reconnus, 0 nouvelle accusation.
+console.log('\n--- Le nom nomme un aliment : l\'app doit le voir ---');
+const nomme = [
+  ['Whole black peppercorns', 'black peppercorns, no added ingredients', 'peppercorn'],
+  ['LeanFit Whey Protein', 'whey protein blend (whey protein concentrate), xanthan gum', 'whey'],
+];
+for (const [nom, ingr, mot] of nomme) {
+  const v = detectVerdict(nom, ingr);
+  if (v.verdict === 'clean') pass++;
+  else echecs.push(`${nom} : attendu clean, obtenu ${v.verdict} (${mot} non reconnu)`);
+}
+// Et le pendant : le mot promis mais absent doit toujours accuser.
+const vAbs = detectVerdict('Whey Protein Bar', 'milk protein isolate, sugar');
+if (vAbs.verdict === 'misleading') pass++;
+else echecs.push(`Whey absent : attendu misleading, obtenu ${vAbs.verdict}`);
+
 if (echecs.length) process.exit(1);
 console.log('\nTOUT PASSE');

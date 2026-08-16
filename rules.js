@@ -326,9 +326,19 @@ const FOOD_PAIRS = [
   ['persil', 'parsley'], ['coriandre', 'coriander'], ['aneth', 'dill'],
   ['piment', 'chili'], ['paprika'], ['cumin'], ['muscade', 'nutmeg'],
   ['girofle', 'clove'], ['cardamome', 'cardamom'], ['lavande', 'lavender'],
-  ['anis', 'anise'], ['reglisse', 'licorice'], ['poivre', 'pepper'],
+  // ⚠️ `peppercorn` rejoint la famille du poivre : « Whole black peppercorns »
+  // (Kirkland, vu en rayon le 2026-08-14) était classé « aucun aliment mis en
+  // avant », pendant que la ligne juste en dessous écrivait « whole black
+  // peppercorns en tête ». L'écran se contredisait. `pepper` était connu, la
+  // forme en grains non.
+  ['anis', 'anise'], ['reglisse', 'licorice'], ['poivre', 'pepper', 'peppercorn'],
 
   // -- Divers
+  // ⚠️ `whey` : « LeanFit Whey Protein » recevait « aucun aliment mis en avant »
+  // alors que sa liste commence par « whey protein blend ». Le lactosérum est un
+  // ingrédient qu'un nom peut promettre et qu'on peut remplacer par une autre
+  // protéine moins chère, ce qui est exactement le critère d'entrée ici.
+  ['lactoserum', 'whey'],
   ['tournesol', 'sunflower'], ['tofu'], ['sirop', 'syrup'],
 
   // =========================================================================
