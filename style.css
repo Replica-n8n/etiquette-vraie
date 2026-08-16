@@ -93,28 +93,25 @@ body{
   box-shadow:0 30px 60px -20px rgba(20,25,35,0.35);
   border:8px solid var(--frame);
 }
-.screen{ min-height:900px; display:flex; flex-direction:column; }
+/* ⚠️ PLUS DE HAUTEUR IMPOSÉE. `min-height:900px` forçait la page à faire 900 px
+   quel que soit son contenu : sur une fiche pauvre, on faisait défiler des
+   centaines de pixels de vide. La page s'arrête maintenant où le contenu
+   s'arrête. Le minimum ne sert plus qu'à empêcher le cadre de s'effondrer. */
+.screen{ min-height:420px; display:flex; flex-direction:column; }
 
 .topbar{
   position:relative; display:flex; align-items:center; justify-content:center;
   padding:16px 18px 20px;
 }
-/* ⚠️ BARRE FIXE EN BAS DE PAGE, PAS DEUX PASTILLES FLOTTANTES. Demandé le
-   2026-08-14 : les boutons doivent s'ALIGNER sur les bords du contenu, comme
-   toutes les cartes de la fiche, et se poser au bas de l'écran plutôt que
-   sembler survoler la page. D'où le même retrait de 16 px que les cartes, un
-   fond plein et un filet au-dessus.
-   Centrée sur la largeur du téléphone plutôt que sur celle de la fenêtre :
-   sans ça, en aperçu sur ordinateur, les boutons partaient aux bords de
-   l'écran. */
-.actions-flottantes{
-  position:fixed; z-index:900;
-  left:50%; transform:translateX(-50%);
-  bottom:0;
-  width:390px; max-width:100%;
-  padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+/* ⚠️ LES DEUX ACTIONS LES PLUS RÉPÉTÉES, EN BAS DE PAGE, DANS LE FLUX.
+   Historique : haut de page jusqu'en v2.24, barre FIXE en v2.25, retirée en
+   v2.27. La barre survolait le contenu et, large de 390 px contre 374 px
+   d'intérieur de téléphone, décalait les boutons de 8 px par rapport aux
+   cartes. Dans le flux avec la même marge de 16 px, l'alignement est acquis
+   par construction et il n'y a plus rien qui flotte. */
+.actions-bas{
+  margin:18px 16px 20px;
   display:flex; align-items:center; justify-content:space-between;
-  background:var(--paper); border-top:1px solid var(--line);
 }
 .back{
   width:46px; height:46px; border-radius:23px;
@@ -135,11 +132,8 @@ body{
 .fab-scan svg{ width:17px; height:17px; }
 .fab-scan:active{ transform:scale(0.96); }
 .fab-scan:hover{ background:var(--brand-hover); }
-.actions-flottantes .back:focus-visible,
-.actions-flottantes .fab-scan:focus-visible{ outline:2px solid var(--ink); outline-offset:3px; }
-/* La barre couvre le bas de l'écran : il faut de la place sous le dernier
-   bloc, sinon elle masque « Signaler un changement ». */
-.bottom-space{ height:88px; }
+.actions-bas .back:focus-visible,
+.actions-bas .fab-scan:focus-visible{ outline:2px solid var(--ink); outline-offset:3px; }
 /* Nom sur une ligne, version dessous : le nom reste vraiment centré */
 .brand{
   display:flex; flex-direction:column; align-items:center; gap:1px;

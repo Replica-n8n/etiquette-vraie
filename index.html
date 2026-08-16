@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css?v=1786882405">
+<link rel="stylesheet" href="./style.css?v=1786899404">
 </head>
 <body>
 
@@ -372,28 +372,24 @@
           <div class="modal-body" id="additives-modal-body"></div>
         </div>
       </div>
-      </div>
     </div>
 
-    <div class="bottom-space"></div>
+    <!-- ⚠️ DANS LE FLUX, TOUT EN BAS DE LA PAGE. Une barre fixe a été essayée
+         en v2.25 puis retirée : elle survolait le contenu, et sa largeur de
+         390 px dépassait de 8 px l'intérieur du téléphone, ce qui désalignait
+         les boutons des cartes. Ici ils prennent la même marge de 16 px que
+         tout le reste, donc ils s'alignent par construction. -->
+    <div class="actions-bas" id="actions-bas">
+      <button class="back" id="back-button" type="button" aria-label="Retour">←</button>
+      <button class="fab-scan hidden" id="fab-scan" type="button" aria-label="Scanner un code-barres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5v14M7 5v14M11 5v14M14.5 5v14M18 5v14M21 5v14"/></svg>
+        Scan
+      </button>
+    </div>
   </main>
 </div>
 
-<!-- ⚠️ LES DEUX ACTIONS LES PLUS FRÉQUENTES, DANS LA ZONE DU POUCE. Le retour
-     était en haut à gauche, c'est-à-dire au point le plus éloigné du pouce droit
-     quand l'autre main tient le produit, alors que revenir en arrière est
-     l'action la plus répétée de l'app. Ils descendent tous les deux en bas.
-     Barre FIXE et centrée sur la largeur du téléphone : `position:fixed` seul
-     collerait les boutons aux bords de l'écran d'ordinateur en aperçu. -->
-<div class="actions-flottantes" id="actions-flottantes">
-  <button class="back" id="back-button" type="button" aria-label="Retour">←</button>
-  <button class="fab-scan hidden" id="fab-scan" type="button" aria-label="Scanner un code-barres">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5v14M7 5v14M11 5v14M14.5 5v14M18 5v14M21 5v14"/></svg>
-    Scan
-  </button>
-</div>
-
-<script src="./rules.js?v=1786882405" defer></script>
-<script src="./app.js?v=1786882405" defer></script>
+<script src="./rules.js?v=1786899404" defer></script>
+<script src="./app.js?v=1786899404" defer></script>
 </body>
 </html>
