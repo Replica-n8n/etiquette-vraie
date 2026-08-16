@@ -412,6 +412,12 @@ body{
   font-size:9.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--green);
 }
 .bareme-cle.hidden{ display:none; }
+/* Quand la clé porte le nom d'un AUTRE rang, elle redevient une phrase : les
+   capitales et l'interlettrage d'une étiquette rendraient « pur jus : ce que ce
+   mot garantirait » illisible. */
+.bareme-cle.autre{
+  text-transform:none; letter-spacing:0.005em; font-size:11.5px; color:var(--ink);
+}
 .bareme-expl-titre{
   margin-top:10px; font-size:11.5px; font-weight:700; letter-spacing:0.01em;
   color:var(--ink);

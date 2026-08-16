@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.32';
+const APP_VERSION = 'v2.33';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786905812';
+const BUILD = '1786906505';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1467,12 +1467,24 @@ function renderBareme(tier) {
     // sinon, lire « sorbet plein fruit » repeindrait la fiche d'un sorbet
     // ordinaire en réussite.
     expl.className = `bareme-expl${sel === tier.ici && tier.sommet ? ' sommet' : ''}`;
+    // ⚠️ UNE SEULE LIGNE DE TÊTE, PAS DEUX. Le titre « ce que ce mot
+    // garantirait » était un bloc SÉPARÉ, inséré entre la clé et l'explication
+    // qui forment une seule carte : il la coupait en deux dès qu'on touchait un
+    // autre rang. C'est la CLÉ qui porte les deux états.
+    const ailleurs = sel !== tier.ici;
     const cle = document.getElementById('bareme-cle');
-    if (cle) cle.classList.toggle('hidden', !expl.textContent);
+    if (cle) {
+      cle.textContent = ailleurs
+        ? `« ${tier.rangs[sel]} » : ce que ce mot garantirait`
+        : 'Seuil garanti';
+      cle.classList.toggle('autre', ailleurs);
+      cle.classList.toggle('hidden', !expl.textContent);
+    }
+    // L'ancien bloc reste dans le HTML le temps d'un cycle de déploiement, mais
+    // il ne s'affiche plus jamais.
     if (explTitre) {
-      const ailleurs = sel !== tier.ici;
-      explTitre.textContent = ailleurs ? `« ${tier.rangs[sel]} » : ce que ce mot garantirait` : '';
-      explTitre.classList.toggle('hidden', !ailleurs);
+      explTitre.textContent = '';
+      explTitre.classList.add('hidden');
     }
     [...rangsEl.children].forEach((b, i) => {
       b.classList.toggle('ici', i === tier.ici);
