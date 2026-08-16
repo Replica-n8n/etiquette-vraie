@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.30';
+const APP_VERSION = 'v2.31';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786903414';
+const BUILD = '1786904047';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -773,7 +773,7 @@ async function searchProducts(term, onRetry, signal) {
 // de "photo envoyée, OFF ne l'a pas encore validée". Sans ce champ, plusieurs
 // utilisateurs photographieraient le même produit en série - chaque envoi
 // REMPLACE l'image de référence, donc une photo floue peut en dégrader une nette.
-const PRODUCT_FIELDS = 'product_name,generic_name,ingredients_text,ingredients_text_fr,ingredients_text_en,lang,brands,last_modified_t,image_front_small_url,image_ingredients_url,ingredients,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags,images';
+const PRODUCT_FIELDS = 'product_name,generic_name,ingredients_text,ingredients_text_fr,ingredients_text_en,lang,brands,last_modified_t,image_front_small_url,image_ingredients_url,ingredients,code,nutriscore_grade,nova_group,additives_n,additives_tags,labels_tags,categories_tags';
 
 async function fetchProduct(code) {
   // API v2 et NON v0 : la v0 APLATIT l'arbre des ingrédients. Un sous-ingrédient
@@ -1043,21 +1043,6 @@ function ilYA(timestamp) {
 function freshnessText(lastModifiedT) {
   if (!lastModifiedT) return 'Date de dernière vérification inconnue.';
   return `Donnée vérifiée ${ilYA(lastModifiedT)}. La recette a pu changer depuis.`;
-}
-
-// ⚠️ LA DATE DE LA PHOTO D'INGRÉDIENTS, PAS CELLE DE LA DERNIÈRE IMAGE.
-// `last_image_t` existe et serait plus simple, mais il date la dernière image
-// de N'IMPORTE QUEL type : sur Cocoa Camino il donne le 17 mai alors que la
-// photo des ingrédients date du 26 octobre. Open Food Facts range l'image
-// choisie sous `images.ingredients_<langue>`, qui ne porte pas de date mais un
-// `imgid` pointant vers l'original, lui daté.
-function dateEnvoiPhotoIngredients(product) {
-  const images = product && product.images;
-  if (!images) return null;
-  const cle = Object.keys(images).find((k) => /^ingredients_/.test(k));
-  const choisie = cle ? images[cle] : null;
-  const original = choisie && choisie.imgid ? images[choisie.imgid] : null;
-  return (original && original.uploaded_t) || null;
 }
 
 // Les métas portent une couleur en dur depuis la v1 ; on la traduit en classe
@@ -2019,18 +2004,14 @@ function setFillGapTarget(product, verdict) {
     // pour le cas où la photo existante serait illisible, mais discrète : ce
     // n'est plus l'action attendue.
     document.getElementById('fillgap-title').textContent = 'Photo en attente';
-    // ⚠️ NE PLUS PROMETTRE UNE VÉRIFICATION QUI N'ARRIVE PAS. L'ancienne phrase
-    // disait « Open Food Facts doit encore la vérifier », ce qui laisse croire à
-    // une file d'attente qui avance. Mesuré le 2026-08-14 : plus de 10 000
-    // produits ont une photo d'ingrédients sans texte, et sur 17 dont j'ai pu
-    // dater la photo, la médiane est de 3,1 ans, aucune de moins de 6 mois.
-    // L'échantillon est petit et biaisé (les photos transcrites sortent de
-    // l'ensemble), mais il interdit de promettre un délai. On dit ce qui est :
-    // la photo existe, le texte n'a pas été saisi, et personne ne sait quand.
-    const quand = ilYA(dateEnvoiPhotoIngredients(product));
-    document.getElementById('fillgap-text').textContent = quand
-      ? `Une photo des ingrédients a été envoyée ${quand}, mais personne ne l'a encore recopiée en texte. Tant que ce n'est pas fait, l'app ne peut rien lire.`
-      : "Une photo des ingrédients existe, mais personne ne l'a encore recopiée en texte. Tant que ce n'est pas fait, l'app ne peut rien lire.";
+    // ⚠️ NI PROMESSE, NI REPROCHE. La phrase a dit successivement « Open Food
+    // Facts doit encore la vérifier » (faux : médiane mesurée à 3,1 ans le
+    // 2026-08-14) puis « personne ne l'a encore recopiée en texte », retirée à
+    // son tour : afficher l'âge de la photo revenait à annoncer que la
+    // contribution ne sert à rien, juste avant de la proposer. On énonce le
+    // fait, rien de plus.
+    document.getElementById('fillgap-text').textContent =
+      "Une photo des ingrédients a déjà été envoyée.";
     openBtn.textContent = 'Elle est illisible ? En envoyer une meilleure';
     openBtn.classList.add('subtle');
   } else {
