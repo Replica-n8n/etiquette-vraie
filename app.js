@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.34';
+const APP_VERSION = 'v2.35';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786907050';
+const BUILD = '1786977036';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -2306,6 +2306,9 @@ document.getElementById('fillgap-send').addEventListener('click', async () => {
 });
 
 // Initialize with home screen
+// ⚠️ `.catch()` OBLIGATOIRE en bas de cette IIFE : une promesse de démarrage
+// qui rejette sans filet devient une erreur non gérée, et l'app reste sur son
+// écran de chargement sans rien dire.
 (async () => {
   await loadAdditivesDatabase();
   // Lien direct vers un produit : ...?code=0065633468191
@@ -2316,7 +2319,21 @@ document.getElementById('fillgap-send').addEventListener('click', async () => {
     return;
   }
   showScreen('home');
-})();
+})().catch((err) => {
+  console.error('[APP] démarrage impossible:', err);
+  showScreen('home');
+});
+
+// ⚠️ FILET DE DIAGNOSTIC. Un « TypeError: Load failed » sans pile est apparu
+// deux fois le 2026-08-16, juste après un déploiement, puis a disparu. Deux
+// tentatives de reproduction ont échoué : coupure réseau et abandon de requête
+// ne l'ont pas déclenché, et l'ancien service worker se comportait comme le
+// nouveau. Faute de le trouver, on le rend TROUVABLE : ce guetteur imprime la
+// pile du prochain rejet non géré. À lire dans la console si le cas revient.
+window.addEventListener('unhandledrejection', (event) => {
+  const r = event.reason;
+  console.error('[Rejet non géré]', (r && r.message) || r, (r && r.stack) || '(aucune pile)');
+});
 
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {

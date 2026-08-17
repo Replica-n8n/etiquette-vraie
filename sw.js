@@ -1,4 +1,4 @@
-const CACHE_NAME = 'etiquette-vraie-1786907050';
+const CACHE_NAME = 'etiquette-vraie-1786977036';
 // Chemins RELATIFS (résolus par rapport à l'emplacement de sw.js) pour que
 // l'app fonctionne à n'importe quelle URL (prod, sous-dossier, dépôt de test).
 const OFFLINE_URL = './index.html';
@@ -15,10 +15,13 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', (event) => {
+  // ⚠️ `addAll` est TOUT OU RIEN : une seule des huit URL en échec faisait
+  // rejeter l'installation entière, donc pas de cache et donc pas de mode hors
+  // ligne. On range chaque fichier séparément et on laisse passer les ratés.
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
-    })
+    caches.open(CACHE_NAME).then((cache) => Promise.all(
+      urlsToCache.map((url) => cache.add(url).catch(() => null)),
+    )),
   );
   self.skipWaiting();
 });
@@ -40,7 +43,10 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  const isLocalFile = url.hostname === 'localhost' || url.hostname === 'world.openfoodfacts.org' === false;
+  // ⚠️ Écrit `a === b === false` à l'origine, ce qui se lit de travers : cela
+  // signifiait « tout SAUF l'API d'Open Food Facts ». Même comportement, écrit
+  // pour être compris.
+  const isLocalFile = url.hostname !== 'world.openfoodfacts.org';
   const isJsOrCss = url.pathname.endsWith('.js') || url.pathname.endsWith('.css') || url.pathname.endsWith('.html');
   const isOpenFoodFacts = url.hostname === 'world.openfoodfacts.org';
 
@@ -110,7 +116,7 @@ self.addEventListener('fetch', (event) => {
           return fetch(event.request).then((response) => {
             if (response.ok) cache.put(event.request, response.clone());
             return response;
-          });
+          }).catch(() => new Response('', { status: 503 }));
         })
       )
     );
@@ -119,7 +125,14 @@ self.addEventListener('fetch', (event) => {
   else {
     event.respondWith(
       caches.match(event.request).then((response) => {
-        return response || fetch(event.request);
+        if (response) return response;
+        // ⚠️ SANS CE `catch`, UN RATÉ RÉSEAU REMONTE EN ERREUR NON GÉRÉE.
+        // C'est par ici que passent les vignettes d'images.openfoodfacts.org,
+        // celles des alternatives. Une seule manquante faisait rejeter
+        // `respondWith` et salissait la console d'un « TypeError: Load failed »
+        // intermittent. L'app le gérait déjà côté page (l'`onerror` de l'img
+        // masque la vignette), le bruit venait uniquement d'ici.
+        return fetch(event.request).catch(() => new Response('', { status: 503 }));
       })
     );
   }
