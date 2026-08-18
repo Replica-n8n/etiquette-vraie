@@ -126,3 +126,38 @@ voisin sans rapport. `findAlternative` va déjà du plus précis au plus large e
 **L'effet de liste.** Cinq produits alignés ressemblent à un classement, même
 sans note. C'est assumé : l'ordre PORTE une information, et elle est fondée sur
 ce que la loi garantit, pas sur un avis.
+
+---
+
+## Suite : pourquoi la contribution photo ne débloque rien (2026-08-16)
+
+Recherche menée dans la documentation et l'API de Robotoff, après que
+l'utilisatrice a trouvé choquant qu'une photo attende quatre ans.
+
+**Le chemin est débranché, ce n'est pas une file lente.**
+
+1. Robotoff extrait automatiquement le texte de chaque photo d'ingrédients.
+2. Le résultat n'est **jamais écrit** dans la fiche : il devient une proposition
+   qui attend une validation humaine, et elle n'est créée que si **60 % au moins
+   des ingrédients sont reconnus** par la taxonomie d'Open Food Facts.
+3. **Ces propositions ne sont posées à personne.** Sur 100 questions tirées au
+   hasard parmi celles servies aux contributeurs : 98 catégories, 1 label,
+   1 emballage, zéro ingrédient. Demandées explicitement, l'API répond
+   `count: 0, status: no_questions`.
+
+Le dépôt Hunger Games le confirme dans sa propre description : catégories,
+labels, poids, marques, logos, « nous aurions besoin de porter les ingrédients
+depuis l'ancienne version ».
+
+**File d'attente mesurée sur 150 propositions non validées :** âge médian
+426 jours, 86 de plus d'un an, aucune entre 1 et 6 mois, 62 de moins de 30 jours.
+Du frais, un stock gelé, et rien entre les deux. Langues : anglais 65,
+français 38, allemand 7. Les utilisatrices canadiennes sont les premières
+concernées.
+
+⚠️ Réserve : les compteurs de Robotoff plafonnent à 100 par page, le total de la
+file reste inconnu.
+
+**Conséquence pour l'app**, déjà appliquée en v2.31 : la photo est stockée et
+visible, mais rien ne la transforme en texte. Aucune promesse n'est faite, ni
+sur le délai, ni sur le résultat.
