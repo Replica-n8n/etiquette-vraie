@@ -12,7 +12,7 @@
 // Version du code déployé. Le Worker se colle à la main dans Cloudflare : sans
 // marqueur, impossible de savoir si la version en ligne est à jour. Un simple
 // GET sur la racine l'affiche. À bumper à chaque modification de ce fichier.
-const WORKER_VERSION = 'w3-add-brands-ua';
+const WORKER_VERSION = 'w4-ingredients-text';
 
 const OFF_SEARCH = 'https://search.openfoodfacts.org/search';
 const FIELDS = 'code,product_name,brands,image_front_small_url,lang,languages_tags,countries_tags';
@@ -112,6 +112,11 @@ async function handleContribute(request, env) {
   // ⚠️ Envoyée en `add_brands`, jamais en `brands` · voir plus bas.
   const brands = String(body.brands || '').trim().slice(0, 120);
   const lang = /^[a-z]{2}$/.test(body.lang || '') ? body.lang : 'fr';
+  // La liste d'ingrédients, telle qu'elle est IMPRIMÉE sur l'emballage.
+  // ⚠️ Champ TEXTE chez OFF : il n'a PAS de variante `add_`, tout envoi ÉCRASE
+  // ce qui est là. Même famille de piège que `brands` · voir plus bas. Le
+  // garde-fou est plus bas aussi : on refuse d'écraser une liste existante.
+  const ingredients = String(body.ingredients_text || '').trim().slice(0, 3000);
   // uuid anonyme fourni par l'app (aucune donnée perso)
   const uuid = String(body.uuid || 'anon').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 64);
 
@@ -120,8 +125,31 @@ async function handleContribute(request, env) {
   const identity = { app_name: APP_NAME, app_version: APP_VERSION, app_uuid: uuid };
   const result = { base, code };
 
-  // 1) Champs texte (nom, marque) - seulement si au moins un est fourni
-  if (name || brands) {
+  // 0) Garde-fou : ne JAMAIS écraser une liste d'ingrédients déjà publiée.
+  // Sur une fiche vide, écrire est un ajout pur et sans risque. Sur une fiche
+  // déjà remplie, c'est une CORRECTION, et elle doit être demandée exprès.
+  let listeAEcrire = '';
+  if (ingredients) {
+    const champ = `ingredients_text_${lang}`;
+    let existant;
+    try {
+      const r = await fetch(`${base}/api/v2/product/${code}.json?fields=${champ}`, {
+        headers: { 'User-Agent': USER_AGENT },
+      });
+      const j = await r.json();
+      existant = String((j.product || {})[champ] || '').trim();
+    } catch (e) {
+      // On ne devine pas : sans avoir pu lire l'état actuel, on n'écrit rien.
+      return json({ ...result, error: 'etat-illisible', message: e.message }, 502);
+    }
+    if (existant && body.overwrite_ingredients !== true) {
+      return json({ ...result, error: 'ingredients-deja-remplis', existant: existant.slice(0, 300) }, 409);
+    }
+    listeAEcrire = ingredients;
+  }
+
+  // 1) Champs texte (nom, marque, ingrédients) - si au moins un est fourni
+  if (name || brands || listeAEcrire) {
     const form = new FormData();
     for (const [k, v] of Object.entries({ ...auth, ...identity, code, lang })) form.append(k, v);
     if (name) form.append('product_name', name);
@@ -130,6 +158,7 @@ async function handleContribute(request, env) {
     // ajoute à la liste. Sans ça, chaque contribution sur une fiche déjà remplie
     // détruisait des données publiques. Ne jamais revenir à `brands`.
     if (brands) form.append('add_brands', brands);
+    if (listeAEcrire) form.append(`ingredients_text_${lang}`, listeAEcrire);
     try {
       const res = await fetch(`${base}/cgi/product_jqm2.pl`, {
         method: 'POST', body: form,
@@ -166,7 +195,7 @@ async function handleContribute(request, env) {
     }
   }
 
-  if (!name && !brands && !body.image) return json({ error: 'nothing-to-send' }, 400);
+  if (!name && !brands && !ingredients && !body.image) return json({ error: 'nothing-to-send' }, 400);
   result.ok = !!((result.fields && result.fields.status === 1) || (result.image && !result.image.error));
   return json(result);
 }

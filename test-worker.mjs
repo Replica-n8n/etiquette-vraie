@@ -118,6 +118,72 @@ const root = await worker.fetch(new Request('https://w.dev/'), ENV);
 const rootText = await root.text();
 check('racine : affiche une version bumpée', /w[3-9]\d*-/.test(rootText), rootText);
 
+// --- 4. La liste d'ingrédients : écrire OUI, écraser NON ---------------------
+// Même famille de piège que `brands` : `ingredients_text` est un champ TEXTE,
+// il n'a pas de variante `add_`, donc tout envoi REMPLACE. Sur une fiche vide
+// c'est un cadeau ; sur une fiche remplie c'est une destruction silencieuse.
+
+// Espion qui sait répondre DEUX choses : l'état actuel de la fiche (GET api/v2)
+// et le résultat de l'écriture (POST product_jqm2).
+function spyAvecEtat(ingredientsExistants) {
+  calls = [];
+  globalThis.fetch = async (url, options = {}) => {
+    const u = String(url);
+    const entry = { url: u, headers: options.headers || {}, fields: {} };
+    if (options.body instanceof FormData) {
+      for (const [k, v] of options.body.entries()) {
+        entry.fields[k] = typeof v === 'string' ? v : `[blob ${v.size}]`;
+      }
+    }
+    calls.push(entry);
+    if (u.includes('/api/v2/product/')) {
+      const p = ingredientsExistants ? { ingredients_text_fr: ingredientsExistants } : {};
+      return new Response(JSON.stringify({ status: 1, product: p }), { status: 200 });
+    }
+    return new Response(JSON.stringify({ status: 1, status_verbose: 'fields saved' }), { status: 200 });
+  };
+}
+
+// 4a. Fiche VIDE : on écrit, et sur le champ suffixé par la langue.
+spyAvecEtat(null);
+const vide = await contribute({ code: '0752612000113', ingredients_text: 'Cacao alcalinisé, Carbonate de potassium.', lang: 'fr' });
+const ecrit = calls.find((c) => c.url.includes('product_jqm2.pl'));
+check('ingrédients : fiche vide -> écriture envoyée', !!ecrit);
+check('ingrédients : champ suffixé par la langue', ecrit && ecrit.fields.ingredients_text_fr === 'Cacao alcalinisé, Carbonate de potassium.', ecrit && JSON.stringify(ecrit.fields));
+check('ingrédients : aucun champ `ingredients_text` sans langue', ecrit && ecrit.fields.ingredients_text === undefined);
+check('ingrédients : fiche vide -> réponse OK', vide.status === 200);
+check("ingrédients : l'état est lu AVANT d'écrire", calls.length >= 2 && calls[0].url.includes('/api/v2/product/'), JSON.stringify(calls.map((c) => c.url)));
+
+// 4b. Fiche DÉJÀ REMPLIE : refus net, et surtout AUCUNE écriture.
+spyAvecEtat('Cacao, sucre.');
+const pleine = await contribute({ code: '0752612000113', ingredients_text: 'autre chose', lang: 'fr' });
+check('ingrédients : fiche déjà remplie -> 409', pleine.status === 409, String(pleine.status));
+check("ingrédients : fiche déjà remplie -> RIEN n'est écrit", !calls.some((c) => c.url.includes('product_jqm2.pl')), JSON.stringify(calls.map((c) => c.url)));
+const corps = await pleine.json();
+check('ingrédients : le refus dit ce qui est déjà là', corps.existant === 'Cacao, sucre.', JSON.stringify(corps));
+
+// 4c. Correction assumée : il faut la demander explicitement.
+spyAvecEtat('Cacao, sucre.');
+await contribute({ code: '0752612000113', ingredients_text: 'Cacao alcalinisé.', lang: 'fr', overwrite_ingredients: true });
+const corrige = calls.find((c) => c.url.includes('product_jqm2.pl'));
+check('ingrédients : correction explicite -> écriture envoyée', corrige && corrige.fields.ingredients_text_fr === 'Cacao alcalinisé.', corrige && JSON.stringify(corrige.fields));
+
+// 4d. Sans état lisible, on n'écrit pas : ne jamais deviner.
+calls = [];
+globalThis.fetch = async (url) => {
+  calls.push({ url: String(url) });
+  if (String(url).includes('/api/v2/product/')) throw new Error('reseau');
+  return new Response(JSON.stringify({ status: 1 }), { status: 200 });
+};
+const aveugle = await contribute({ code: '0752612000113', ingredients_text: 'X', lang: 'fr' });
+check('ingrédients : état illisible -> 502, aucune écriture', aveugle.status === 502 && !calls.some((c) => c.url.includes('product_jqm2.pl')), String(aveugle.status));
+
+// 4e. La langue choisie est respectée.
+spyAvecEtat(null);
+await contribute({ code: '0752612000113', ingredients_text: 'Alkalized cocoa.', lang: 'en' });
+const enAnglais = calls.find((c) => c.url.includes('product_jqm2.pl'));
+check('ingrédients : langue en -> ingredients_text_en', enAnglais && enAnglais.fields.ingredients_text_en === 'Alkalized cocoa.', enAnglais && JSON.stringify(enAnglais.fields));
+
 // --- Résultat ---------------------------------------------------------------
 console.log(`\n${pass}/${pass + failures.length} tests Worker au vert`);
 if (failures.length) {
