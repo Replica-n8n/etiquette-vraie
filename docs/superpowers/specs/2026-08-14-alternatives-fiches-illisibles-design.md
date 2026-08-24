@@ -161,3 +161,38 @@ file reste inconnu.
 **Conséquence pour l'app**, déjà appliquée en v2.31 : la photo est stockée et
 visible, mais rien ne la transforme en texte. Aucune promesse n'est faite, ni
 sur le délai, ni sur le résultat.
+
+---
+
+## Suite : écrire nous-mêmes la liste, ce qui est possible (2026-08-24)
+
+Question posée : photo → leur IA liste les ingrédients → on préremplit un
+formulaire → l'utilisatrice valide → envoi → visible au rescan. Mesuré, non codé.
+
+**La ligne de partage est le canal, pas l'opération.** Créer un produit ou le
+mettre à jour ne change rien. Ce qui change tout : le TEXTE s'écrit
+immédiatement et sans modération, la PHOTO passe par Robotoff donc par une
+validation humaine qui n'arrive jamais.
+
+| Étape proposée | Verdict | Preuve |
+|---|---|---|
+| Envoyer la photo | ✅ marche déjà | livré en v2.31 |
+| Obtenir la liste extraite | ⚠️ seulement sur photo FRAÎCHE | 0 proposition sur 40 fiches canadiennes avec photo et sans texte |
+| Préremplir depuis le stock ancien | ⛔ non | ces photos ont 3,1 ans de médiane, le modèle ne traite que les nouvelles |
+| Repli OCR brut public | ⚠️ mitigé | 1 produit sur 2 rend un texte exploitable, et il mêle le tableau nutritionnel aux ingrédients |
+| Écrire `ingredients_text_fr/_en` | ✅ immédiat | même endpoint `product_jqm2.pl` que le nom et la marque, déjà utilisé par le Worker |
+| Voir la fiche parler au rescan | ✅ oui | conséquence directe de la ligne précédente |
+
+Endpoints :
+`robotoff.openfoodfacts.org/api/v1/insights?barcode=<code>&insight_types=ingredient_detection&annotated=0`
+→ `data.text`, `data.ingredients`, `data.lang`, `fraction_known_ingredients`.
+`images.openfoodfacts.org/images/products/<chemin>/<imgid>.json`
+→ OCR brut Google Cloud Vision, public, `responses[0].fullTextAnnotation.text`.
+
+**Inconnue restante :** le délai entre l'envoi d'une photo et l'apparition de la
+proposition. Le mesurer exige d'écrire dans la base publique : à ne faire que
+sur un produit choisi par l'utilisatrice, et seulement si elle le demande.
+
+**Réserve de responsabilité :** ce que l'app écrira sera lu par toutes les autres
+applications qui utilisent Open Food Facts. Le Worker porte déjà la cicatrice
+d'une contribution qui détruisait des données publiques.
