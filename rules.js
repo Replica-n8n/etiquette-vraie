@@ -888,6 +888,37 @@ const LOW_PERCENT_THRESHOLD = 5;
 //     lignes, "vanille en poudre (" puis ")".
 // Cette fonction sert à la fois au moteur et à l'affichage : c'est ce qui
 // garantit que la ligne surlignée est bien celle que le moteur a repérée.
+// ⚠️ LES TRACES NE SONT PAS DES INGRÉDIENTS. « Peut contenir : lait, soja » est
+// un avertissement d'allergie sur ce que l'usine côtoie, pas une déclaration de
+// composition. Open Food Facts le range d'ailleurs à part, dans `traces_tags`.
+//
+// Le découpage de l'app coupait sur les virgules AVANT de retirer la prose : la
+// phrase se scindait en deux, la tête partait bien à la poubelle, et la QUEUE
+// survivait en se faisant passer pour un ingrédient. Mesuré le 2026-08-24 sur
+// 46 fiches réelles parmi les plus scannées : 8, soit 17,4 %, affichaient un
+// faux ingrédient. Lindt Excellence 85 % annonçait « du soja » et « des graines
+// de sésame » ; Wasa annonçait « LAIT », « MOUTARDE » et « SOJA ».
+//
+// Le défaut ne touchait pas que l'affichage : `isMentionedInIngredients` teste
+// le TEXTE ENTIER. Un « peut contenir des noisettes » suffisait donc à absoudre
+// un produit dont le nom promet de la noisette qu'il ne contient pas. La coupe
+// se fait ici, une seule fois, pour le moteur ET pour la liste affichée.
+//
+// Le texte reçu est tantôt brut, tantôt normalisé (sans accents, en minuscules)
+// selon l'appelant : les deux formes doivent être reconnues.
+const MARQUEUR_TRACES = /peu(?:t|vent)\s+(?:aussi\s+|(?:é|e)galement\s+)?contenir|contient\s+des\s+traces|traces?\s+(?:(?:é|e)ventuelles?\s+|possibles?\s+)?d[eu']|pr(?:é|e)sence\s+possible|fabriqu(?:é|e)e?\s+dans\s+un\s+(?:atelier|environnement|(?:é|e)tablissement)|may\s+contain|(?:manufactured|produced|packed)\s+in\s+a\s+facility/i;
+
+// ⚠️ On ne coupe JAMAIS quand le marqueur ouvre le texte : il ne resterait rien,
+// et une fiche sans liste ne dit pas « rien à signaler », elle dit « je ne peux
+// pas vérifier ». Mieux vaut garder un texte imparfait qu'inventer un silence.
+function couperTraces(texte) {
+  const s = String(texte || '');
+  const m = MARQUEUR_TRACES.exec(s);
+  if (!m || m.index === 0) return s;
+  const avant = s.slice(0, m.index).replace(/[\s.,;:·-]+$/, '').trim();
+  return avant || s;
+}
+
 function splitIngredientList(text) {
   const items = [];
   const chaine = String(text || '');
@@ -1313,7 +1344,7 @@ function legalTier(productName, ingredientsText, categoriesTags, genericName) {
   // produit légalement vendu comme crème glacée : une fausse accusation.
   const legalNorm = normalize(denominationLegale(genericName));
   const nomNorm = normalize(productName);
-  const ingrNorm = normalize(ingredientsText);
+  const ingrNorm = normalize(couperTraces(ingredientsText));
   const items = splitIngredientList(ingrNorm);
   for (const f of FAMILLES_LEGALES) {
     if (!estDeLaFamille(tags, f.categorie)) continue;
@@ -1779,7 +1810,7 @@ function detectVerdictBase(productName, ingredientsText) {
   }
 
   const nameNorm = normalize(productName);
-  const ingredientsNorm = normalize(ingredientsText);
+  const ingredientsNorm = normalize(couperTraces(ingredientsText));
 
   if (!ingredientsNorm) {
     return {
@@ -2141,6 +2172,6 @@ if (typeof module !== 'undefined') {
     findIngredientPosition, ingredientShare, isMentionedInIngredients,
     splitIngredientList, chocolateForm, chocolatePercent, legalTier, denominationLegale,
     claimConflict, additiveLabel, findSubstitute, partLabel,
-    langueDuTexte, texteLisible,
+    langueDuTexte, texteLisible, couperTraces,
   };
 }

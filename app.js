@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.35';
+const APP_VERSION = 'v2.36';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1786977036';
+const BUILD = '1787600330';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1109,7 +1109,10 @@ function buildIngredientExcerpt(ingredientsText, detail) {
   // ligne surlignée est celle qu'il a repérée. Découper ici sur toutes les
   // virgules faisait disparaître les morceaux de décimales ("4%" de "59,4%")
   // et décalait toutes les lignes suivantes.
-  const items = splitIngredientList(ingredientsText || '')
+  // ⚠️ Les traces d'allergènes ne sont pas des ingrédients : elles sont
+  // coupées AVANT le découpage, sinon leur dernier morceau survit comme une
+  // ligne de la liste. Voir couperTraces dans rules.js.
+  const items = splitIngredientList(couperTraces(ingredientsText || ''))
     .map(couperProse)
     // Retirer le pourcentage, décimales comprises : "59,4 %" comme "0.5%".
     .map((s) => s.replace(/^\d+(?:[.,]\d+)?\s*%\s*/, '').replace(/\s*\d+(?:[.,]\d+)?\s*%\s*$/, '').trim())
