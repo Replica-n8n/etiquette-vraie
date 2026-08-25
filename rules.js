@@ -186,6 +186,40 @@ const INGREDIENT_VARIANTS = {
   // SUBSTITUTS l'un de l'autre, donc l'app ne pourrait plus dire qu'un produit
   // promettant du tofu n'en contient pas.
   'tofu': ['tofu', 'soja', 'soy', 'soya', 'soybean', 'soybeans', 'soyabean', 'soyabeans'],
+  // ⚠️ MÊME PIÈGE QUE LE TOFU, sur sept autres mots. Mesuré le 2026-08-24 sur
+  // de vrais produits : un aliment TRANSFORMÉ ne se nomme pas lui-même dans sa
+  // liste, il nomme sa MATIÈRE PREMIÈRE.
+  // Toutes ces correspondances sont À SENS UNIQUE, pour la même raison que le
+  // tofu : symétriques, la matière première et le produit transformé
+  // deviendraient substituts l'un de l'autre, et l'app ne pourrait plus
+  // accuser un faux miso ni un faux lardon.
+  //
+  // miso, 3 fiches sur 3 accusées : « Water, Organic Soybeans, Rice, Salt ».
+  'miso': ['miso', 'soja', 'soy', 'soya', 'soybean', 'soybeans', 'soyabean', 'soyabeans'],
+  // edamame, 5 sur 6 : « Organic Soybeans », « Graines de soja (99%) ».
+  'edamame': ['edamame', 'soja', 'soy', 'soya', 'soybean', 'soybeans', 'soyabean', 'soyabeans'],
+  // tapioca : « 100% starch from the tubers of the manioc ».
+  'tapioca': ['tapioca', 'manioc', 'cassava'],
+  // ⚠️ LARDON ET BACON, le cas le plus grave du lot : l'app n'écrivait pas
+  // seulement « absent », elle écrivait « lardon absent, REMPLACÉ PAR PORC ».
+  // Elle accusait un charcutier d'avoir substitué du porc à du lard, sur
+  // « Pork belly, salt, preservatives » et « Pork 87%, Water, Salt ».
+  'lardon': ['lardon', 'lardons', 'porc', 'pork'],
+  'lardons': ['lardon', 'lardons', 'porc', 'pork'],
+  'bacon': ['bacon', 'porc', 'pork'],
+  // massepain, 2 sur 2 : « Amandes (50%), Sucre, Sirop de glucose ».
+  'massepain': ['massepain', 'marzipan', 'amande', 'almond'],
+  'marzipan': ['massepain', 'marzipan', 'amande', 'almond'],
+  // ghee, 2 sur 3 : « UNSALTED BUTTER » et « Milk Solids (Milk Fat) ». Les deux
+  // formes comptent : certaines fiches ne parlent jamais de beurre, seulement
+  // de matière grasse laitière.
+  'ghee': ['ghee', 'ghi', 'beurre', 'butter', 'butterfat', 'milk fat', 'matiere grasse laitiere'],
+  'ghi': ['ghee', 'ghi', 'beurre', 'butter', 'butterfat', 'milk fat', 'matiere grasse laitiere'],
+  // ⚠️ ET LE DÉFAUT DANS L'AUTRE SENS : « EDAMAME BEANS », dont la liste dit
+  // « Edamame », était accusé de ne pas contenir de haricot. Le nom et la liste
+  // désignaient le même aliment, écrit autrement.
+  'haricot': ['haricot', 'bean', 'edamame'],
+  'bean': ['haricot', 'bean', 'edamame'],
   'soja': ['soja', 'soy', 'soya', 'soybean', 'soybeans'],
   'soy': ['soja', 'soy', 'soya', 'soybean', 'soybeans'],
   'soya': ['soja', 'soy', 'soya', 'soybean', 'soybeans'],

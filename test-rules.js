@@ -93,6 +93,37 @@ const T = [
  // fausse accusation contre une fausse absolution.
  ['faux tofu : ni soja ni tofu','Tofu grille','Eau, proteines de pois, huile de colza, sel','misleading'],
  ['le soja garde sa famille','Boisson au soja','eau, sucre, arome','misleading'],
+ // ---- FAMILLE 6 : les ALIMENTS TRANSFORMÉS ne se nomment pas eux-mêmes ----
+ // Un aliment transformé nomme sa MATIÈRE PREMIÈRE dans sa liste, jamais
+ // lui-même. Le mot « miso » n'apparaît dans la liste d'aucun miso au monde.
+ // Découvert par l'utilisatrice en rayon sur un tofu le 2026-08-24, puis
+ // mesuré mot par mot sur de vrais produits. Toutes les listes ci-dessous
+ // sont réelles, copiées d'Open Food Facts.
+ ['miso = soja + riz','Aged Red Miso','Water, Soya (29%), Rice, Salt, Alcohol.','clean'],
+ ['miso = soybeans (en)','Organic White Miso','Water, Organic Soybeans (29%), Organic Rice, Salt, Koji Culture','clean'],
+ ['edamame = soybeans','Organic Edamame','Organic Soybeans','clean'],
+ ['edamame = graines de soja','Edamame sales surgeles','Graines de soja (99%). sel.','clean'],
+ ['tapioca = manioc','tapioca perly','100% starch from the tubers of the manioc','clean'],
+ ['lardon = porc','Unsmoked Lardons','Pork belly, salt, preservatives: E326 - E250, sugar','clean'],
+ ['bacon = porc','Unsmoked Bacon Lardons','Pork 87%, Water, Salt, Antioxidant (Sodium Ascorbate)','clean'],
+ ['massepain = amandes','Massepain en figurines','Amandes (50%), Sucre, Sirop de glucose, Eau, Stabilisant','clean'],
+ ['ghee = beurre','CLARIFIED BUTTER (ghee)','UNSALTED BUTTER. CONTAINS MILK.','clean'],
+ // ⚠️ Certaines fiches de ghee ne parlent jamais de beurre, seulement de
+ // matière grasse laitière : la variante en DEUX MOTS est indispensable.
+ ['ghee = matiere grasse laitiere','Pure Ghee','Milk Solids (Milk Fat)','clean'],
+ // ⚠️ ET LE DÉFAUT DANS L'AUTRE SENS : le nom dit le mot générique, la liste
+ // dit le mot précis. Un edamame EST un haricot.
+ ['haricot confirme par edamame','EDAMAME BEANS','Edamame','clean'],
+
+ // ---- FAMILLE 6bis : les CONTREPARTIES, qui doivent RESTER accusées --------
+ // Chaque correspondance est à SENS UNIQUE. Si elle ne l'était pas, on aurait
+ // échangé une fausse accusation contre une fausse absolution, ce qui est pire :
+ // l'app se tairait précisément là où elle sert à quelque chose.
+ ['faux miso','Miso maison','eau, sel, colorant','misleading'],
+ ['lardons de dinde','Lardons de dinde','dinde, sel, eau','misleading'],
+ ['massepain sans amande','Massepain','sucre, huile de palme, arome amande','misleading'],
+ ['faux edamame','Edamame','pois, sel','misleading'],
+ ['faux tapioca','Perles de tapioca','farine de ble, eau','misleading'],
  // ---- FAMILLE 5 : pièges à FAUX POSITIFS (ne doivent PAS être flaggés) ----
  ['herbes aromatiques','Sauce tomate basilic','tomates, basilic, herbes aromatiques, sel','clean'],
  ['dénomination','Preparation fromagere','lait, ferments','misleading'],
