@@ -727,6 +727,35 @@ const CATEGORY_WORDS = new Set([
   // serait déclaré trompeur. Muette quand elle est absente, l'app signale
   // quand même "arôme de pomme de terre" - le seul cas qui vaut un avertissement.
   'patate', 'potato',
+  // ⚠️⚠️ LES TRANSFORMATIONS, ajoutées le 2026-08-24 sur son objection, et elle
+  // avait raison : « au final le tofu c'est une transformation et non un
+  // ingrédient ». Un tofu, un miso, un lardon ne sont pas des aliments qu'on
+  // met DANS un produit, ce sont des produits qu'on FAIT à partir d'un aliment.
+  // Leur liste nomme la matière première, jamais eux-mêmes.
+  //
+  // LA MESURE QUI TRANCHE : sur 64 fiches lisibles portant ces mots, il restait
+  // 8 accusations après le correctif du dictionnaire, et **pas une seule
+  // n'était vraie** (un tofu hongrois, deux fiches de bruit d'OCR, un nougat
+  // authentique, une semoule d'orge...). Un mot qui n'accuse jamais à raison
+  // ne doit plus pouvoir accuser du tout.
+  //
+  // ⚠️ CE N'EST PAS UN RETRAIT DU DICTIONNAIRE. Les correspondances vers la
+  // matière première (tofu -> soja, ghee -> beurre) RESTENT, et elles servent :
+  // quand le soja est là, l'app affiche « tofu confirmé dans la composition
+  // réelle ». Ce qui disparaît, c'est seulement le pouvoir d'ACCUSER quand il
+  // n'est pas là. Confirmer oui, accuser non.
+  // ⚠️ Le cas « présent SEULEMENT comme arôme » continue, lui, d'être signalé :
+  // un massepain dont l'amande n'existe qu'en arôme reste trompeur. La garde
+  // ci-dessous ne couvre que l'absence totale.
+  'tofu', 'miso', 'edamame', 'tapioca', 'lardon', 'lardons', 'bacon',
+  'massepain', 'marzipan', 'ghee', 'ghi',
+  // Et les mots qui sont des FORMES sans matière première fixe : une semoule,
+  // c'est du grain moulu, n'importe quel grain ; un sirop, c'est du sucre dans
+  // de l'eau. Il n'y a aucune promesse à trahir, donc rien à vérifier. Leur
+  // donner des variantes reviendrait à tout accepter, donc à ne rien dire.
+  // Mesuré : « Semoule d'orge » dont la liste dit « orge » était accusé, et
+  // deux nougats authentiques aussi.
+  'semoule', 'semolina', 'sirop', 'syrup', 'nougat', 'melasse', 'molasses',
 ]);
 
 // CATEGORY_WORDS répond à « faut-il conclure quand le mot est absent ? ».

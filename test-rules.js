@@ -88,10 +88,9 @@ const T = [
  ['tofu = grains de soja','Frittierter Tofu','Grains de soja, eau, GDL (E575), huile de tournesol','clean'],
  ['tofu = soyabean (en)','Deep Fried Tofu','Water, Soyabean, Calcuium Sulphate, Vegetable Oil','clean'],
  ['tofu dessert (le cas trouve en rayon)','TOFU DESSERT','Eau, Feves de soja (sans OGM), Sucre, Arome naturel','clean'],
- // ⚠️ ET LA CONTREPARTIE : la correspondance est à SENS UNIQUE. Un produit qui
- // promet du tofu sans en contenir doit rester accusé, sinon on a échangé une
- // fausse accusation contre une fausse absolution.
- ['faux tofu : ni soja ni tofu','Tofu grille','Eau, proteines de pois, huile de colza, sel','misleading'],
+ // ⚠️ La contrepartie du tofu a déménagé en FAMILLE 6bis : depuis que les
+ // transformations n'accusent plus, « Tofu grillé » aux protéines de pois se
+ // tait au lieu d'accuser. Le test y vérifie ce silence.
  ['le soja garde sa famille','Boisson au soja','eau, sucre, arome','misleading'],
  // ---- FAMILLE 6 : les ALIMENTS TRANSFORMÉS ne se nomment pas eux-mêmes ----
  // Un aliment transformé nomme sa MATIÈRE PREMIÈRE dans sa liste, jamais
@@ -115,15 +114,31 @@ const T = [
  // dit le mot précis. Un edamame EST un haricot.
  ['haricot confirme par edamame','EDAMAME BEANS','Edamame','clean'],
 
- // ---- FAMILLE 6bis : les CONTREPARTIES, qui doivent RESTER accusées --------
- // Chaque correspondance est à SENS UNIQUE. Si elle ne l'était pas, on aurait
- // échangé une fausse accusation contre une fausse absolution, ce qui est pire :
- // l'app se tairait précisément là où elle sert à quelque chose.
- ['faux miso','Miso maison','eau, sel, colorant','misleading'],
- ['lardons de dinde','Lardons de dinde','dinde, sel, eau','misleading'],
- ['massepain sans amande','Massepain','sucre, huile de palme, arome amande','misleading'],
- ['faux edamame','Edamame','pois, sel','misleading'],
- ['faux tapioca','Perles de tapioca','farine de ble, eau','misleading'],
+ // ---- FAMILLE 6bis : une transformation CONFIRME, elle n'ACCUSE jamais -----
+ // Son objection du 2026-08-24, et elle avait raison : « au final le tofu c'est
+ // une transformation et non un ingrédient ». Rattacher le tofu au soja réparait
+ // les fiches honnêtes, mais laissait au mot le pouvoir d'accuser.
+ // LA MESURE QUI TRANCHE : sur 64 fiches lisibles portant ces mots, il restait
+ // 8 accusations, et PAS UNE N'ÉTAIT VRAIE. Un mot qui n'accuse jamais à raison
+ // ne doit plus pouvoir accuser du tout : l'app se tait au lieu de se tromper.
+ // C'est le mécanisme CATEGORY_WORDS, celui qui protège déjà fromage et surimi.
+ ['tofu sans soja : elle se tait','Tofu grille','Eau, proteines de pois, huile de colza, sel','noclaim'],
+ ['miso sans soja : elle se tait','Miso maison','eau, sel, colorant','noclaim'],
+ ['edamame sans soja : elle se tait','Edamame','pois, sel','noclaim'],
+ ['tapioca sans manioc : elle se tait','Perles de tapioca','farine de ble, eau','noclaim'],
+ ['sirop : rien a confronter','Sirop','water, sugar, cellulose gum, natural flavour','noclaim'],
+ ['nougat authentique','Nougat Gourmet','SIROP DE GLUCOSE, SUCRE, CACAHUETES (GRILLEES) 10%','noclaim'],
+ // ⚠️ Se taire n'est pas devenir aveugle : quand le nom porte AUSSI un vrai
+ // aliment, celui-là reste vérifié. La dinde des lardons de dinde est
+ // confirmée, l'orge de la semoule d'orge aussi.
+ ['lardons de dinde : la dinde est confirmee','Lardons de dinde','dinde, sel, eau','clean'],
+ ["semoule d'orge : l'orge est confirme","Semoule d'orge",'orge','clean'],
+ // ⚠️ ET LA GARDE NE COUVRE QUE L'ABSENCE TOTALE. Un massepain dont l'amande
+ // n'existe qu'en ARÔME reste trompeur, et c'est voulu : là, l'étiquette promet
+ // un aliment que la liste remplace explicitement par son parfum. C'est la
+ // différence entre « je ne peux rien conclure » et « je vois la substitution ».
+ ["massepain a l'arome d'amande",'Massepain','sucre, huile de palme, arome amande','misleading'],
+
  // ---- FAMILLE 5 : pièges à FAUX POSITIFS (ne doivent PAS être flaggés) ----
  ['herbes aromatiques','Sauce tomate basilic','tomates, basilic, herbes aromatiques, sel','clean'],
  ['dénomination','Preparation fromagere','lait, ferments','misleading'],
