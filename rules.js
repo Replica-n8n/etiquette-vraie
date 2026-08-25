@@ -174,6 +174,18 @@ const INGREDIENT_VARIANTS = {
   'cacahuete': ['cacahuete', 'cacahuetes', 'peanut', 'peanuts', 'arachide', 'arachides'],
   'peanut': ['cacahuete', 'cacahuetes', 'peanut', 'peanuts', 'arachide', 'arachides'],
   'arachide': ['cacahuete', 'cacahuetes', 'peanut', 'peanuts', 'arachide', 'arachides'],
+  // ⚠️ LE TOFU EST DU SOJA, et sa liste ne dit jamais « tofu ». Un tofu, c'est
+  // de l'eau, des fèves de soja et un coagulant, point. Mesuré sur 33 fiches
+  // dont le nom parle de tofu : 20 étaient accusées de ne pas en contenir, et
+  // toutes étaient du vrai tofu (« Eau, fèves de soja bio, nigari »).
+  // Trouvé en rayon par l'utilisatrice le 2026-08-24 sur Sunrise Tofu Dessert.
+  // ⚠️ CORRESPONDANCE À SENS UNIQUE, et c'est important : elle est déclarée ici
+  // plutôt que dans FOOD_PAIRS, qui est symétrique. Symétrique, « soja »
+  // pointerait vers « tofu » et deux dégâts suivraient : une boisson au soja
+  // serait confirmée par du tofu, et surtout soja et tofu deviendraient
+  // SUBSTITUTS l'un de l'autre, donc l'app ne pourrait plus dire qu'un produit
+  // promettant du tofu n'en contient pas.
+  'tofu': ['tofu', 'soja', 'soy', 'soya', 'soybean', 'soybeans', 'soyabean', 'soyabeans'],
   'soja': ['soja', 'soy', 'soya', 'soybean', 'soybeans'],
   'soy': ['soja', 'soy', 'soya', 'soybean', 'soybeans'],
   'soya': ['soja', 'soy', 'soya', 'soybean', 'soybeans'],

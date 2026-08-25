@@ -75,6 +75,24 @@ const T = [
  ['chocolat %','Chocolate 70%','cacao, sucre, beurre de cacao','clean'],
  ['noix générique','Barre chocolat et noix','avoine, arachides, amandes, chocolat','clean'],
  ['canneberges','Melange noix chocolat et canneberges','arachides, canneberges sechees, chocolat, amandes','clean'],
+ // ⚠️ LE TOFU EST DU SOJA. Sa liste ne dit jamais « tofu » : c'est de l'eau,
+ // des fèves de soja et un coagulant. Trouvé en rayon le 2026-08-24 sur
+ // « Sunrise Tofu Dessert », puis mesuré sur 33 fiches dont le nom parle de
+ // tofu : 20 accusées, 20 vrais tofus. Toutes les listes ci-dessous sont
+ // réelles, copiées d'Open Food Facts.
+ ['tofu = fèves de soja (fr)','Tofu Bio','Eau, feves de soja bio (Suisse), nigari','clean'],
+ ['tofu = soybeans (en)','Organic Tofu','canadian organic non-gmo soybeans, water, magnesium chloride','clean'],
+ ['tofu = soya beans (en)','Super Firm Tofu','Water, Organic soya beans (34%), Firming Agent (Nigari)','clean'],
+ ['tofu = soy beans (en)','Bio Tofu natur','Soy beans, water','clean'],
+ ['tofu = soja nu (fr)','Tofu artisanal fume','Eau, Soja, Nigari, Sel','clean'],
+ ['tofu = grains de soja','Frittierter Tofu','Grains de soja, eau, GDL (E575), huile de tournesol','clean'],
+ ['tofu = soyabean (en)','Deep Fried Tofu','Water, Soyabean, Calcuium Sulphate, Vegetable Oil','clean'],
+ ['tofu dessert (le cas trouve en rayon)','TOFU DESSERT','Eau, Feves de soja (sans OGM), Sucre, Arome naturel','clean'],
+ // ⚠️ ET LA CONTREPARTIE : la correspondance est à SENS UNIQUE. Un produit qui
+ // promet du tofu sans en contenir doit rester accusé, sinon on a échangé une
+ // fausse accusation contre une fausse absolution.
+ ['faux tofu : ni soja ni tofu','Tofu grille','Eau, proteines de pois, huile de colza, sel','misleading'],
+ ['le soja garde sa famille','Boisson au soja','eau, sucre, arome','misleading'],
  // ---- FAMILLE 5 : pièges à FAUX POSITIFS (ne doivent PAS être flaggés) ----
  ['herbes aromatiques','Sauce tomate basilic','tomates, basilic, herbes aromatiques, sel','clean'],
  ['dénomination','Preparation fromagere','lait, ferments','misleading'],
