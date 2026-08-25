@@ -1674,7 +1674,12 @@ function texteLisible(ingredientsText) {
 const MARGE_BORNE = 2; // points au-dessus du trivial, pour absorber les arrondis
 
 function borneMinimale(ingredients) {
-  const racine = (ingredients || []).filter((i) => i && (typeof i.percent_min === 'number' || typeof i.percent === 'number'));
+  // ⚠️ LE PREMIER DE LA LISTE, PAS LE PREMIER QUI PORTE UN CHIFFRE.
+  // Première version fautive, attrapée en vérifiant la prod : elle filtrait
+  // sur la présence dun pourcentage, si bien que sur Nutella le sucre (sans
+  // chiffre) disparaissait et les NOISETTES 13 % devenaient « en tête ».
+  // La phrase aurait annoncé 13 % pour lingrédient majoritaire.
+  const racine = (ingredients || []).filter((i) => i && i.text);
   if (racine.length < 2) return null;
   const premier = racine[0];
   const texte = String(premier.text || '').replace(/_/g, '').trim();

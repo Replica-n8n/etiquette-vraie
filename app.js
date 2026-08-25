@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.41';
+const APP_VERSION = 'v2.42';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1787678099';
+const BUILD = '1787678490';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1176,6 +1176,11 @@ function ligneDecodage(ingredientsText, additifs, risques, borne) {
     const tete = rows[0].text
       .replace(/\s*\([^)]*\)/g, '')
       .replace(/_/g, '')
+      // ⚠️ Le pourcentage restait COLLÉ au nom quand il précédait une
+      // parenthèse : « Céréales 98,5 % (blé complet) » perdait sa parenthèse
+      // ici mais gardait son chiffre, et la borne en ajoutait un second.
+      // La ligne disait « céréales 98,5 % en tête, 98,5 % déclarés ».
+      .replace(/\s*\d+(?:[.,]\d+)?\s*%/g, '')
       .trim()
       .toLowerCase();
     if (tete && tete.length <= 28) {
