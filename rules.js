@@ -1674,15 +1674,34 @@ function texteLisible(ingredientsText) {
 const MARGE_BORNE = 2; // points au-dessus du trivial, pour absorber les arrondis
 
 function borneMinimale(ingredients) {
-  const racine = (ingredients || []).filter((i) => i && typeof i.percent_min === 'number');
+  const racine = (ingredients || []).filter((i) => i && (typeof i.percent_min === 'number' || typeof i.percent === 'number'));
   if (racine.length < 2) return null;
   const premier = racine[0];
-  // Un pourcentage DÉCLARÉ se dit tel quel, ce n'est pas le travail d'ici.
-  if (typeof premier.percent === 'number') return null;
-  const trivial = 100 / racine.length;
-  if (!(premier.percent_min > trivial + MARGE_BORNE)) return null;
   const texte = String(premier.text || '').replace(/_/g, '').trim();
   if (!texte) return null;
+  // ⚠️ LE POURCENTAGE DÉCLARÉ PASSE DEVANT, et c'est le fait le plus fort de
+  // toute l'app : le fabricant l'a écrit sur son emballage, sous sa
+  // responsabilité. Mesuré le 2026-08-24 : sur 110 fiches parmi les plus
+  // scannées, 9 déclarent un pourcentage sur leur premier ingrédient contre
+  // 1 seule qui n'a qu'une borne. Les écarter divisait la couverture par dix.
+  if (typeof premier.percent === 'number') {
+    // ⚠️ MÊME GARDE-FOU QUE `ingredientShare` : le pourcentage déclaré n'est
+    // retenu que si l'estimation d'Open Food Facts le corrobore. Son analyseur
+    // rattache parfois le chiffre au mauvais ingrédient. Cas réel retrouvé par
+    // cette fonction avant même sa mise en ligne : « Biscuits NUTELLA Noisettes »
+    // sortait « au cacao 40 % déclarés », alors que les 40 % sont ceux de la
+    // pâte à tartiner, pas du biscuit. Sans ce test, on republiait un faux
+    // chiffre corrigé le 2026-08-10.
+    const estime = typeof premier.percent_estimate === 'number' && premier.percent_estimate > 0
+      ? premier.percent_estimate : null;
+    const coherent = estime === null
+      || (premier.percent <= estime * 2 && estime <= premier.percent * 2);
+    if (!coherent) return null;
+    return { texte, declare: Math.round(premier.percent * 10) / 10 };
+  }
+  if (typeof premier.percent_min !== 'number') return null;
+  const trivial = 100 / racine.length;
+  if (!(premier.percent_min > trivial + MARGE_BORNE)) return null;
   // Un chiffre à la virgule près ferait croire à une mesure : on arrondit VERS
   // LE BAS, ce qui garde la borne vraie.
   return { texte, min: Math.floor(premier.percent_min) };

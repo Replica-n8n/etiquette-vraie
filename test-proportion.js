@@ -244,9 +244,10 @@ const weetabix = [
 ];
 check('borne serree : gardee', JSON.stringify(borneMinimale(weetabix)), JSON.stringify({ texte: 'Blé complet', min: 95 }));
 
-check('pourcentage DECLARE : la borne se tait',
-  borneMinimale([{ text: 'Cacao', percent: 32, percent_min: 32 }, { text: 'Sucre', percent_min: 0 }, { text: 'Sel', percent_min: 0 }]),
-  null);
+ // ⚠️ RÈGLE CHANGÉE le 2026-08-24 : le pourcentage DÉCLARÉ ne fait plus taire
+ // la fonction, il passe DEVANT la borne. C'est le fait le plus fort de l'app,
+ // et l'écarter divisait la couverture par dix (1 fiche sur 110 contre 43).
+ // Le cas est repris plus bas avec son garde-fou de corroboration.
 check('aucune borne fournie', borneMinimale([{ text: 'Eau' }, { text: 'Sucre' }]), null);
 check('un seul ingredient : rien a borner', borneMinimale([{ text: 'Lait', percent_min: 100 }]), null);
 check('liste absente', borneMinimale(null), null);
@@ -254,6 +255,27 @@ check('liste absente', borneMinimale(null), null);
 check('arrondi vers le bas', borneMinimale([{ text: 'Blé', percent_min: 57.7 }, { text: 'Sel', percent_min: 0 }, { text: 'Eau', percent_min: 0 }]).min, 57);
 // ⚠️ Les tirets bas d'Open Food Facts sont un balisage, pas un mot de l'étiquette.
 check('tirets bas retires', borneMinimale([{ text: '_Blé_ complet', percent_min: 60 }, { text: 'Sel', percent_min: 0 }, { text: 'Eau', percent_min: 0 }]).texte, 'Blé complet');
+
+
+// ⚠️ LE POURCENTAGE DÉCLARÉ PASSE DEVANT LA BORNE : le fabricant l'a écrit sur
+// son emballage, sous sa responsabilité. Mesuré le 2026-08-24 : ne garder que
+// les bornes couvrait 1 fiche sur 110 ; avec le déclaré, 43 sur 110.
+check('declare prioritaire sur la borne',
+  JSON.stringify(borneMinimale([{ text: 'Farine de blé', percent: 57, percent_estimate: 57, percent_min: 30 }, { text: 'Sucre', percent_min: 0 }, { text: 'Sel', percent_min: 0 }])),
+  JSON.stringify({ texte: 'Farine de blé', declare: 57 }));
+// ⚠️ MÊME GARDE-FOU QUE ingredientShare : l'analyseur d'Open Food Facts rattache
+// parfois le chiffre au mauvais ingrédient. Cas réel attrapé AVANT la mise en
+// ligne : « Biscuits NUTELLA Noisettes » sortait « au cacao 40 % déclarés »,
+// alors que les 40 % sont ceux de la pâte à tartiner, pas du biscuit.
+check('declare incoherent avec l estimation : on se tait',
+  borneMinimale([{ text: 'au cacao', percent: 40, percent_estimate: 5, percent_min: 0 }, { text: 'Sucre', percent_min: 0 }, { text: 'Sel', percent_min: 0 }]),
+  null);
+check('declare corrobore par l estimation : on garde',
+  borneMinimale([{ text: 'Noisettes', percent: 13, percent_estimate: 13, percent_min: 0 }, { text: 'Sucre', percent_min: 0 }, { text: 'Sel', percent_min: 0 }]).declare,
+  13);
+check('aucune estimation pour corroborer : on garde',
+  borneMinimale([{ text: 'Noisettes', percent: 13, percent_min: 0 }, { text: 'Sucre', percent_min: 0 }, { text: 'Sel', percent_min: 0 }]).declare,
+  13);
 
 console.log(`\n${pass}/${pass + fail} passent${fail ? ` · ${fail} ÉCHEC(S)` : ' · TOUT PASSE'}`);
 process.exit(fail ? 1 : 0);

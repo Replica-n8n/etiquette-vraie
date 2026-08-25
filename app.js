@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.40';
+const APP_VERSION = 'v2.41';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1787677433';
+const BUILD = '1787678099';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1193,7 +1193,11 @@ function ligneDecodage(ingredientsText, additifs, risques, borne) {
       if (borne) {
         const a = normalize(borne.texte);
         const b = normalize(tete);
-        if (a && b && (a.includes(b) || b.includes(a))) phrase += `, au moins ${borne.min} %`;
+        if (a && b && (a.includes(b) || b.includes(a))) {
+          phrase += borne.declare !== undefined
+            ? `, ${String(borne.declare).replace('.', ',')} % déclarés`
+            : `, au moins ${borne.min} %`;
+        }
       }
       morceaux.push(phrase);
     }
