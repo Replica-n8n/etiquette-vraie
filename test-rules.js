@@ -139,6 +139,34 @@ const T = [
  // différence entre « je ne peux rien conclure » et « je vois la substitution ».
  ["massepain a l'arome d'amande",'Massepain','sucre, huile de palme, arome amande','misleading'],
 
+ // ---- FAMILLE 7 : ce que la BATTUE a trouvé (2026-08-24) -------------------
+ // Battue = rejouer le moteur sur les produits les plus scannés dont le NOM
+ // promet un aliment, puis contre-vérifier chaque accusation avec l'analyse
+ // d'Open Food Facts lui-même. Quatre défauts distincts, tous sur de vrais
+ // produits, aucun trouvé à l'œil.
+ //
+ // ⚠️ « CACAHOUÈTE » est l'autre orthographe française, et elle est imprimée.
+ // « Beurre de cacahuètes » dont la liste dit « Cacahouète 70% » était déclaré
+ // trompeur : le produit le plus honnête du rayon, accusé sur une lettre.
+ ['cacahouete, l autre orthographe','Beurre de cacahuetes','Cacahouète 70%, sucre, sel, huile de tournesol.','clean'],
+ // ⚠️ UN INGRÉDIENT COMPOSÉ PEUT CONTENIR L'ALIMENT **ET** SON ARÔME. Tout est
+ // dans une seule parenthèse, donc un seul item : l'arôme final éteignait la
+ // noix de coco pourtant déclarée à 7,8 %.
+ ['coco reelle ET arome dans le meme compose','Kefir coco','coconut drink (90%) (water, coconut (7,8%), modified corn starch, salt, thickeners (gellan gum) natural coconut aroma), agave syrup','clean'],
+ // ⚠️ LE HARICOT COCO N'EST PAS UNE NOIX DE COCO. Même piège que la pomme de
+ // terre : un composé dont un morceau est un autre aliment.
+ ['haricot coco','Haricots Coco cuisines aux tomates','Eau, haricots blancs secs trempes 37%, tomates 11%, sel','clean'],
+ // ⚠️ Le CARAMEL est une PRÉPARATION, pas un ingrédient : du sucre cuit. Il
+ // rejoint sirop et nougat. Un chocolat « 70% caramel » dont la liste dit
+ // « sucre, sirop de glucose » décrit exactement du caramel.
+ ['caramel, preparation et non ingredient','NOIR DEGUSTATION 70% CARAMEL','Pate de cacao, sucre, beurre de cacao, sirop de glucose','noclaim'],
+
+ // ---- FAMILLE 7bis : et les vraies tromperies doivent SURVIVRE -------------
+ // Chaque correctif de la battue enlève un pouvoir d'accuser. On vérifie donc
+ // à chaque fois que l'accusation FONDÉE passe encore.
+ ['arome de vanille seul','Yaourt vanille','lait, sucre, arome naturel de vanille','misleading'],
+ ['arome de fraise seul','Biscuit fraise','farine, sucre, arome fraise','misleading'],
+ ['coco en arome SEULEMENT','Kefir coco','water, corn starch, natural coconut aroma','misleading'],
  // ---- FAMILLE 5 : pièges à FAUX POSITIFS (ne doivent PAS être flaggés) ----
  ['herbes aromatiques','Sauce tomate basilic','tomates, basilic, herbes aromatiques, sel','clean'],
  ['dénomination','Preparation fromagere','lait, ferments','misleading'],

@@ -171,8 +171,12 @@ const INGREDIENT_VARIANTS = {
   'eggplant': ['aubergine', 'aubergines', 'eggplant', 'eggplants'],
   'amande': ['amande', 'amandes', 'almond', 'almonds'],
   'almond': ['amande', 'amandes', 'almond', 'almonds'],
-  'cacahuete': ['cacahuete', 'cacahuetes', 'peanut', 'peanuts', 'arachide', 'arachides'],
-  'peanut': ['cacahuete', 'cacahuetes', 'peanut', 'peanuts', 'arachide', 'arachides'],
+  // ⚠️ « CACAHOUÈTE » EST L'AUTRE ORTHOGRAPHE, et elle est sur les emballages.
+  // Trouvé par la battue du 2026-08-24 : « Beurre de cacahuètes » dont la liste
+  // dit « Cacahouète 70% » était déclaré TROMPEUR. Le produit le plus honnête
+  // du rayon, accusé sur une lettre.
+  'cacahuete': ['cacahuete', 'cacahuetes', 'cacahouete', 'cacahouetes', 'peanut', 'peanuts', 'arachide', 'arachides'],
+  'peanut': ['cacahuete', 'cacahuetes', 'cacahouete', 'cacahouetes', 'peanut', 'peanuts', 'arachide', 'arachides'],
   'arachide': ['cacahuete', 'cacahuetes', 'peanut', 'peanuts', 'arachide', 'arachides'],
   // ⚠️ LE TOFU EST DU SOJA, et sa liste ne dit jamais « tofu ». Un tofu, c'est
   // de l'eau, des fèves de soja et un coagulant, point. Mesuré sur 33 fiches
@@ -506,6 +510,11 @@ for (const formes of FOOD_PAIRS) {
 const COMPOUND_TRAPS = [
   { pattern: /\bpommes? de terre\b/, drop: 'pomme', add: 'patate' },
   { pattern: /\bpommes? d'amour\b/, drop: 'pomme' },
+  // ⚠️ LE HARICOT COCO N'EST PAS UNE NOIX DE COCO. « Haricots Coco cuisinés »
+  // dont la liste dit « haricots blancs » était accusé de ne pas contenir de
+  // coco. Même piège que la pomme de terre : un composé dont un morceau est
+  // un autre aliment. `add` rétablit ce que le nom promet VRAIMENT.
+  { pattern: /\bharicots? cocos?\b/, drop: 'coco', add: 'haricot' },
   { pattern: /\bbeurre de pomme\b/, drop: 'beurre' },
   // ⚠️ « PÊCHÉ » EST UN VERBE. « Sardines pêchées par des bateaux français »
   // (0014352990933) était accusé de ne pas contenir de pêche - le fruit.
@@ -756,6 +765,11 @@ const CATEGORY_WORDS = new Set([
   // Mesuré : « Semoule d'orge » dont la liste dit « orge » était accusé, et
   // deux nougats authentiques aussi.
   'semoule', 'semolina', 'sirop', 'syrup', 'nougat', 'melasse', 'molasses',
+  // ⚠️ Le CARAMEL est de la même farine : du sucre cuit. La battue du
+  // 2026-08-24 a trouvé quatre fiches accusées, dont un chocolat noir
+  // « 70% caramel » dont la liste dit « sucre, sirop de glucose ». C'est
+  // exactement le caramel, écrit par ses composants.
+  'caramel',
 ]);
 
 // CATEGORY_WORDS répond à « faut-il conclure quand le mot est absent ? ».
@@ -806,7 +820,16 @@ function onlyAppearsAsArome(word, ingredientsNorm) {
   const items = splitIngredientList(ingredientsNorm);
   const mentions = items.filter(item => wordRe.test(item));
   if (mentions.length === 0) return true; // absent = pareil qu'arôme seul
-  return mentions.every(item => avant.test(item) || apres.test(item));
+  // ⚠️ UN INGRÉDIENT COMPOSÉ PEUT CONTENIR L'ALIMENT **ET** SON ARÔME.
+  // « coconut drink (90%) (water, coconut (7,8%), ... natural coconut aroma) »
+  // ne fait QU'UN SEUL item : tout est dans la même parenthèse. Tester la
+  // présence d'un arôme dans l'item suffisait alors à éteindre la noix de coco
+  // pourtant déclarée à 7,8 %. Trouvé par la battue du 2026-08-24.
+  // On efface donc les occurrences ATTACHÉES à un arôme, et on regarde s'il
+  // reste une mention libre : c'est elle qui prouve l'ingrédient réel.
+  const effaceAvant = new RegExp(`(?:${marqueur})${LIEN_SAVEUR}${mot}`, 'g');
+  const effaceApres = new RegExp(`${mot}[\\s'-]*(?:${marqueur})`, 'g');
+  return mentions.every((item) => !wordRe.test(item.replace(effaceAvant, ' ').replace(effaceApres, ' ')));
 }
 
 // ===========================================================================
