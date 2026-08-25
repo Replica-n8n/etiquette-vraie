@@ -7,7 +7,7 @@
 //
 // Voir docs/superpowers/specs/2026-08-04-proportion-reelle-design.md
 
-const { ingredientShare, detectVerdict, chocolatePercent, partLabel } = require('./rules.js');
+const { ingredientShare, detectVerdict, chocolatePercent, partLabel, borneMinimale } = require('./rules.js');
 const F = require('./test-fixtures/off-ingredients.json');
 
 let pass = 0;
@@ -214,6 +214,46 @@ check('déclaré l emporte sur la borne',
   ingredientShare('homard', [{ id: 'en:lobster', percent: 12, percent_estimate: 12, percent_min: 5, percent_max: 40 }]).source,
   'declare');
 
+
+
+// ---- LA BORNE DU PREMIER INGRÉDIENT (v2.40, 2026-08-24) --------------------
+// Sur une fiche dont le nom ne promet rien, la ligne de décodage est tout ce
+// que l'utilisatrice lit. La borne légale y ajoute le seul chiffre disponible,
+// et il n'est pas estimé : il se déduit de l'ordre légal des quantités et des
+// pourcentages déclarés plus bas dans la liste.
+//
+// ⚠️ LE GARDE-FOU EST LE CŒUR DE LA FONCTION. Le premier de cinq est
+// mécaniquement « au moins 20 % » : c'est 100 divisé par le nombre
+// d'ingrédients, pas une information. Publier ça referait exactement la faute
+// de `percent_estimate`, supprimé le 2026-08-10 pour cette raison précise.
+// Mesuré sur 110 fiches parmi les plus scannées : 15 portent une borne, dont
+// 10 plus serrées que le trivial.
+const cinq = [
+  { text: 'Poireau', percent_min: 20 }, { text: 'Eau', percent_min: 0 },
+  { text: 'Pomme de terre', percent_min: 0 }, { text: 'Crème', percent_min: 0 },
+  { text: 'Sel', percent_min: 0 },
+];
+check('borne triviale (100/n) : ecartee', borneMinimale(cinq), null);
+
+const weetabix = [
+  { text: 'Blé complet', percent_min: 95 }, { text: 'Sucre', percent_min: 0 },
+  { text: 'Sel', percent_min: 0 }, { text: 'Extrait de malt', percent_min: 0 },
+  { text: 'Vitamines', percent_min: 0 }, { text: 'Fer', percent_min: 0 },
+  { text: 'Niacine', percent_min: 0 }, { text: 'Riboflavine', percent_min: 0 },
+  { text: 'Thiamine', percent_min: 0 },
+];
+check('borne serree : gardee', JSON.stringify(borneMinimale(weetabix)), JSON.stringify({ texte: 'Blé complet', min: 95 }));
+
+check('pourcentage DECLARE : la borne se tait',
+  borneMinimale([{ text: 'Cacao', percent: 32, percent_min: 32 }, { text: 'Sucre', percent_min: 0 }, { text: 'Sel', percent_min: 0 }]),
+  null);
+check('aucune borne fournie', borneMinimale([{ text: 'Eau' }, { text: 'Sucre' }]), null);
+check('un seul ingredient : rien a borner', borneMinimale([{ text: 'Lait', percent_min: 100 }]), null);
+check('liste absente', borneMinimale(null), null);
+// ⚠️ Arrondi VERS LE BAS : arrondir vers le haut rendrait la borne fausse.
+check('arrondi vers le bas', borneMinimale([{ text: 'Blé', percent_min: 57.7 }, { text: 'Sel', percent_min: 0 }, { text: 'Eau', percent_min: 0 }]).min, 57);
+// ⚠️ Les tirets bas d'Open Food Facts sont un balisage, pas un mot de l'étiquette.
+check('tirets bas retires', borneMinimale([{ text: '_Blé_ complet', percent_min: 60 }, { text: 'Sel', percent_min: 0 }, { text: 'Eau', percent_min: 0 }]).texte, 'Blé complet');
 
 console.log(`\n${pass}/${pass + fail} passent${fail ? ` · ${fail} ÉCHEC(S)` : ' · TOUT PASSE'}`);
 process.exit(fail ? 1 : 0);

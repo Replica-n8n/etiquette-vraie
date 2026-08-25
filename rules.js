@@ -1650,6 +1650,44 @@ function texteLisible(ingredientsText) {
 // qui n'apparaissent jamais dans une liste d'ingrédients (unités d'énergie, "pour
 // 100 g", lignes de tableau) - pas des mots d'ingrédients courants comme "sucre" ou
 // "sodium" (qui faisaient de faux positifs sur des produits normaux).
+// ===========================================================================
+// LA BORNE LÉGALE DU PREMIER INGRÉDIENT
+//
+// La loi impose l'ordre décroissant des quantités (règlement UE 1169/2011,
+// annexe VII). Open Food Facts en déduit `percent_min`, une borne INFÉRIEURE :
+// pas une estimation, une conséquence logique de l'ordre et des pourcentages
+// déjà déclarés ailleurs dans la liste.
+//
+// ⚠️ MAIS IL FAUT ÉCARTER LES BORNES TRIVIALES, sinon on refait exactement la
+// faute de `percent_estimate` (supprimé le 2026-08-10) : une arithmétique qui
+// ne dépend que du NOMBRE d'ingrédients, présentée comme une mesure. Le premier
+// de cinq est mécaniquement « au moins 20 % », et ça n'apprend rien à qui lit
+// déjà « 5 ingrédients · X en tête ».
+// On ne garde donc que les bornes STRICTEMENT PLUS SERRÉES que 100/n, celles
+// qui viennent d'un vrai pourcentage déclaré plus bas dans la liste.
+//
+// Mesuré le 2026-08-24 sur 110 fiches parmi les plus scannées :
+//   15 portent une borne (14 %), dont 10 plus serrées que le trivial (67 %).
+// Soit environ 9 % du rayon, contre 2,5 % pour le barème.
+// Exemples réels : Weetabix « blé au moins 95 % » (trivial : 11 %),
+// pain complet « farine complète au moins 63 % » (trivial : 7 %).
+const MARGE_BORNE = 2; // points au-dessus du trivial, pour absorber les arrondis
+
+function borneMinimale(ingredients) {
+  const racine = (ingredients || []).filter((i) => i && typeof i.percent_min === 'number');
+  if (racine.length < 2) return null;
+  const premier = racine[0];
+  // Un pourcentage DÉCLARÉ se dit tel quel, ce n'est pas le travail d'ici.
+  if (typeof premier.percent === 'number') return null;
+  const trivial = 100 / racine.length;
+  if (!(premier.percent_min > trivial + MARGE_BORNE)) return null;
+  const texte = String(premier.text || '').replace(/_/g, '').trim();
+  if (!texte) return null;
+  // Un chiffre à la virgule près ferait croire à une mesure : on arrondit VERS
+  // LE BAS, ce qui garde la borne vraie.
+  return { texte, min: Math.floor(premier.percent_min) };
+}
+
 function isNutritionFactsInsteadOfIngredients(ingredientsText) {
   if (!ingredientsText) return false;
   const n = normalize(ingredientsText);
@@ -2270,6 +2308,6 @@ if (typeof module !== 'undefined') {
     findIngredientPosition, ingredientShare, isMentionedInIngredients,
     splitIngredientList, chocolateForm, chocolatePercent, legalTier, denominationLegale,
     claimConflict, additiveLabel, findSubstitute, partLabel,
-    langueDuTexte, texteLisible, couperTraces,
+    langueDuTexte, texteLisible, couperTraces, borneMinimale,
   };
 }

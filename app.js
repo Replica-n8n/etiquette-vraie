@@ -4,10 +4,10 @@ function dbg(...args) { if (DEBUG) console.log(...args); }
 
 // Version LISIBLE affichée à l'utilisateur. À incrémenter à chaque livraison
 // (v1.18 -> v1.19). Rien à voir avec le cache : celui-ci utilise BUILD.
-const APP_VERSION = 'v2.39';
+const APP_VERSION = 'v2.40';
 // Numéro de build = cache-busting. Doit correspondre à CACHE_NAME dans sw.js
 // et aux ?v=... de index.html, sinon les utilisateurs gardent l'ancienne version.
-const BUILD = '1787664644';
+const BUILD = '1787677433';
 document.getElementById('app-version').textContent = APP_VERSION;
 console.log(`[APP] ${APP_VERSION} (build ${BUILD})`);
 
@@ -1162,7 +1162,7 @@ function buildIngredientExcerpt(ingredientsText, detail) {
 // ⚠️ Le compte vient de `buildIngredientExcerpt`, celui de l'accordéon : deux
 // comptages différents sur la même fiche se contrediraient à trois lignes
 // d'écart.
-function ligneDecodage(ingredientsText, additifs, risques) {
+function ligneDecodage(ingredientsText, additifs, risques, borne) {
   const { rows } = buildIngredientExcerpt(ingredientsText, null);
   const morceaux = [];
   if (rows.length) morceaux.push(`${rows.length} ingrédient${rows.length > 1 ? 's' : ''}`);
@@ -1178,7 +1178,25 @@ function ligneDecodage(ingredientsText, additifs, risques) {
       .replace(/_/g, '')
       .trim()
       .toLowerCase();
-    if (tete && tete.length <= 28) morceaux.push(rows.length > 1 ? `${tete} en tête` : tete);
+    if (tete && tete.length <= 28) {
+      let phrase = rows.length > 1 ? `${tete} en tête` : tete;
+      // ⚠️ LA BORNE LÉGALE DU PREMIER INGRÉDIENT. « sucre en tête » devient
+      // « sucre en tête, au moins 57 % ». C'est le seul chiffre disponible sur
+      // une fiche dont le nom ne promet rien, et il n'est pas estimé : il se
+      // déduit de l'ordre légal et des pourcentages déclarés plus bas.
+      // ⚠️ Les bornes TRIVIALES (100 divisé par le nombre d'ingrédients) sont
+      // écartées dans borneMinimale : sans ça on refaisait la faute de
+      // `percent_estimate`, une arithmétique présentée comme une mesure.
+      // ⚠️ Et on n'accroche la borne QUE si elle porte sur le même ingrédient :
+      // Open Food Facts découpe la liste à sa façon, pas à la nôtre, et une
+      // borne collée au mauvais mot serait un faux chiffre.
+      if (borne) {
+        const a = normalize(borne.texte);
+        const b = normalize(tete);
+        if (a && b && (a.includes(b) || b.includes(a))) phrase += `, au moins ${borne.min} %`;
+      }
+      morceaux.push(phrase);
+    }
   }
   const n = (additifs || []).length;
   if (n === 0) morceaux.push('aucun additif');
@@ -1618,7 +1636,7 @@ function renderResult(product) {
   const decodage = verdict === 'noclaim'
     // ⚠️ On dédoublonne les TAGS avant d'en tirer les risqués : `risky` contient
     // des objets, pas des codes.
-    ? ligneDecodage(ingr.texte, additifsUniques, findFlaggedAdditives(additifsUniques).risky)
+    ? ligneDecodage(ingr.texte, additifsUniques, findFlaggedAdditives(additifsUniques).risky, borneMinimale(product.ingredients))
     : '';
   document.getElementById('verdict-text').textContent = decodage || headline;
 
