@@ -1,4 +1,13 @@
-const CACHE_NAME = 'etiquette-vraie-1787678490';
+const VERSION = 'etiquette-vraie-1789493051';
+// Toutes nos apps partagent l'origine replica-n8n.github.io, donc le même
+// CacheStorage. Le cache porte le nom de l'app ET de sa portée (prod et
+// dépôt de test ont chacun le leur), et l'activation ne supprime QUE les
+// siens : avant, chaque mise à jour effaçait le hors ligne de GVT, de La Cour
+// et des jeux. Les anciens noms `etiquette-vraie-<tampon>` sont nettoyés une
+// dernière fois, ceux du dépôt de test compris : c'est la même app.
+const PREFIXE = 'ev:' + new URL(self.registration.scope).pathname + ':';
+const CACHE_NAME = PREFIXE + VERSION;
+const ANCIEN = 'etiquette-vraie-';
 // Chemins RELATIFS (résolus par rapport à l'emplacement de sw.js) pour que
 // l'app fonctionne à n'importe quelle URL (prod, sous-dossier, dépôt de test).
 const OFFLINE_URL = './index.html';
@@ -9,6 +18,11 @@ const urlsToCache = [
   './style.css',
   './app.js',
   './rules.js',
+  './polices/space-grotesk-variable.woff2',
+  './polices/inter-variable.woff2',
+  './polices/ibm-plex-mono-400.woff2',
+  './polices/ibm-plex-mono-500.woff2',
+  './polices/ibm-plex-mono-600.woff2',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
@@ -30,11 +44,9 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
+        cacheNames
+          .filter((k) => (k.startsWith(PREFIXE) && k !== CACHE_NAME) || k.startsWith(ANCIEN))
+          .map((k) => caches.delete(k))
       );
     })
   );
@@ -50,20 +62,45 @@ self.addEventListener('fetch', (event) => {
   const isJsOrCss = url.pathname.endsWith('.js') || url.pathname.endsWith('.css') || url.pathname.endsWith('.html');
   const isOpenFoodFacts = url.hostname === 'world.openfoodfacts.org';
 
+  // Navigation : le réseau d'abord, revalidé (`no-cache` : Pages garde le HTML
+  // 10 minutes en cache HTTP), rangée pour le hors ligne, la coquille sinon.
+  // Avant, `./` tombait dans la branche « cache d'abord » : la page restait
+  // celle de l'installation tant qu'on ne rechargeait pas deux fois.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      caches.open(CACHE_NAME).then((cache) =>
+        fetch(event.request.url, { cache: 'no-cache', credentials: 'same-origin' })
+          .then((response) => {
+            if (response.ok) cache.put(event.request, response.clone()).catch(() => {});
+            return response;
+          })
+          .catch(() => cache.match(event.request, { ignoreSearch: true })
+            .then((hit) => hit || cache.match(OFFLINE_URL)))
+      )
+    );
+    return;
+  }
+
   // Strategy: Network-first for local JS/CSS/HTML files
   if (isLocalFile && isJsOrCss) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
+          // ⚠️ La copie se fait TOUT DE SUITE : faite plus tard dans le
+          // `then` de caches.open, elle arrivait après la lecture du corps par
+          // la page, levait « body already used » en silence, et rien n'était
+          // jamais rangé. Hors ligne, `style.css?v=…` et `app.js?v=…`
+          // manquaient donc : la page s'ouvrait sans style ni script.
           if (response.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, response.clone());
-            });
+            const copie = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copie)).catch(() => {});
           }
           return response;
         })
         .catch(() => {
-          return caches.match(event.request).then((cachedResponse) => {
+          // `ignoreSearch` : l'installation range `./style.css`, la page demande
+          // `./style.css?v=<tampon>`. Même lot de fichiers, même version.
+          return caches.open(CACHE_NAME).then((cache) => cache.match(event.request, { ignoreSearch: true })).then((cachedResponse) => {
             return cachedResponse || new Response('Offline - file not cached', { status: 503 });
           });
         })
@@ -121,10 +158,22 @@ self.addEventListener('fetch', (event) => {
       )
     );
   }
+  // Les polices hébergées : cache d'abord, et rangées si elles manquaient
+  // (une installation interrompue n'aurait plus jamais de police hors ligne).
+  else if (url.pathname.endsWith('.woff2')) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then((cache) =>
+        cache.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
+          if (response.ok) cache.put(event.request, response.clone()).catch(() => {});
+          return response;
+        }))
+      )
+    );
+  }
   // Default: cache-first for everything else
   else {
     event.respondWith(
-      caches.match(event.request).then((response) => {
+      caches.open(CACHE_NAME).then((cache) => cache.match(event.request)).then((response) => {
         if (response) return response;
         // ⚠️ SANS CE `catch`, UN RATÉ RÉSEAU REMONTE EN ERREUR NON GÉRÉE.
         // C'est par ici que passent les vignettes d'images.openfoodfacts.org,

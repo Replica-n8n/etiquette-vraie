@@ -12,7 +12,7 @@ servir un mélange d'ancien et de neuf :
 
 | Fichier | Ce qu'il porte |
 |---|---|
-| `sw.js` | `CACHE_NAME = 'etiquette-vraie-<tampon>'` |
+| `sw.js` | `VERSION = 'etiquette-vraie-<tampon>'` (le cache s'appelle `ev:<portée>:` + VERSION) |
 | `index.html` | `style.css?v=<tampon>` |
 | `index.html` | `rules.js?v=<tampon>` |
 | `index.html` | `app.js?v=<tampon>` |

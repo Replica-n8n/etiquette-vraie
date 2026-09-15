@@ -1,3 +1,12 @@
+/* Polices hébergées ici (sous-ensemble latin, qui contient « œ »). Chargées
+   depuis Google Fonts, elles n'étaient jamais rangées par le service worker :
+   hors ligne, en rayon sans réseau, l'app retombait sur les polices du téléphone. */
+@font-face{font-family:'Space Grotesk';font-style:normal;font-weight:500 700;font-display:swap;src:url('./polices/space-grotesk-variable.woff2') format('woff2');}
+@font-face{font-family:'Inter';font-style:normal;font-weight:400 700;font-display:swap;src:url('./polices/inter-variable.woff2') format('woff2');}
+@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:400;font-display:swap;src:url('./polices/ibm-plex-mono-400.woff2') format('woff2');}
+@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:500;font-display:swap;src:url('./polices/ibm-plex-mono-500.woff2') format('woff2');}
+@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:600;font-display:swap;src:url('./polices/ibm-plex-mono-600.woff2') format('woff2');}
+
 :root{
   --paper:#EDEFF0;
   --card:#FFFFFF;
@@ -126,7 +135,7 @@ body{
   display:flex; align-items:center; gap:8px;
   height:46px; padding:0 18px; border:0; border-radius:23px;
   background:var(--brand); color:#fff; cursor:pointer;
-  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13.5px;
+  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px;
   transition:transform 140ms var(--ease-out), background 140ms ease;
 }
 .fab-scan svg{ width:17px; height:17px; }
@@ -138,13 +147,13 @@ body{
 .brand{
   display:flex; flex-direction:column; align-items:center; gap:1px;
   font-family:'Space Grotesk', sans-serif; font-weight:700;
-  font-size:13px; letter-spacing:0.02em; color:var(--ink-soft);
+  font-size:14px; letter-spacing:0.02em; color:var(--ink-soft);
   text-transform:uppercase; line-height:1.2;
 }
 .brand-name{ white-space:nowrap; }
 .brand b{ color:var(--ink); }
 .version{
-  font-family:'IBM Plex Mono', monospace; font-size:9px;
+  font-family:'IBM Plex Mono', monospace; font-size:14px;
   color:var(--muted); /* couleur dédiée plutôt qu'une opacité : contraste maîtrisé */
   font-weight:400; letter-spacing:0; text-transform:none;
   user-select:text; /* le code-barres doit pouvoir être copié pour un signalement */
@@ -155,14 +164,14 @@ body{
 .home-content{ width:100%; }
 .history-section{ margin-top:24px; width:100%; }
 .history-section.hidden{ display:none; }
-.history-title{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13px; color:var(--ink-soft); text-transform:uppercase; margin-bottom:12px; }
+.history-title{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px; color:var(--ink-soft); text-transform:uppercase; margin-bottom:12px; }
 .history-list{ list-style:none; display:flex; flex-direction:column; gap:8px; }
 .history-item{ display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; cursor:pointer; }
 .history-item:hover{ border-color:var(--ink-soft); }
 .history-thumb{ width:40px; height:40px; border-radius:8px; object-fit:cover; background:var(--paper); flex-shrink:0; }
-.history-name{ font-weight:600; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.history-name{ font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .home-title{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:22px; margin-bottom:10px; text-align:center; }
-.home-subtitle{ font-size:13.5px; color:var(--ink-soft); line-height:1.55; text-align:center; margin-bottom:28px; }
+.home-subtitle{ font-size:14px; color:var(--ink-soft); line-height:1.55; text-align:center; margin-bottom:28px; }
 .home-button{
   display:flex; align-items:center; justify-content:center; gap:10px;
   width:100%; padding:14px 16px; margin-bottom:12px;
@@ -183,7 +192,7 @@ body{
    fois l'app installée. */
 .install-hint{
   margin-top:16px; text-align:center;
-  font-size:12px; color:var(--ink-soft); line-height:1.5;
+  font-size:14px; color:var(--ink-soft); line-height:1.5;
 }
 .install-hint.hidden{ display:none; }
 .install-hint button{
@@ -191,7 +200,7 @@ body{
      imposés plus bas dans cette feuille. Sans ça elle faisait 23px, sur une
      app qu'on utilise d'une main avec un caddie dans l'autre. */
   background:none; border:none; padding:13px 10px; line-height:18px;
-  font-family:inherit; font-size:12px; font-weight:600;
+  font-family:inherit; font-size:14px; font-weight:600;
   /* --green, pas --brand : ce dernier est FIGÉ dans les deux modes parce qu'il
      sert de fond plein sous du texte blanc. En texte sur fond sombre il
      tomberait à un contraste de 2,5. --green, lui, s'éclaircit en mode sombre. */
@@ -204,7 +213,7 @@ body{
 .search-screen{ padding:2px 20px 20px; }
 .search-head{ margin-bottom:16px; }
 .search-title{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:19px; margin-bottom:6px; }
-.search-hint{ font-size:12.5px; color:var(--ink-soft); line-height:1.5; }
+.search-hint{ font-size:14px; color:var(--ink-soft); line-height:1.5; }
 .search-form{ display:flex; gap:8px; margin-bottom:12px; }
 .search-input{
   flex:1; border:1px solid var(--line); border-radius:12px;
@@ -214,10 +223,10 @@ body{
 .search-input:focus{ outline:2px solid var(--ink-soft); outline-offset:1px; }
 .search-button{
   border:none; border-radius:12px; background:var(--ink); color:var(--btn-text);
-  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13px;
+  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px;
   padding:11px 16px; cursor:pointer;
 }
-.search-status{ font-size:12.5px; color:var(--ink-soft); min-height:18px; margin-bottom:8px; }
+.search-status{ font-size:14px; color:var(--ink-soft); min-height:18px; margin-bottom:8px; }
 .results-list{ list-style:none; display:flex; flex-direction:column; gap:8px; }
 .result-item{
   display:flex; align-items:center; gap:12px;
@@ -227,23 +236,23 @@ body{
 .result-item:hover{ border-color:var(--ink-soft); }
 .result-thumb{ width:40px; height:40px; border-radius:8px; object-fit:cover; background:var(--paper); flex-shrink:0; }
 .result-text{ min-width:0; }
-.result-name{ font-weight:600; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.result-brand{ font-size:11.5px; color:var(--ink-soft); }
+.result-name{ font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.result-brand{ font-size:14px; color:var(--ink-soft); }
 
 /* Écran de scan */
 .scan-screen{ padding:20px; display:flex; flex-direction:column; }
 .scan-header{ margin-bottom:16px; }
 .scan-title{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:19px; margin-bottom:6px; }
-.scan-hint{ font-size:12.5px; color:var(--ink-soft); line-height:1.5; }
+.scan-hint{ font-size:14px; color:var(--ink-soft); line-height:1.5; }
 .qr-reader{ width:100%; height:300px; border-radius:14px; overflow:hidden; background:var(--card); border:1px solid var(--line); margin-bottom:12px; }
-.scan-status{ font-size:12px; color:var(--ink-soft); min-height:18px; text-align:center; }
+.scan-status{ font-size:14px; color:var(--ink-soft); min-height:18px; text-align:center; }
 
 .product-head{ padding:2px 16px 10px; }
 .product-name{
   font-family:'Space Grotesk', sans-serif;
   font-weight:700; font-size:19px; line-height:1.15; margin-bottom:3px;
 }
-.product-sub{ font-size:12px; color:var(--ink-soft); }
+.product-sub{ font-size:14px; color:var(--ink-soft); }
 /* Dénomination légale. Tronquée à DEUX lignes : 65 fiches sur 1919 dépassent
    90 caractères, et une phrase de cinq lignes repousserait le verdict hors de
    l'écran. Le reste s'ouvre au clic. */
@@ -253,7 +262,7 @@ body{
 .denom-surtitre{
   margin-top:12px; display:flex; align-items:center; gap:8px;
   font-family:'Space Grotesk', sans-serif; font-weight:700;
-  font-size:9.5px; letter-spacing:0.09em; text-transform:uppercase; color:var(--green);
+  font-size:14px; letter-spacing:0.09em; text-transform:uppercase; color:var(--green);
 }
 .denom-surtitre::after{
   content:""; flex:1; height:1px;
@@ -285,10 +294,10 @@ body{
   margin-top:6px; padding:7px 9px;
   background:var(--paper); border-left:3px solid var(--green);
   border-radius:0 8px 8px 0;
-  font-size:11.5px; line-height:1.45; color:var(--ink-2);
+  font-size:14px; line-height:1.45; color:var(--ink-2);
 }
 .product-generic.hidden{ display:none; }
-.product-generic b{ color:var(--ink-soft); font-weight:600; text-transform:uppercase; font-size:9px; letter-spacing:0.04em; display:block; margin-bottom:2px; }
+.product-generic b{ color:var(--ink-soft); font-weight:600; text-transform:uppercase; font-size:14px; letter-spacing:0.04em; display:block; margin-bottom:2px; }
 
 /* Bloc alerte : hauteur = contenu réel */
 .alert{
@@ -314,13 +323,13 @@ body{
 .alert.v-unknown{ background:var(--card); border:1.5px solid var(--line); }
 
 .alert.compact{ padding:11px 14px; margin-top:8px; }
-.alert.compact .stamp{ margin-bottom:5px; font-size:10.5px; }
-.alert.compact .alert-text{ font-size:12.5px; font-weight:600; }
+.alert.compact .stamp{ margin-bottom:5px; font-size:14px; }
+.alert.compact .alert-text{ font-size:14px; font-weight:600; }
 
 .stamp{
   display:inline-flex; align-items:center; gap:6px;
   font-family:'Space Grotesk', sans-serif; font-weight:700;
-  font-size:11.5px; letter-spacing:0.05em; text-transform:uppercase;
+  font-size:14px; letter-spacing:0.05em; text-transform:uppercase;
   border-radius:999px;
   padding:4px 10px 4px 9px; background:var(--card); margin-bottom:8px;
 }
@@ -342,7 +351,7 @@ body{
    Deux graisses différentes suggéraient une hiérarchie que personne ne lisait. */
 .alert-sub{
   font-family:'Space Grotesk', sans-serif; font-weight:700;
-  font-size:11.5px; line-height:1.4; margin-top:5px; position:relative;
+  font-size:14px; line-height:1.4; margin-top:5px; position:relative;
 }
 .v-misleading .alert-sub{ color:var(--red-ink); }
 .v-warning .alert-sub{ color:var(--amber-ink); }
@@ -363,7 +372,7 @@ body{
 .bareme-label{
   display:flex; align-items:center; gap:8px;
   font-family:'Space Grotesk', sans-serif; font-weight:700;
-  font-size:9.5px; letter-spacing:0.09em; text-transform:uppercase;
+  font-size:14px; letter-spacing:0.09em; text-transform:uppercase;
   color:var(--green); margin-bottom:2px;
 }
 .bareme-label::after{
@@ -382,7 +391,7 @@ body{
 
 /* margin-top 0 : les 4 px d'écart entre la marche et son étiquette étaient
    INERTES au doigt, au milieu d'une colonne censée être une seule cible. */
-.bareme-rangs{ display:grid; gap:2px; margin-top:0; font-size:10.5px; line-height:1.25; color:var(--ink-soft); text-align:center; }
+.bareme-rangs{ display:grid; gap:2px; margin-top:0; font-size:14px; line-height:1.25; color:var(--ink-soft); text-align:center; }
 /* Chaque rang est un bouton. La cible faisait 15 px de haut et le pointillé
    avait la couleur des filets : au doigt, sur un téléphone, la fonction était
    introuvable. Hauteur portée à 30 px (56 px avec la marche au-dessus) et
@@ -409,17 +418,17 @@ body{
   border:1px solid var(--line); border-left:2px solid var(--green); border-bottom:0;
   border-radius:0 10px 0 0; background:var(--card);
   font-family:'Space Grotesk', sans-serif; font-weight:700;
-  font-size:9.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--green);
+  font-size:14px; letter-spacing:0.08em; text-transform:uppercase; color:var(--green);
 }
 .bareme-cle.hidden{ display:none; }
 /* Quand la clé porte le nom d'un AUTRE rang, elle redevient une phrase : les
    capitales et l'interlettrage d'une étiquette rendraient « pur jus : ce que ce
    mot garantirait » illisible. */
 .bareme-cle.autre{
-  text-transform:none; letter-spacing:0.005em; font-size:11.5px; color:var(--ink);
+  text-transform:none; letter-spacing:0.005em; font-size:14px; color:var(--ink);
 }
 .bareme-expl-titre{
-  margin-top:10px; font-size:11.5px; font-weight:700; letter-spacing:0.01em;
+  margin-top:10px; font-size:14px; font-weight:700; letter-spacing:0.01em;
   color:var(--ink);
 }
 .bareme-expl-titre.hidden{ display:none; }
@@ -438,25 +447,25 @@ body{
   border-top:1px solid var(--line);
   margin-top:20px; padding-top:16px;
 }
-.nova-echelle{ margin:10px 0; display:grid; gap:6px; font-size:13px; line-height:1.4; }
+.nova-echelle{ margin:10px 0; display:grid; gap:6px; font-size:14px; line-height:1.4; }
 /* L'explication prolonge la clé : même carte, coins raccordés, un seul bloc. */
 .bareme-expl{
   margin-top:0; padding:6px 12px 11px; border-radius:0 0 10px 0;
   background:var(--card); border:1px solid var(--line); border-left:2px solid var(--green); border-top:0;
-  font-size:12px; line-height:1.5; color:var(--ink-2);
+  font-size:14px; line-height:1.5; color:var(--ink-2);
 }
 
 /* Comparaison : hauteur naturelle */
 .compare{ margin:10px 16px 0; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 .compare-col{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 11px; }
-.compare-label{ font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--ink-soft); margin-bottom:5px; }
+.compare-label{ font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--ink-soft); margin-bottom:5px; }
 .compare-col.real.v-misleading{ border-color:var(--red); }
 .compare-col.real.v-misleading .compare-label{ color:var(--red); }
 .compare-col.real.v-warning{ border-color:var(--amber); }
 .compare-col.real.v-warning .compare-label{ color:var(--amber); }
 .compare-col.real.v-clean{ border-color:var(--green); }
 .compare-col.real.v-clean .compare-label{ color:var(--green); }
-.compare-value{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13px; margin-bottom:2px; }
+.compare-value{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px; margin-bottom:2px; }
 .compare-list{ margin:0; padding-left:15px; list-style:disc; }
 .compare-list li{ margin:0; }
 
@@ -494,11 +503,12 @@ body{
   width:17px; height:17px;
   background:var(--paper);
 }
-.score-grid.trois .score-tile .icon{ width:26px; height:26px; border-radius:8px; font-size:12px; }
+.score-grid.trois .score-tile .icon{ width:26px; height:26px; border-radius:8px; font-size:14px; }
 /* 8 px était sous le plancher : illisible sur un téléphone tenu à bout de bras
    dans un rayon au néon. Le libellé passe à 10 px, la valeur suit. */
-.score-grid.trois .score-label{ font-size:10px; letter-spacing:0.01em; }
-.score-grid.trois .score-value{ font-size:10.5px; line-height:1.2; }
+/* 14 px sur trois colonnes de 360 px : sans nowrap, « NUTRI-SCORE » se coupait au trait d'union. */
+.score-grid.trois .score-label{ font-size:14px; letter-spacing:0; white-space:nowrap; }
+.score-grid.trois .score-value{ font-size:14px; line-height:1.2; }
 /* La pleine largeur n'a plus lieu d'être quand les trois tiennent sur la ligne. */
 .score-grid.trois .score-tile.pleine-largeur{ grid-column:auto; }
 /* ⚠️ LES TUILES NE SONT PLUS DES CARTES. Audit du 2026-08-14 : verdict, barème
@@ -536,11 +546,11 @@ body{
 .score-tile .icon.t-orange{ background:var(--pill-amber); color:var(--pill-ink); }
 .score-tile .icon.t-vert{ background:var(--pill-green); color:var(--pill-ink); }
 /* 9 px -> 10 px : plancher typographique de la fiche. */
-.score-label{ font-size:10px; text-transform:uppercase; letter-spacing:0.03em; color:var(--ink-soft); font-weight:600; }
-.score-value{ font-size:12px; font-weight:600; line-height:1.25; }
+.score-label{ font-size:14px; white-space:nowrap; text-transform:uppercase; letter-spacing:0.03em; color:var(--ink-soft); font-weight:600; }
+.score-value{ font-size:14px; font-weight:600; line-height:1.25; }
 
 /* Détail à la demande */
-.detail-label{ margin:16px 16px 8px; font-size:10.5px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--ink-soft); }
+.detail-label{ margin:16px 16px 8px; font-size:14px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--ink-soft); }
 /* ⚠️ Le bloc des alternatives touchait l'accordéon du dessus : deux cartes
    collées se lisent comme une seule. Il lui faut son propre espace. */
 #alternative-accordion{ margin-top:14px; }
@@ -560,25 +570,25 @@ body{
   .squelette-bloc{ animation:none; opacity:.6; }
 }
 .squelette-annonce{
-  margin-top:8px; font-size:11px; color:var(--ink-soft);
+  margin-top:8px; font-size:14px; color:var(--ink-soft);
 }
 .accordion{ margin:0 16px 8px; background:var(--card); border:1px solid var(--line); border-radius:13px; overflow:hidden; }
 .accordion summary{
   list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
-  padding:12px 14px; font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:12.5px;
+  padding:12px 14px; font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px;
 }
 .accordion summary::-webkit-details-marker{ display:none; }
-.accordion summary .chev{ font-size:11px; color:var(--ink-soft); transition:transform 0.2s; }
+.accordion summary .chev{ font-size:14px; color:var(--ink-soft); transition:transform 0.2s; }
 .accordion[open] summary .chev{ transform:rotate(180deg); }
-.accordion-body{ padding:0 14px 14px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-2); line-height:1.55; }
+.accordion-body{ padding:0 14px 14px; border-top:1px solid var(--line); font-size:14px; color:var(--ink-2); line-height:1.55; }
 
-.ingredient-list{ font-family:'IBM Plex Mono', monospace; font-size:11px; line-height:1.85; padding-top:10px; max-height:180px; overflow-y:auto; overflow-x:hidden; padding-right:8px; }
+.ingredient-list{ font-family:'IBM Plex Mono', monospace; font-size:14px; line-height:1.85; padding-top:10px; max-height:180px; overflow-y:auto; overflow-x:hidden; padding-right:8px; }
 .ingredient-list .idx{ color:var(--muted); margin-right:6px; }
 .ingredient-list .flagged{ font-weight:600; padding:1px 4px; border-radius:4px; }
 .ingredient-list .flagged.v-misleading{ background:var(--red-soft); color:var(--red); }
 .ingredient-list .flagged.v-warning{ background:var(--amber-soft); color:var(--amber); }
 .ingredient-list .flagged.v-clean{ background:var(--green-soft); color:var(--green); }
-.ingredient-caption{ font-size:10px; color:var(--ink-soft); padding-top:10px; }
+.ingredient-caption{ font-size:14px; color:var(--ink-soft); padding-top:10px; }
 
 /* La suggestion est devenue un bouton : on annule l'apparence native et on
    rend l'action lisible - le texte seul ne disait pas qu'on pouvait l'ouvrir. */
@@ -595,14 +605,14 @@ body{
 .alternative-row:active{ opacity:0.7; }
 .alternative-go{ margin-left:auto; font-size:20px; line-height:1; color:var(--ink-soft); flex-shrink:0; }
 .alternative-thumb{ width:44px; height:44px; border-radius:10px; object-fit:cover; background:var(--paper); flex-shrink:0; }
-.alternative-name{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:12.5px; color:var(--green); }
-.alternative-brand{ font-size:10.5px; color:var(--ink-soft); }
+.alternative-name{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px; color:var(--green); }
+.alternative-brand{ font-size:14px; color:var(--ink-soft); }
 
 .freshness{
   margin:16px 16px 0;
   background:var(--card); border:1px dashed var(--line);
   border-radius:12px; padding:11px 13px;
-  font-size:11px; color:var(--ink-soft); line-height:1.5;
+  font-size:14px; color:var(--ink-soft); line-height:1.5;
   display:flex; gap:8px; align-items:flex-start;
 }
 .freshness b{ color:var(--ink); }
@@ -640,10 +650,10 @@ body{
 }
 .error-icon{ width:44px; height:44px; color:var(--amber); }
 .error-title{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:18px; color:var(--ink); }
-.error-text{ font-size:13px; color:var(--ink-soft); line-height:1.5; margin-bottom:12px; }
+.error-text{ font-size:14px; color:var(--ink-soft); line-height:1.5; margin-bottom:12px; }
 .error-button{
   border:none; border-radius:12px; background:var(--ink); color:var(--btn-text);
-  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13px;
+  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px;
   padding:11px 20px; cursor:pointer;
 }
 
@@ -660,6 +670,7 @@ body{
    avait quelque chose à ouvrir. Même dessin que le bouton des additifs, pour
    que les trois tuiles se lisent pareil. */
 .info-mark{
+  /* seule exception aux 14 px : le « i » est une icône dans un rond de 17 px */
   position:absolute; bottom:6px; right:6px;
   display:flex; align-items:center; justify-content:center;
   width:17px; height:17px;
@@ -706,8 +717,8 @@ body{
   border-radius:12px; border-left:4px solid var(--amber);
 }
 .additive-code{ font-family:'IBM Plex Mono', monospace; font-weight:600; color:var(--ink); }
-.additive-role{ font-size:12px; color:var(--ink); margin-top:2px; font-weight:500; }
-.additive-reason{ font-size:12px; color:var(--ink-soft); margin-top:4px; line-height:1.4; }
+.additive-role{ font-size:14px; color:var(--ink); margin-top:2px; font-weight:500; }
+.additive-reason{ font-size:14px; color:var(--ink-soft); margin-top:4px; line-height:1.4; }
 
 
 /* ===== Contribution à Open Food Facts (produit absent) ===== */
@@ -716,22 +727,22 @@ body{
 .contribute-open{
   width:100%; padding:12px 14px; border-radius:12px; cursor:pointer;
   background:var(--card); border:1.5px solid var(--green); color:var(--green);
-  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13px;
+  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px;
   transition:transform 140ms var(--ease-out), background 140ms ease;
 }
 .contribute-open:hover{ background:var(--green-soft); }
 .contribute-open:active{ transform:scale(0.97); }
 .contribute-form{ margin-top:12px; display:flex; flex-direction:column; gap:6px; }
 .contribute-form.hidden{ display:none; }
-.contribute-label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--ink-soft); margin-top:6px; }
+.contribute-label{ font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--ink-soft); margin-top:6px; }
 .contribute-input{
   border:1px solid var(--line); border-radius:12px; padding:11px 14px;
   font-size:16px; font-family:'Inter', sans-serif; background:var(--card); color:var(--ink);
 }
 .contribute-input:focus{ outline:2px solid var(--ink-soft); outline-offset:1px; }
-.contribute-file{ font-size:12px; color:var(--ink-soft); padding:6px 0; }
-.contribute-note{ font-size:11px; color:var(--ink-soft); line-height:1.5; }
-.contribute-status{ font-size:12px; min-height:18px; line-height:1.5; }
+.contribute-file{ font-size:14px; color:var(--ink-soft); padding:6px 0; }
+.contribute-note{ font-size:14px; color:var(--ink-soft); line-height:1.5; }
+.contribute-status{ font-size:14px; min-height:18px; line-height:1.5; }
 .contribute-status.ok{ color:var(--green); font-weight:600; }
 .contribute-status.err{ color:var(--red); }
 
@@ -812,12 +823,12 @@ button, .back, .result-item, .history-item{ -webkit-tap-highlight-color:transpar
   text-align:left;
 }
 .fillgap-title{
-  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13px;
+  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px;
   color:var(--ink); margin-bottom:5px;
 }
-.fillgap-text{ font-size:12px; color:var(--ink-soft); line-height:1.55; }
-.fillgap-note{ font-size:11px; color:var(--ink-soft); line-height:1.5; margin-top:9px; }
-.fillgap-status{ font-size:12px; line-height:1.5; margin-top:9px; }
+.fillgap-text{ font-size:14px; color:var(--ink-soft); line-height:1.55; }
+.fillgap-note{ font-size:14px; color:var(--ink-soft); line-height:1.5; margin-top:9px; }
+.fillgap-status{ font-size:14px; line-height:1.5; margin-top:9px; }
 .fillgap-status.ok{ color:var(--green); font-weight:600; }
 .fillgap-status.err{ color:var(--red); }
 
@@ -827,7 +838,7 @@ button, .back, .result-item, .history-item{ -webkit-tap-highlight-color:transpar
   display:block; width:100%; margin-top:12px; padding:13px 16px;
   border:1.5px solid var(--brand); border-radius:12px;
   background-color:var(--brand); color:#fff;
-  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13px;
+  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px;
   cursor:pointer;
   transition:transform 160ms var(--ease-out), background-color 160ms ease;
 }
@@ -839,7 +850,7 @@ button, .back, .result-item, .history-item{ -webkit-tap-highlight-color:transpar
    possible, mais ce n'est plus l'action attendue - donc discrète. */
 .fillgap-action.subtle{
   background-color:transparent; border-color:var(--line); color:var(--ink-soft);
-  font-weight:600; font-size:12px; padding:11px 14px;
+  font-weight:600; font-size:14px; padding:11px 14px;
 }
 .fillgap-action.subtle:hover{ background-color:var(--paper); border-color:var(--ink-soft); }
 
@@ -847,9 +858,9 @@ button, .back, .result-item, .history-item{ -webkit-tap-highlight-color:transpar
    monospace se lit d'un coup d'oeil ; "estimé" distingue le calcul d'Open Food
    Facts d'une déclaration du fabricant. */
 .compare-pct{ font-family:'IBM Plex Mono', monospace; font-weight:600; }
-.compare-est{ display:block; font-size:8.5px; color:var(--ink-soft); font-weight:400; line-height:1.3; margin-top:-1px; }
+.compare-est{ display:block; font-size:14px; color:var(--ink-soft); font-weight:400; line-height:1.3; margin-top:-1px; }
 /* Forme du chocolat : la réponse en trois mots, sous le nom de l'aliment. */
-.compare-forme{ display:block; font-size:9px; font-weight:600; line-height:1.3; margin-top:1px; }
+.compare-forme{ display:block; font-size:14px; font-weight:600; line-height:1.3; margin-top:1px; }
 .compare-forme.ok{ color:var(--green); }
 .compare-forme.ko{ color:var(--amber); }
 .compare-forme .info-inline{ vertical-align:middle; }
@@ -862,13 +873,13 @@ button, .back, .result-item, .history-item{ -webkit-tap-highlight-color:transpar
 .choco-answer{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px; line-height:1.3; }
 .choco-verdict.ok .choco-answer{ color:var(--green-ink); }
 .choco-verdict.ko .choco-answer{ color:var(--amber-ink); }
-.choco-found{ font-size:11.5px; margin-top:3px; color:var(--ink-2); }
-.choco-why{ font-size:12.5px; line-height:1.45; margin-bottom:11px; }
-.choco-cols{ display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:11.5px; line-height:1.5; color:var(--ink-2); }
-.choco-head{ font-weight:700; font-size:10px; letter-spacing:0.03em; text-transform:uppercase; margin-bottom:3px; }
+.choco-found{ font-size:14px; margin-top:3px; color:var(--ink-2); }
+.choco-why{ font-size:14px; line-height:1.45; margin-bottom:11px; }
+.choco-cols{ display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:14px; line-height:1.5; color:var(--ink-2); }
+.choco-head{ font-weight:700; font-size:14px; letter-spacing:0.03em; text-transform:uppercase; margin-bottom:3px; }
 .choco-head.ok{ color:var(--green); }
 .choco-head.ko{ color:var(--amber); }
-.choco-source{ font-size:10px; color:var(--ink-soft); margin-top:11px; }
+.choco-source{ font-size:14px; color:var(--ink-soft); margin-top:11px; }
 
 /* Pastille "i" : UN SEUL repère visuel dans toute la fiche - dénomination
    officielle et liste des additifs. Deux "i" d'aspect différent, c'est deux
@@ -901,7 +912,7 @@ button, .back, .result-item, .history-item{ -webkit-tap-highlight-color:transpar
   width:17px; height:17px;
   border:1px solid var(--line); border-radius:50%;
   color:var(--ink-soft);
-  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:10px;
+  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px;
   line-height:1;
   transition:border-color 140ms ease, color 140ms ease;
 }
