@@ -1,4 +1,4 @@
-const VERSION = 'etiquette-vraie-1789493051';
+const VERSION = 'etiquette-vraie-1789662662';
 // Toutes nos apps partagent l'origine replica-n8n.github.io, donc le même
 // CacheStorage. Le cache porte le nom de l'app ET de sa portée (prod et
 // dépôt de test ont chacun le leur), et l'activation ne supprime QUE les

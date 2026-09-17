@@ -154,7 +154,9 @@ body{
 .brand b{ color:var(--ink); }
 .version{
   font-family:'IBM Plex Mono', monospace; font-size:14px;
-  color:var(--muted); /* couleur dédiée plutôt qu'une opacité : contraste maîtrisé */
+  /* --ink-soft (5,1:1) : --muted ne donnait que 1,7:1 sur le papier, le numéro
+     de version était illisible (Lighthouse, 2026-09-17). */
+  color:var(--ink-soft); /* couleur dédiée plutôt qu'une opacité : contraste maîtrisé */
   font-weight:400; letter-spacing:0; text-transform:none;
   user-select:text; /* le code-barres doit pouvoir être copié pour un signalement */
 }
