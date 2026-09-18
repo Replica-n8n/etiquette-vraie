@@ -1,4 +1,4 @@
-const VERSION = 'etiquette-vraie-1789663842';
+const VERSION = 'etiquette-vraie-1789733991';
 // Toutes nos apps partagent l'origine replica-n8n.github.io, donc le même
 // CacheStorage. Le cache porte le nom de l'app ET de sa portée (prod et
 // dépôt de test ont chacun le leur), et l'activation ne supprime QUE les
@@ -32,9 +32,24 @@ self.addEventListener('install', (event) => {
   // ⚠️ `addAll` est TOUT OU RIEN : une seule des huit URL en échec faisait
   // rejeter l'installation entière, donc pas de cache et donc pas de mode hors
   // ligne. On range chaque fichier séparément et on laisse passer les ratés.
+  //
+  // ⚠️ Et chaque fichier se demande avec la VERSION dans son adresse. Les
+  // serveurs relais de GitHub Pages gardent un fichier jusqu'à 10 minutes
+  // après une publication, et `cache.add` (même avec `reload`, qui ne
+  // contourne que le cache du téléphone) pouvait alors ranger l'ANCIEN
+  // fichier dans le cache de la NOUVELLE version, resservi sans erreur
+  // jusqu'à la suivante (vécu sur le Chevalier le 2026-09-17). Pour les
+  // relais, l'adresse avec `?v=` est inédite : ils vont la chercher à la
+  // source. On la range sous son nom propre.
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => Promise.all(
-      urlsToCache.map((url) => cache.add(url).catch(() => null)),
+      urlsToCache.map((url) =>
+        fetch(new Request(url + '?v=' + encodeURIComponent(VERSION), { cache: 'reload' }))
+          .then((res) => {
+            if (!res.ok) throw new Error(url + ' : ' + res.status);
+            return cache.put(url, res);
+          })
+          .catch(() => null)),
     )),
   );
   self.skipWaiting();
